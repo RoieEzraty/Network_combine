@@ -6,8 +6,10 @@ import copy
 from typing import Tuple, List
 from numpy import array as array
 from numpy import zeros as zeros
+from typing import TYPE_CHECKING
 
-from User_Variables import User_Variables
+if TYPE_CHECKING:
+    from Network_Structure import Network_Structure
 
 
 ############# functions that operate on matrices #############
@@ -35,17 +37,17 @@ def build_input_output_and_ground(Nin: int, Nout: int) -> Tuple[np.ndarray, np.n
     Nout          - int, # output nodes
 
     outputs:
-    input_nodes_lst  - array of all input nodes in task 
-    ground_nodes_lst - array of all output nodes in task
+    input_nodes_arr  - array of all input nodes in task 
+    ground_noides_arr - array of all output nodes in task
     output_nodes        - array of nodes with fixed values, for 'XOR' task. default=0
     """
-    input_nodes_lst = array([i for i in range(Nin)])  # input nodes are first ones named
-    output_nodes_lst = array([Nin + i for i in range(Nout)])  # output nodes are named later
-    ground_nodes_lst = array([Nin + Nout])  # last node is ground
-    return input_nodes_lst, ground_nodes_lst, output_nodes_lst
+    input_nodes_arr = array([i for i in range(Nin)])  # input nodes are first ones named
+    output_nodes_arr = array([Nin + i for i in range(Nout)])  # output nodes are named later
+    ground_noides_arr = array([Nin + Nout])  # last node is ground
+    return input_nodes_arr, ground_noides_arr, output_nodes_arr
 
 
-def build_incidence(Variabs: "User_Variables") -> Tuple[np.ndarray, np.ndarray, List[np.ndarray], np.ndarray, int, int]:
+def build_incidence(Strctr: "Network_Structure") -> Tuple[np.ndarray, np.ndarray, List[np.ndarray], np.ndarray, int, int]:
     """
     Builds incidence matrix DM as np.array [NEdges, NNodes]
     its meaning is 1 at input node and -1 at outpus for every row which resembles one edge.
@@ -64,24 +66,24 @@ def build_incidence(Variabs: "User_Variables") -> Tuple[np.ndarray, np.ndarray, 
     NN         - NNodes, int
     """
 
-    NN: int = len(Variabs.input_nodes_lst) + len(Variabs.output_nodes) + 1
+    NN: int = len(Strctr.input_nodes_arr) + len(Strctr.output_nodes_arr) + 1
     ground_node: int = copy.copy(NN) - 1
     EIlst = []
     EJlst = []
 
     # connect inputs to outputs
-    for i, inNode in enumerate(Variabs.input_nodes_lst):
-        for j, outNode in enumerate(Variabs.output_nodes):
+    for i, inNode in enumerate(Strctr.input_nodes_arr):
+        for j, outNode in enumerate(Strctr.output_nodes_arr):
             EIlst.append(inNode)
             EJlst.append(outNode)
 
     # connect input to ground
-    for i, inNode in enumerate(Variabs.input_nodes_lst):
+    for i, inNode in enumerate(Strctr.input_nodes_arr):
         EIlst.append(inNode)
         EJlst.append(ground_node)
 
     # connect output to ground
-    for i, outNode in enumerate(Variabs.output_nodes):
+    for i, outNode in enumerate(Strctr.output_nodes_arr):
         EIlst.append(outNode)
         EJlst.append(ground_node)
                 

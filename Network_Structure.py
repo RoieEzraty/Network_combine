@@ -4,11 +4,15 @@ import random
 import copy
 
 from typing import Tuple, List
-from numpy import array as array
-from numpy import zeros as zeros
+from numpy import array, zeros
+from typing import TYPE_CHECKING
 
 import matrix_functions, functions
-from User_Variables import User_Variables
+
+
+if TYPE_CHECKING:
+    from User_Variables import User_Variables
+    from Big_Class import Big_Class
 
 
 ############# Class - network structure variables #############
@@ -19,15 +23,18 @@ class Network_Structure:
     Net_structure class save the structure of the network
     """
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, input_nodes_arr: np.ndarray, output_nodes_arr: np.ndarray, \
+                 ground_nodes_arr: np.ndarray) -> None:
+        self.input_nodes_arr = input_nodes_arr
+        self.output_nodes_arr = output_nodes_arr
+        self.ground_nodes_arr = ground_nodes_arr
 
-    def build_incidence(self, Variabs: "User_Variables") -> None:
+    def build_incidence(self) -> None:
         """
         build_incidence builds the incidence matrix DM
 
         inputs:
-        Variabs - variables class
+        None
 
         outputs:
         EI         - array, node number on 1st side of all edges
@@ -37,4 +44,13 @@ class Network_Structure:
         NE         - int, # edges in network
         NN         - int, # nodes in network
         """
-        self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence(Variabs)
+        self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence(self)
+
+    def build_edges(self) -> None:
+        self.output_edges: np.ndarray = array([np.where(np.append(self.EI, self.EJ)==self.output_nodes_arr[i])[0] % len(self.EI) 
+                                               for i in range(len(self.output_nodes_arr))])
+        self.input_edges: np.ndarray = array([np.where(np.append(self.EI, self.EJ)==self.input_nodes_arr[i])[0] % len(self.EI) 
+                                              for i in range(len(self.input_nodes_arr))])
+        self.ground_edges: np.ndarray = array([np.where(np.append(self.EI, self.EJ)==self.ground_nodes_arr[i])[0] % len(self.EI) 
+                                               for i in range(len(self.ground_nodes_arr))])
+

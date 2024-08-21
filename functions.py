@@ -4,8 +4,7 @@ import random
 import copy
 
 from typing import Tuple, List
-from numpy import array as array
-from numpy import zeros as zeros
+from numpy import array, zeros
 
 
 ############# other functions #############

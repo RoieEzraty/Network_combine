@@ -44,10 +44,8 @@ class Networkx_Net:
 	    outputs:
 	    NET - networkx network containing just the edges from EIEJ_plots
 	    """
-
-		EIEJ_plots = BigClass.Strctr.EIEJ_plots
 		NET: nx.DiGraph = nx.DiGraph()  # initiate graph object
-		NET.add_edges_from(EIEJ_plots)  # add edges 
+		NET.add_edges_from(BigClass.Strctr.EIEJ_plots)  # add edges 
 		self.NET: nx.DiGraph = NET
 
 	def build_pos_lattice(self, BigClass: "Big_Class", plot: bool=False, node_labels: bool=False):

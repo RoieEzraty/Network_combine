@@ -87,6 +87,7 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     ax3.legend(legend3)  
     ax4.plot(np.mean(np.mean(np.abs(State.loss_in_t[1:]), axis=1),axis=1))    
     ax4.set_xlabel('t')
+    ax4.set_yscale('log')
     ax4.legend(legend4)
     fig.suptitle(f'alpha={Variabs.alpha_vec}')
     plt.show()

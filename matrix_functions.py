@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 ############# functions that operate on matrices #############
 
 
-def build_input_output_and_ground(Nin: int, Nout: int) -> Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]:
+def build_input_output_and_ground(Nin: int, Ninter: int, Nout: int) -> Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]:
     """
     build_input_output_and_ground builds the input and output pairs and ground node values
 
@@ -40,13 +40,14 @@ def build_input_output_and_ground(Nin: int, Nout: int) -> Tuple[NDArray[np.int_]
 
     outputs:
     input_nodes_arr  - array of all input nodes in task 
-    ground_noides_arr - array of all output nodes in task
+    ground_nodes_arr - array of all output nodes in task
     output_nodes        - array of nodes with fixed values, for 'XOR' task. default=0
     """
     input_nodes_arr = array([i for i in range(Nin)])  # input nodes are first ones named
-    output_nodes_arr = array([Nin + i for i in range(Nout)])  # output nodes are named later
-    ground_noides_arr = array([Nin + Nout])  # last node is ground
-    return input_nodes_arr, ground_noides_arr, output_nodes_arr
+    inter_nodes_arr = array([Nin + i for i in range(Ninter)])  # output nodes are named later
+    output_nodes_arr = array([Nin + Ninter + i for i in range(Nout)])  # output nodes are named later
+    ground_nodes_arr = array([Nin + Ninter + Nout])  # last node is ground
+    return input_nodes_arr, inter_nodes_arr, output_nodes_arr, ground_nodes_arr
 
 
 def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDArray[np.int_], List[NDArray[np.int_]], NDArray[np.int_], int, int]:
@@ -55,10 +56,7 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     its meaning is 1 at input node and -1 at outpus for every row which resembles one edge.
 
     input (extracted from Variabs input):
-    a        - N cells in vertical direction of lattice, int
-    b        - N cells in horizontal direction of lattice, int
-    typ      - type of lattice (Nachi style or mine) str
-    Periodic - 1 if lattice is periodic, 0 if not
+    Strctr: "Network_Structure" class instance with the input, intermediate and output nodes
 
     output:
     EI, EJ     - 1D np.arrays sized NEdges such that EI[i] is node connected to EJ[i] at certain edge
@@ -68,8 +66,8 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     NN         - NNodes, int
     """
 
-    NN: int = len(Strctr.input_nodes_arr) + len(Strctr.output_nodes_arr) + 1
-    ground_node: int = copy.copy(NN) - 1
+    NN: int = len(Strctr.input_nodes_arr) + len(Strctr.output_nodes_arr) + len(Strctr.inter_nodes_arr) + 1
+    ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
     EIlst = []
     EJlst = []
 
@@ -77,6 +75,18 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     for i, inNode in enumerate(Strctr.input_nodes_arr):
         for j, outNode in enumerate(Strctr.output_nodes_arr):
             EIlst.append(inNode)
+            EJlst.append(outNode)
+
+    # connect input to inter
+    for i, inNode in enumerate(Strctr.input_nodes_arr):
+        for j, interNode in enumerate(Strctr.inter_nodes_arr):
+            EIlst.append(inNode)
+            EJlst.append(interNode)
+
+    # connect inter to output
+    for i, interNode in enumerate(Strctr.inter_nodes_arr):
+        for j, outNode in enumerate(Strctr.output_nodes_arr):
+            EIlst.append(interNode)
             EJlst.append(outNode)
 
     # connect input to ground

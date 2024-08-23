@@ -4,6 +4,7 @@ import random
 import copy
 
 from typing import Tuple, List
+from numpy.typing import NDArray
 from numpy import array, zeros
 from typing import TYPE_CHECKING
 
@@ -23,11 +24,10 @@ class Network_Structure:
     Net_structure class save the structure of the network
     """
 
-    def __init__(self, input_nodes_arr: np.ndarray, output_nodes_arr: np.ndarray, \
-                 ground_nodes_arr: np.ndarray) -> None:
-        self.input_nodes_arr = input_nodes_arr
-        self.output_nodes_arr = output_nodes_arr
-        self.ground_nodes_arr = ground_nodes_arr
+    def __init__(self, input_nodes_arr: NDArray[np.int_], output_nodes_arr: NDArray[np.int_], ground_nodes_arr: NDArray[np.int_]) -> None:
+        self.input_nodes_arr: NDArray[np.int_] = input_nodes_arr
+        self.output_nodes_arr: NDArray[np.int_] = output_nodes_arr
+        self.ground_nodes_arr: NDArray[np.int_] = ground_nodes_arr
 
     def build_incidence(self) -> None:
         """

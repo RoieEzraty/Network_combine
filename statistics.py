@@ -6,7 +6,10 @@ import copy
 from typing import Tuple, List
 from numpy import array as array
 from numpy import zeros as zeros
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from Big_Class import Big_Class
 
 ############# functions for statistical analysis #############
 

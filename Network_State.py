@@ -5,9 +5,9 @@ import copy
 
 from typing import Tuple, List
 from numpy import array, zeros, arange
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Union
 
-import matrix_functions, functions, solve
+import matrix_functions, functions, solve, plot_functions
 
 if TYPE_CHECKING:
     from Network_Structure import Network_Structure
@@ -25,21 +25,24 @@ class Network_State():
     what ends w/out _in_t is at current time instance self.t
     """
     def __init__(self, Nin: int, Nout: int) -> None:
-        super(Network_State, self).__init__()      
-        self.out_in_t: List[np.ndarray] = []
-        self.loss_in_t: List[np.ndarray] = []
-        self.t: int = 0
-        self.out_dual_in_t: List[np.ndarray] = [0.5*np.ones(Nout)]
-        self.p_dual_in_t: List[np.ndarray] = [1.0*np.ones(Nin)]
-        self.p_drawn_in_t: List[np.ndarray] = []
+        super(Network_State, self).__init__()  
+        self.t: int = 0  
+        self.p: np.ndarray=array([])  
+        self.u: np.ndarray=array([])  
+        self.output: np.ndarray=array([])
+        self.output_in_t: List[np.ndarray] = []
+        self.desired: np.ndarray=array([])
+        self.input_drawn_in_t: List[np.ndarray] = []
         self.desired_in_t: List[np.ndarray] = []
-        self.output_dual_in_t: List[np.ndarray] = []
+        self.output_dual_in_t: List[np.ndarray] = [0.5*np.ones(Nout)]
+        self.input_dual_in_t: List[np.ndarray] = [1.0*np.ones(Nin)]
+        self.loss_in_t: List[np.ndarray] = []   
             
-    def initiate_resistances(self, Strctr: "Network_Structure") -> None:
+    def initiate_resistances(self, BigClass: "Big_Class") -> None:
         """
         After using build_incidence, initiate resistances
         """
-        self.R_in_t: List[np.ndarray] = [np.ones((Strctr.NE), dtype=float)]
+        self.R_in_t: List[np.ndarray] = [np.ones((BigClass.Strctr.NE), dtype=float)]
             
     def draw_p_in_and_desired(self, Variabs: "User_Variables"):
         """
@@ -52,9 +55,9 @@ class Network_State():
         p_drawn: np.ndarray sized [Nout,], input pressures
         desired: np.ndarray sized [Nout,], desired output defined by the task M*p_input
         """
-        self.p_drawn: np.ndarray = np.random.uniform(low=0.0, high=2.0, size=Variabs.Nin)
-        self.desired: np.ndarray = np.matmul(Variabs.M, self.p_drawn)
-        self.p_drawn_in_t.append(self.p_drawn)
+        self.input_drawn: np.ndarray = np.random.uniform(low=0.0, high=2.0, size=Variabs.Nin)
+        self.desired = np.matmul(Variabs.M, self.input_drawn)
+        self.input_drawn_in_t.append(self.input_drawn)
         self.desired_in_t.append(self.desired)
 
     def assign_output_dual(self, Variabs: "User_Variables"):
@@ -65,7 +68,7 @@ class Network_State():
         self.output_dual: np.ndarray = zeros(Variabs.Nout)
         self.output_dual_in_t.append(self.output_dual)
 
-    def solve_flow_until_conv(self, BigClass: "Big_Class", CstrTuple: Tuple[np.ndarray, np.ndarray, np.ndarray]):
+    def solve_flow_until_conv(self, BigClass: "Big_Class", problem: str) -> None:
         """
         solve_flow_until_conv solves the flow under same BCs while updating K until convergence. 
         used as part of flow_iterate()
@@ -84,138 +87,95 @@ class Network_State():
         p     - pressure at every node under the specific BC, after convergence while allowing conductivities to change
         u_nxt - flow at every edge under the specific BC, after convergence while allowing conductivities to change
         """
-        p, u_nxt = self.solve_flow_const_K(BigClass, CstrTuple, self.R_in_t[-1])
-        return p, u_nxt
-
-    def solve_flow_const_K(self, BigClass: "Big_Class", CstrTuple: Tuple[np.ndarray, np.ndarray, np.ndarray], R_vec: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        solve_flow_const_K solves the flow under given conductance configuration without changing Ks, until simulation converges
-
-        inputs:
-        BigClass       - class instance including user variables (Variabs), network structure (Strctr) and networkx (NET) and network state (State) class instances
-        u              - 1D array sized [NE + constraints, ], flow field at edges from previous solution iteration
-        Cstr           - 2D array without last column, which is f from Rocks & Katifori 2018 https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116
-        f              - constraint vector (from Rocks and Katifori 2018)
-        iters_same_BSc - # iteration allowed under same boundary conditions (same constraints)
-
-        outputs:
-        p     - 1D array sized [NN + constraints, ], pressure at nodes at end of current iteration step
-        u_nxt - 1D array sized [NE + constraints, ], flow velocity at edgses at end of current iteration step
-        """
-        # create effective conductivities if they are flow dependent
-        Cstr = CstrTuple[1]
-        f = CstrTuple[2]
-        K_mat = np.eye(BigClass.Strctr.NE) / R_vec
-        L, L_bar = matrix_functions.buildL(BigClass, BigClass.Strctr.DM, K_mat, Cstr, BigClass.Strctr.NN)  # Lagrangian
-        p, u_nxt = solve.Solve_flow(L_bar, BigClass.Strctr.EI, BigClass.Strctr.EJ, K_eff, f, round=10**-10)  # pressure and flow
-        # NETfuncs.PlotNetwork(p, u_nxt, self.K, BigClass, BigClass.Strctr.EIEJ_plots, BigClass.Strctr.NN, 
-        #                    BigClass.Strctr.NE, nodes='yes', edges='yes', savefig='no')
-        return p, u_nxt
-
-    def setup_constraints_given_pin(self, BigClass: "Big_Class", problem: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        build_incidence builds the incidence matrix DM
-
-        inputs:
-        BigClass: class instance consisting User_Variables, Network_State, etc.
-        problem: str, "measure" for pressure posed on inputs and ground, "dual" for pressure also on outputs and change of resistances 
-
-        outputs:
-        Cstr_full = 2D array sized [Constraints, NN + 1] representing constraints on nodes and edges. last column is value of constraint
-                    (p value of row contains just +1. pressure drop if row contains +1 and -1)
-        Cstr      = 2D array without last column (which is f from Rocks and Katifori 2018 https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116)
-        f         = constraint vector (from Rocks and Katifori 2018)
-        """
-        # specific constraints for training step 
-        NodeData, Nodes, GroundNodes = self.Constraints_nodes(BigClass, problem)
-
-        print('NodeData', NodeData)
-        print('Nodes', Nodes)
-        print('GroundNodes',  GroundNodes)
-
-        # BC and constraints as matrix
-        Cstr_full, Cstr, f = self.ConstraintMatrix(NodeData, Nodes, GroundNodes, BigClass.Variabs.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ) 
-        return Cstr_full, Cstr, f 
-
-    def Constraints_nodes(self, BigClass: "Big_Class", problem: str):
-        """
-        Constraints_afo_task sets up the constraints on nodes and edges for specific learning task, and for specific step.
-        This comes after Setup_constraints which sets them for the whole task
-
-        inputs:
-        BigClass: class instance that includes all class instances User_Variables, Network_State, et.c
-        problem: str, "measure" for pressure posed on inputs and ground, "dual" for pressure also on outputs and change of resistances  
-        """
-        GroundNodes: np.ndarray = copy.copy(BigClass.Strctr.ground_nodes_arr)
-        InNodeData: np.ndarray = copy.copy(BigClass.State.p_drawn)
-        InNodes: np.ndarray = copy.copy(BigClass.Strctr.input_nodes_arr)
-        print('BigClass input nodes', BigClass.Strctr.input_nodes_arr)
-        print('InNodes', InNodes)
-        if problem=="measure":
-            OutputNodeData: np.ndarray = array([], dtype=int)
-            OutputNodes: np.ndarray = array([], dtype=int)
-        elif problem=="dual":
-            OutputNodeData = copy.copy(BigClass.State.output_dual)
-            OutputNodes = copy.copy(BigClass.Strctr.output_nodes_arr)
-        NodeData: np.ndarray = np.append(InNodeData, OutputNodeData)
-        Nodes: np.ndarray = np.append(InNodes, OutputNodes)
-        print('Nodes inside func', Nodes)
-        return NodeData, Nodes, GroundNodes
-
-    def ConstraintMatrix(self, NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Builds constraint matrix, 
-        for constraints on edge voltage drops: 1 at input node index, -1 at output and voltage drop at NN+1 index, for every row
-        For constraints on node voltages: 1 at constrained node index, voltage at NN+1 index, for every row
-        For ground nodes: 1 at ground node index, 0 else.
-
-        Inputs:
-        NodeData    = 1D array at length as "Nodes" corresponding to pressures at each node from "Nodes"
-        Nodes       = 1D array of nodes that have a constraint
-        GroundNodes = 1D array of nodes that have a constraint of ground (outlet)
-        NN          = int, number of nodes in network
-        EI          = 1D array of nodes at each edge beginning
-        EJ          = 1D array of nodes at each edge ending corresponding to EI
-
-        outputs:
-        Cstr_full = 2D array sized [Constraints, NN + 1] representing constraints on nodes and edges. last column is value of constraint
-                 (p value of row contains just +1. pressure drop if row contains +1 and -1)
-        Cstr      = 2D array without last column (which is f from Rocks and Katifori 2018 https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116)
-        f         = constraint vector (from Rocks and Katifori 2018)
-        """
-
-        # ground nodes
-        csg = len(GroundNodes)
-        idg = arange(csg)
-        CStr = zeros([csg, NN+1])
-        CStr[idg, GroundNodes] = +1.
-        CStr[:, NN] = 0.
+        if problem == 'measure':
+            CstrTuple = functions.setup_constraints_given_pin((BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr), BigClass.State.input_drawn, BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+            self.p, self.u = solve.solve_flow_const_K(BigClass, CstrTuple, self.R_in_t[-1])
+            self.output = self.p[BigClass.Strctr.output_nodes_arr].ravel()  # output is only at output edges, raveled so sized [Nout,]
+            self.output_in_t.append(self.output)
+        elif problem == 'dual':
+            CstrTuple = functions.setup_constraints_given_pin((BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.output_nodes_arr), (BigClass.State.input_dual_in_t[-1], BigClass.State.output_dual_in_t[-1]),\
+                                                              BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+            self.p, self.u = solve.solve_flow_const_K(BigClass, CstrTuple, self.R_in_t[-1])
+        print('Rs', self.R_in_t[-1])
         
-        # constrained node pressures
-        if len(Nodes):
-            csn = len(Nodes)
-            idn = arange(csn)
-            SN = zeros([csn, NN+1])
-            SN[idn, Nodes] = +1.
-            SN[:, NN] = NodeData
-            CStr = np.r_[CStr, SN]
 
-        # to not lose functionality in the future if I want to add Edges as well
-        Edges = array([])
-        EdgeData = array([])
+    def calc_loss(self, BigClass: "Big_Class") -> None:
+        """
+        Calculates the loss given system state and desired outputs, perhaps including 1 time step ago
+
+        inputs:
+        BigClass: Class instance where all the
+
+        outputs:
+        loss: np.ndarray sized [Nout,]
+        """
+        if BigClass.Variabs.loss_fn == functions.loss_fn_2samples:
+            self.loss = BigClass.Variabs.loss_fn(self.output, self.output_in_t[-2], self.desired, self.desired_in_t[-2])
+        elif BigClass.Variabs.loss_fn == functions.loss_fn_1sample:
+            self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
+        self.loss_in_t.append(self.loss)
+
+    def update_pressure_dual(self, BigClass: "Big_Class") -> None:
+        self.t += 1  # update time
+        loss = self.loss_in_t[-1]  # copy loss
+        input_dual = self.input_dual_in_t[-1]
+        pert = np.random.normal(size=np.size(input_dual))  # perturbation, not in use
+        input_drawn = self.input_drawn_in_t[-1]
+        # dot product for alpha in pressure update
+        if BigClass.Variabs.use_p_tag:
+            input_drawn_prev = self.input_drawn_in_t[-2]
+            print('delta_loss', loss[0]-loss[1])
+            print('delta_input', input_drawn-input_drawn_prev)
+            print('the dot itself', (input_drawn-input_drawn_prev)*np.dot(BigClass.Variabs.alpha_vec, loss[0]-loss[1]))
+            self.input_dual_nxt = input_dual - (input_drawn-input_drawn_prev)*np.dot(BigClass.Variabs.alpha_vec, loss[0]-loss[1])
+            print('input_dual_nxt for inside function', self.input_dual_nxt)
+        else:
+            self.input_dual_nxt = input_dual - (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])                     
+        if BigClass.Variabs.supress_prints:
+            pass
+        else:
+            print('loss=', loss)
+            print('time=', self.t)
+            print('input_dual_nxt=', self.input_dual_nxt)
+
+        # if pressure changes without memory
+        if BigClass.Variabs.R_update == 'deltaR' and np.shape(self.input_dual_in_t)[0]>1:  # make sure its not initial value
+            self.input_dual_nxt -= input_dual  # erase memory
+
+        self.input_dual_in_t.append(self.input_dual_nxt)  # append into list in time
+
+    def update_output_dual(self, BigClass: "Big_Class"):
+        loss = self.loss_in_t[-1]
+        pert = np.random.normal(size=np.size(self.output))
+        output_dual = copy.copy(self.output_dual_in_t[-1])
+        # element-wise multiplication for alpha in output update
+        # self.output = out_dual + self.variabs.alpha * np.dot(self.output-self.out_in_t[-2], loss[0]-loss[1])
+        print('x-xprime', self.output-self.output_in_t[-2])
+        print('loss-loss_prime', loss[0]-loss[1])
+        self.output_dual_nxt = output_dual + BigClass.Variabs.alpha_vec * (self.output-self.output_in_t[-2])*(loss[0]-loss[1])
+        # self.output = out_dual + self.variabs.alpha[1] * (self.output[1]-self.out_in_t[-2][1])*(loss[0][1]-loss[1][1])
         
-        # constrained edge pressure drops
-        if len(Edges):
-            cse = len(Edges)
-            ide = arange(cse)
-            SE = zeros([cse, NN+1])
-            SE[ide, EI[Edges]] = +1.
-            SE[ide, EJ[Edges]] = -1.
-            SE[:, NN] = EdgeData
-            CStr = np.r_[CStr, SE]
-            
-        # last column of CStr is vector f 
-        f = zeros([NN + len(CStr), 1])
-        f[NN:,0] = CStr[:,-1]
+        # outputs change without memory?
+        if BigClass.Variabs.R_update == 'deltaR' and np.shape(self.output_dual_in_t)[0]>1:  # make sure its not initial value
+            self.output_dual_nxt -= output_dual  # erase memory
+        self.output_dual_in_t.append(self.output_dual_nxt)           
+        
+        # optionally print output
+        if BigClass.Variabs.supress_prints:
+            pass
+        else:
+            print('output_dual_nxt', self.output_dual_nxt)
 
-        return CStr, CStr[:,:-1], f
+    def update_Rs(self, BigClass: "Big_Class") -> None:
+        R_vec: np.ndarray = self.R_in_t[-1]
+        delta_p: np.ndarray = self.u * R_vec
+        if BigClass.Variabs.R_update == 'deltaR':
+            self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
+        elif BigClass.Variabs.R_update == 'propto':
+            self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
+          
+        # optionally display resistances
+        if BigClass.Variabs.supress_prints:
+            pass
+        else:
+            print('R_nxt', self.R_in_t[-1])

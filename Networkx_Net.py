@@ -5,8 +5,7 @@ import copy
 import networkx as nx
 
 from typing import Tuple, List
-from numpy import array as array
-from numpy import zeros as zeros
+from numpy import array, zeros
 from typing import TYPE_CHECKING
 
 import plot_functions
@@ -38,8 +37,7 @@ class Networkx_Net:
 	    After this step, the order of edges at EIEJ_plots and in the networkx net is not the same which is shit
 	    
 	    inputs:
-	    EIEJ_plots - 2D array sized [NE, 2] - 
-	                 EIEJ_plots[i,0] and EIEJ_plots[i,1] are input and output nodes to edge i, respectively
+	    BigClass - class instance including User_Variables, Network_Structure instances, etc.
 	    
 	    outputs:
 	    NET - networkx network containing just the edges from EIEJ_plots
@@ -48,14 +46,17 @@ class Networkx_Net:
 		NET.add_edges_from(BigClass.Strctr.EIEJ_plots)  # add edges 
 		self.NET: nx.DiGraph = NET
 
-	def build_pos_lattice(self, BigClass: "Big_Class", plot: bool=False, node_labels: bool=False):
+	def build_pos_lattice(self, BigClass: "Big_Class", plot: bool=False, node_labels: bool=False) -> None:
 		"""
 		build_pos_lattice builds the lattice of positions of edges and nodes
 
 		inputs:
 		BigClass - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET) and network state (State) class instances
+		plot        - bool, whether to plot or not
+    	node_labels - boolean, show node number in plot or not
 
 	    outputs:
 	    pos_lattice - dict, positions of nodes from NET.nodes
 		"""
-		self.pos_lattice = plot_functions.plotNetStructure(self.NET, plot=plot, node_labels=node_labels)
+		pos_lattice: Dict[Any, Tuple[float, float]] = plot_functions.plotNetStructure(self.NET, plot=plot, node_labels=node_labels)
+		self.pos_lattice = pos_lattice

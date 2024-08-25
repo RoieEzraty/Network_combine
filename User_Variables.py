@@ -4,9 +4,9 @@ import random
 import copy
 
 from typing import Tuple, List
-from numpy import array as array
-from numpy import zeros as zeros
-from typing import TYPE_CHECKING, Callable, Union
+from numpy import array, zeros
+from numpy.typing import NDArray
+from typing import TYPE_CHECKING, Callable, Union, Optional
 
 import functions
 
@@ -18,13 +18,13 @@ class User_Variables:
     """
     
     """
-    def __init__(self, iterations: int, Nin: int, Nout: int, gamma: np.ndarray, \
-                 R_update: str, use_p_tag: bool, supress_prints: bool, bc_noise: float) -> None:
+    def __init__(self, iterations: int, Nin: int, Nout: int, gamma: NDArray[np.float_], \
+                 R_update: str, use_p_tag: bool, supress_prints: bool, bc_noise: float, Ninter: Optional[int]=0) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
         self.Nout: int = Nout
-        self.NN: int = Nin+Nout+1
+        self.NN: int = Nin+Nout+Ninter
         self.gamma: np.ndarray = gamma
         self.use_p_tag: bool = use_p_tag 
         if use_p_tag:
@@ -37,7 +37,7 @@ class User_Variables:
         self.supress_prints = supress_prints
         self.bc_noise = bc_noise
 
-    def create_M(self, M_values: np.ndarray):
+    def create_M(self, M_values: NDArray[np.float_]) -> None:
       """
       creates the matrix which defines the task, i.e. p_out=M*p_in
 
@@ -50,7 +50,13 @@ class User_Variables:
       self.M: np.ndarray =  M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
 
     def assign_alpha_vec(self, alpha: float) -> None:
+      """
+      assign the alpha vector, in the form of array of [Nout], to the User_Variables
+
+      inputs:
+      alpha: float of the learning rate alpha
+      """
       if type(alpha)==float:
-        self.alpha_vec = np.tile(alpha, (self.Nout,))
+        self.alpha_vec: NDArray[np.float_] = np.tile(alpha, (self.Nout,))
       else:
         print('wrong type for alpha, should be float')

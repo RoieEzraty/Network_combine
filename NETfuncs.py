@@ -9,11 +9,16 @@ import matplotlib.pyplot as plt
 
 import statistics
 
- 
+
+# ===================================================
+# functions that operate on netowrkx networks
+# ===================================================
+
+
 def plotNetStructure(NET, NGrid, scale, squish, layout='Cells', plot='no', node_labels=True):
     """
-    Plots the structure (nodes and edges) of networkx NET 
-    
+    Plots the structure (nodes and edges) of networkx NET
+
     input:
     NET         - networkx net of nodes and edges
     NGrid       - int, # cells in each dimensions (vert, horiz), relevant only for 'Cells' layour
@@ -22,15 +27,15 @@ def plotNetStructure(NET, NGrid, scale, squish, layout='Cells', plot='no', node_
     layout      - str graph visual layout, string. Roie style is 'Cells'
     plot        - 'yes'/'no', whether to plot or not
     node_labels - boolean, show node number in plot or not
-    
+
     output:
     pos_lattice - dict of positions of nodes from NET.nodes
-    if plot=='yes' also show matplotlib plot of network structure 
+    if plot=='yes' also show matplotlib plot of network structure
     """
     if layout == 'Cells':  # Roie style of 2D array of connected crosses
         pos_lattice = {}  # initiate dictionary of node positions
         # NGrid = int(np.sqrt(len(NET.nodes)/5))  # number of cells in network, considering only cubic array of cells
-        k=0  # dummy
+        k = 0  # dummy
         for i in range(NGrid):  # network rows
             for j in range(NGrid):  # network columns
                 pos_lattice[scale*(i+j+k)] = array([-(scale/2-squish)+scale*j, 0+scale*i])  # left node in cell
@@ -38,7 +43,7 @@ def plotNetStructure(NET, NGrid, scale, squish, layout='Cells', plot='no', node_
                 pos_lattice[scale*(i+j+k)+2] = array([(scale/2-squish)+scale*j, 0+scale*i])  # right node
                 pos_lattice[scale*(i+j+k)+3] = array([0+scale*j, (scale/2-squish)+scale*i])  # upper node
                 pos_lattice[scale*(i+j+k)+4] = array([0+scale*j, 0+scale*i])  # middle node
-            k+=NGrid-1  # add to dummy index so skipping to next cell
+            k += NGrid-1  # add to dummy index so skipping to next cell
     elif layout == 'oneCol':  # Roie style of single column of connected crosses
         pos_lattice = {}  # initiate dictionary of node positions
         # NGrid = int(len(NET.nodes)/5)  # number of cells in network, considering only cubic array of cells
@@ -61,7 +66,7 @@ def plotNetStructure(NET, NGrid, scale, squish, layout='Cells', plot='no', node_
         nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=node_labels)
         # nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=False)
         plt.show()
-        
+
     print('NET is ready')
     return pos_lattice
 
@@ -72,14 +77,14 @@ def PlotNetwork(p, u, K, BigClass, EIEJ_plots, NN, NE, nodes='yes', edges='yes',
     pressure denoted by colors from purple (high) to cyan (low)
     flow velocity denoted by arrow direction and thickness
     conductivity denoted by arrow color - black (low) and blue (high)
-    
+
     input:
     p - 1D np.array sized [NNodes], hydrostatic pressure at nodes
     u - 1D np.array sized [NEdges], flow velocities at edges (positive is into cell center)
     K - 1D np.array sized [NEdges], flow conductivities for every edge
     pos_lattice - dict from
     layout - graph visual layout, string. Roie style is 'Cells'
-    
+
     output:
     matplotlib plot of network structure
     """
@@ -89,28 +94,29 @@ def PlotNetwork(p, u, K, BigClass, EIEJ_plots, NN, NE, nodes='yes', edges='yes',
     # Preliminaries for the plot
     node_sizes = 4*24
     u_rescale_factor = 5
-    
+
     # p values at nodes - the same in EIEJ and in networkx's NET
-    val_map = {i : p[i][0] for i in range(NN)}
+    val_map = {i: p[i][0] for i in range(NN)}
     values = [val_map.get(node, 0.25) for node in NET.nodes()]
 
     # velocity and conductivity values at edges - not the same in EIEJ and in networkx's NET
     NETEdges = list(NET.edges)
-    
+
     # rearrange u and K for network
     # since NET.edges and EIEJ_plots are not the same, thanks networkx you idiot
     u_NET = zeros(NE)  # velocity field arranged as edges in NET.edges and not EIEJ_plots
     K_NET = zeros(NE)  # conductivity values at edges in NET.edges and not EIEJ_plots
     for i in range(NE):
-        K_NET[i] = K[EIEJ_plots.index(NETEdges[i])]   
-        u_NET[i] = u[EIEJ_plots.index(NETEdges[i])]   
+        K_NET[i] = K[EIEJ_plots.index(NETEdges[i])]
+        u_NET[i] = u[EIEJ_plots.index(NETEdges[i])]
 
-    low_K_NET_inds = np.where(K_NET==BigClass.Variabs.K_min)[0]  # indices of edges with low conductivity
-    high_K_NET_inds = np.where(K_NET!=BigClass.Variabs.K_min)[0]  # indices of edges with higher conductivity
-    positive_u_NET_inds = np.where(u_NET>10**-10)[0]  # indices of edges with positive flow vel
-    negative_u_NET_inds = np.where(u_NET<-10**-10)[0]  # indices of edges with negative flow vel
-    
-    r_edges_positive = [NETEdges[i] for i in list(set(low_K_NET_inds) & set(positive_u_NET_inds))]  # edges with low conductivity, positive flow
+    low_K_NET_inds = np.where(K_NET == BigClass.Variabs.K_min)[0]  # indices of edges with low conductivity
+    high_K_NET_inds = np.where(K_NET != BigClass.Variabs.K_min)[0]  # indices of edges with higher conductivity
+    positive_u_NET_inds = np.where(u_NET > 10**-10)[0]  # indices of edges with positive flow vel
+    negative_u_NET_inds = np.where(u_NET < -10**-10)[0]  # indices of edges with negative flow vel
+
+    r_edges_positive = [NETEdges[i] for i in list(set(low_K_NET_inds) & set(positive_u_NET_inds))]  # low conductivity edges,
+                                                                                                    # edges, positive flow
     r_edges_negative = [NETEdges[i] for i in list(set(low_K_NET_inds) & set(negative_u_NET_inds))]  # edges with low conductivity, negative flow
     b_edges_positive = [NETEdges[i] for i in list(set(high_K_NET_inds) & set(positive_u_NET_inds))]  # edges with high conductivity, positive flow
     b_edges_negative = [NETEdges[i] for i in list(set(high_K_NET_inds) & set(negative_u_NET_inds))]  # edges with high conductivity, negative flow

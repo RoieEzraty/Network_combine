@@ -10,10 +10,13 @@ from numpy import array, zeros, arange
 import matrix_functions
 
 
-############# other functions #############
+# ===================================================
+# other functions
+# ===================================================
 
 
-def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_], desired1: NDArray[np.float_], desired2: NDArray[np.float_]) -> NDArray[np.float_]:
+def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_], desired1: NDArray[np.float_],
+                     desired2: NDArray[np.float_]) -> NDArray[np.float_]:
     """
     loss functions for regression task out=M*in using two sampled input pressures
 
@@ -24,11 +27,11 @@ def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_], d
     desired2: np.ndarray sized [Nout,] desired output for 2nd sample (previous time step)
 
     outputs:
-    loss: np.ndarray sized [Nout, 2] loss as linear difference between output and desired, each line for a different sample
+    loss: np.ndarray sized [Nout, 2] loss as linear difference output - desired, each line for different sample
     """
-    L1: np.ndarray = desired1-output1
-    L2: np.ndarray = desired2-output2
-    loss = np.array([L1, L2])
+    L1: NDArray[np.float_] = desired1-output1
+    L2: NDArray[np.float_] = desired2-output2
+    loss: NDArray[np.float_] = np.array([L1, L2])
     return loss
 
 
@@ -37,33 +40,52 @@ def loss_fn_1sample(output: np.ndarray, desired: np.ndarray) -> np.ndarray:
     loss functions for regression task out=M*in using a single drawn input pressure
 
     inputs:
-    output1: np.ndarray sized [Nout,] output for 1st sample (current time step)
-    desired1: np.ndarray sized [Nout,] desired output for 1st sample (current time step)
+    output: np.ndarray sized [Nout,] output for 1st sample (current time step)
+    desired: np.ndarray sized [Nout,] desired output for 1st sample (current time step)
 
     outputs:
-    loss: np.ndarray sized [Nout,] loss as linear difference between output and desired, each line for a different sample
+    loss: np.ndarray sized [Nout, 2] loss as linear difference output - desired, each line for different sample
     """
-    L1: np.ndarray = desired-output
-    loss: np.ndarray = np.array([L1])
+    L1: NDArray[np.float_] = desired-output
+    loss: NDArray[np.float_] = np.array([L1])
     return loss
 
 
-def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_]], Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]], nodeData_tuple: Union[Tuple[NDArray[np.float_], NDArray[np.float_]], NDArray[np.float_]],\
-                                NN: int, EI: NDArray[np.int_], EJ: NDArray[np.int_]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_]],
+                                                   Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]],
+                                nodeData_tuple: Union[Tuple[NDArray[np.float_], NDArray[np.float_]],
+                                                      NDArray[np.float_]],
+                                NN: int,
+                                EI: NDArray[np.int_],
+                                EJ: NDArray[np.int_]) -> Tuple[NDArray[np.float_], NDArray[np.float_],
+                                                               NDArray[np.float_]]:
     """
-    build_incidence builds the incidence matrix DM
+    setup_constraints_given_pin sets up arrays of boundary condition on nodes,
+    denoting node indices and assigned pressure values to each node,
+    from which it calculates the constraints matrices Cstr and f.
 
     inputs:
-    BigClass: class instance consisting User_Variables, Network_State, etc.
-    problem: str, "measure" for pressure posed on inputs and ground, "dual" for pressure also on outputs and change of resistances 
+    nodes_tuple    - Tuple containing indices of nodes: (input_nodes_arr, inter_nodes_arr) for the "measure" problem
+                     or (input_nodes_arr, inter_nodes_arr, output_nodes_arr) for the "dual".
+    nodeData_tuple - Tuple, pressure values of nodes_tuple: (input_nodes_arr, inter_nodes_arr) for the "measure" problem
+                                                            or (input_nodes_arr, inter_nodes_arr, output_nodes_arr)
+                                                            for the "dual".
+    NN             - int, total number of nodes in network
+    EI             - array, node number on 1st side of all edges
+    EJ             - array, node number on 2nd side of all edges
 
     outputs:
-    Cstr_full = 2D array sized [Constraints, NN + 1] representing constraints on nodes and edges. last column is value of constraint
+    Cstr_full - 2D array sized [Constraints, NN + 1] representing constraints on nodes and edges.
+                last column is value of constraint
                 (p value of row contains just +1. pressure drop if row contains +1 and -1)
-    Cstr      = 2D array without last column (which is f from Rocks and Katifori 2018 https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116)
-    f         = constraint vector (from Rocks and Katifori 2018)
+    Cstr      - 2D array without last column
+                (which is f from Rocks and Katifori 2018 https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116)
+    f         - constraint vector (from Rocks and Katifori 2018)
     """
-    # specific constraints for training step 
+    # specific constraints for training step
+    NodeData: NDArray[np.float_]  # type hint
+    Nodes: NDArray[np.int_]  # type hint
+    GroundNodes: NDArray[np.int_]  # type hint
     NodeData, Nodes, GroundNodes = Constraints_nodes(nodes_tuple, nodeData_tuple)
 
     # print('NodeData', NodeData)
@@ -71,30 +93,44 @@ def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArr
     # print('GroundNodes',  GroundNodes)
 
     # BC and constraints as matrix
-    Cstr_full, Cstr, f = matrix_functions.ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) 
-    return Cstr_full, Cstr, f 
+    Cstr_full: NDArray[np.float_]  # type hint
+    Cstr: NDArray[np.float_]  # type hint
+    f: NDArray[np.float_]  # type hint
+    Cstr_full, Cstr, f = matrix_functions.ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ)
+    return Cstr_full, Cstr, f
 
 
-def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_]], Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]], \
-                      nodeData_tuple: Union[Tuple[NDArray[np.float_], NDArray[np.float_]], NDArray[np.float_]]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_]],
+                                         Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]],
+                      nodeData_tuple: Union[Tuple[NDArray[np.float_], NDArray[np.float_]],
+                                            NDArray[np.float_]]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Constraints_afo_task sets up the constraints on nodes and edges for specific learning task, and for specific step.
-    This comes after Setup_constraints which sets them for the whole task
+    Constraints_nodes sets up the constraints on nodes for specific problem ("measure" or "dual"),
+    for specific sampled pressure input_drawn.
+    1st part of State.solve_flow_given_problem, after which the flow is solved under solve_flow
 
     inputs:
-    BigClass: class instance that includes all class instances User_Variables, Network_State, et.c
-    problem: str, "measure" for pressure posed on inputs and ground, "dual" for pressure also on outputs and change of resistances  
+    nodes_tuple    - Tuple of indices of nodes: (input_nodes_arr, inter_nodes_arr) for the "measure" problem
+                                                or (input_nodes_arr, inter_nodes_arr, output_nodes_arr) for "dual".
+    nodeData_tuple - Tuple, pressure values of nodes_tuple: (input_nodes_arr, inter_nodes_arr) for the "measure" problem
+                                                            or (input_nodes_arr, inter_nodes_arr, output_nodes_arr)
+                                                            for "dual".
+
+    outputs:
+    NodeData    - 1D array at length as "Nodes" corresponding to pressures at each node from "Nodes"
+    Nodes       - 1D array of nodes that have a constraint
+    GroundNodes - 1D array of nodes that have a constraint of ground (outlet)
     """
-    InNodes: np.ndarray = nodes_tuple[0]
-    GroundNodes: np.ndarray = nodes_tuple[1]
-    if len(nodes_tuple)==2:  # system is in measure mode, not dual
-        InNodeData = nodeData_tuple
-        OutputNodeData: np.ndarray = array([], dtype=int)
-        OutputNodes: np.ndarray = array([], dtype=int)
-    elif len(nodes_tuple)==3:  # system is in dual mode
+    InNodes: NDArray[np.int_] = nodes_tuple[0]
+    GroundNodes: NDArray[np.int_] = nodes_tuple[1]
+    if len(nodes_tuple) == 2:  # system is in measure mode, not dual
+        InNodeData: NDArray[np.float_] = nodeData_tuple
+        OutputNodeData: NDArray[np.float_] = array([], dtype=int)
+        OutputNodes: NDArray[np.int_] = array([], dtype=int)
+    elif len(nodes_tuple) == 3:  # system is in dual mode
         OutputNodeData = nodeData_tuple[1]
         InNodeData = nodeData_tuple[0]
         OutputNodes = nodes_tuple[2]
-    NodeData: np.ndarray = np.append(InNodeData, OutputNodeData)
-    Nodes: np.ndarray = np.append(InNodes, OutputNodes)
+    NodeData: NDArray[np.float_] = np.append(InNodeData, OutputNodeData)
+    Nodes: NDArray[np.int_] = np.append(InNodes, OutputNodes)
     return NodeData, Nodes, GroundNodes

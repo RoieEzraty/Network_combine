@@ -12,45 +12,39 @@ import solve
 
 if TYPE_CHECKING:
     from Network_Structure import Network_Structure
+    from Big_Class import Big_Class
 
 
-############# functions that operate on matrices #############
+# ===================================================
+# functions that operate on matrices
+# ===================================================
 
 
-def build_input_output_and_ground(Nin: int, Ninter: int, Nout: int) -> Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]:
+def build_input_output_and_ground(Nin: int, Ninter: int, Nout: int) -> Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                                             NDArray[np.int_], NDArray[np.int_]]:
     """
-    build_input_output_and_ground builds the input and output pairs and ground node values
+    build_input_output_and_ground builds the input and output pairs and ground node values as arrays
 
     inputs:
-    task_type     - str, type of learning task the network should solve
-                    'Allostery_one_pair' = 1 pair of input and outputs
-                    'Allostery' = 2 pairs of input and outputs
-                    'XOR' = 2 inputs and 2 outputs. difference between output nodes encodes the XOR result of the 2 inputs
-                    'Channeling_diag' = 1st from input to diagonal output, then from output to 2 perpindicular nodes. 
-                                        test from input to output
-                    'Channeling_straight' = 1st from input to output on same column, then from output to 2 perpindicular 
-                                            nodes. test from input to output (same as 1st)
-                    'Counter' = column of cells bottomost and topmost nodes are input/output (switching), 
-                                rightmost nodes (1 each row) ground. more about the task in "_counter.ipynb".
-    sub_task_type - str, another specification of task, for regression whether there are 2 outputs or not etc.
-    row           - int, # of row (and column) of cell in network from which input and output are considered
-    NGrid         - int, row dimension of cells in network
-    Nin           - int, # input nodes
-    Nout          - int, # output nodes
+    Nin    - int, # input nodes
+    Ninter - int, # intermediate nodes between input and output
+    Nout   - int, # output nodes
 
     outputs:
-    input_nodes_arr  - array of all input nodes in task 
+    input_nodes_arr  - array of all input nodes in task
+    inter_nodes_arr  - array of all intermediate nodes in task between input and output
     ground_nodes_arr - array of all output nodes in task
-    output_nodes        - array of nodes with fixed values, for 'XOR' task. default=0
+    output_nodes     - array of nodes with fixed values, for 'XOR' task. default=0
     """
-    input_nodes_arr = array([i for i in range(Nin)])  # input nodes are first ones named
-    inter_nodes_arr = array([Nin + i for i in range(Ninter)])  # output nodes are named later
-    output_nodes_arr = array([Nin + Ninter + i for i in range(Nout)])  # output nodes are named later
-    ground_nodes_arr = array([Nin + Ninter + Nout])  # last node is ground
+    input_nodes_arr: NDArray[np.int_] = array([i for i in range(Nin)])  # input nodes are first ones named
+    inter_nodes_arr: NDArray[np.int_] = array([Nin + i for i in range(Ninter)])  # output nodes are named later
+    output_nodes_arr: NDArray[np.int_] = array([Nin + Ninter + i for i in range(Nout)])  # output nodes are named later
+    ground_nodes_arr: NDArray[np.int_] = array([Nin + Ninter + Nout])  # last node is ground
     return input_nodes_arr, inter_nodes_arr, output_nodes_arr, ground_nodes_arr
 
 
-def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDArray[np.int_], List[NDArray[np.int_]], NDArray[np.int_], int, int]:
+def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDArray[np.int_], List[NDArray[np.int_]],
+                                                          NDArray[np.int_], int, int]:
     """
     Builds incidence matrix DM as np.array [NEdges, NNodes]
     its meaning is 1 at input node and -1 at outpus for every row which resembles one edge.
@@ -68,8 +62,8 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
 
     NN: int = len(Strctr.input_nodes_arr) + len(Strctr.output_nodes_arr) + len(Strctr.inter_nodes_arr) + 1
     ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
-    EIlst = []
-    EJlst = []
+    EIlst: List[int] = []
+    EJlst: List[int] = []
 
     # connect inputs to outputs
     for i, inNode in enumerate(Strctr.input_nodes_arr):
@@ -98,110 +92,122 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     for i, outNode in enumerate(Strctr.output_nodes_arr):
         EIlst.append(outNode)
         EJlst.append(ground_node)
-                
-    EI = array(EIlst)
-    EJ = array(EJlst)
-    NE = len(EI)
-            
+
+    EI: NDArray[np.int_] = array(EIlst)
+    EJ: NDArray[np.int_] = array(EJlst)
+    NE: int = len(EI)
+
     # for plots
-    EIEJ_plots: list = [(EI[i], EJ[i]) for i in range(len(EI))]
-    
-    DM: np.ndarray = zeros([NE, NN])  # Incidence matrix
+    EIEJ_plots: List = [(EI[i], EJ[i]) for i in range(len(EI))]
+
+    DM: NDArray[np.int_] = zeros([NE, NN], dtype=np.int_)  # Incidence matrix
     for i in range(NE):
-        DM[i,int(EI[i])] = +1.
-        DM[i,int(EJ[i])] = -1.
-        
+        DM[i, int(EI[i])] = +1.
+        DM[i, int(EJ[i])] = -1.
+
     return EI, EJ, EIEJ_plots, DM, NE, NN
 
 
-def buildL(BigClass, DM, K_mat, Cstr, NN):
+def buildL(BigClass: "Big_Class", DM: NDArray[np.int_], K_mat: NDArray[np.float_], Cstr: NDArray[np.int_],
+           NN: int) -> Tuple[NDArray[np.float_], NDArray[np.float_]]:
     """
-    Builds expanded Lagrangian with constraints 
+    Builds expanded Lagrangian with constraints
     as in the Methods section of Rocks and Katifori 2018 (https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116)
     np.array cubic array sized [NNodes + Constraints]
 
     input:
-    BigClass - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET) 
+    BigClass - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET)
                and network state (State) class instances
                I will not go into everything used from there to save space here.
     DM       - Incidence matrix np.array [NE, NN]
     K_mat    - cubic np.array sized NE with flow conductivities on diagonal
-    Cstr     - np.array sized [Constraints, NN + 1] of constraints 
+    Cstr     - np.array sized [Constraints, NN + 1] of constraints
     NN       - NNodes, ind
 
     output:
     L     - Shortened Lagrangian np.array cubic array sized [NNodes]
     L_bar - Full  augmented Lagrangian, np.array cubic array sized [NNodes + Constraints]
     """
-    L = solve.dot_triple(DM.T, K_mat, DM)
-    L_bar = zeros([NN + len(Cstr), NN + len(Cstr)])
-    L_bar[NN:,:NN] = Cstr  # the bottom most rows of augmented L are the constraints
-    L_bar[:NN,NN:] = Cstr.T  # the rightmost columns of augmented L are the constraints
-    L_bar[:NN,:NN] = L  # The topmost and leftmost part of augmented L are the basic L
+    L: NDArray[np.float_] = solve.dot_triple(DM.T, K_mat, DM)
+    L_bar: NDArray[np.float_] = zeros([NN + len(Cstr), NN + len(Cstr)])
+    L_bar[NN:, :NN] = Cstr  # the bottom most rows of augmented L are the constraints
+    L_bar[:NN, NN:] = Cstr.T  # the rightmost columns of augmented L are the constraints
+    L_bar[:NN, :NN] = L  # The topmost and leftmost part of augmented L are the basic L
     return L, L_bar
 
-def K_from_R(R_vec: np.ndarray, NE: int) -> Tuple[np.ndarray, np.ndarray]:
+
+def K_from_R(R_vec: NDArray[np.float_], NE: int) -> Tuple[np.ndarray, np.ndarray]:
     """
     Given resistances, calculate conductivities, output vector and matrix
+
+    inputs:
+    R_vec - resistances as array sized [NE,]
+    NE    - # edges, int
+
+    outputs:
+    K_vec - conductances as array sized [NE,]
+    K_vec - conductances as array sized [NE, NE] with off diagonal element = 0
     """
-    K_vec = 1/R_vec
-    K_mat = np.eye(NE)*K_vec
+    K_vec: NDArray[np.float_] = 1/R_vec
+    K_mat: NDArray[np.float_] = np.eye(NE)*K_vec
     return K_vec, K_mat
 
+
 def ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Builds constraint matrix, 
-        for constraints on edge voltage drops: 1 at input node index, -1 at output and voltage drop at NN+1 index, for every row
-        For constraints on node voltages: 1 at constrained node index, voltage at NN+1 index, for every row
-        For ground nodes: 1 at ground node index, 0 else.
+    """
+    Builds constraint matrix,
+    For constraints on node voltages: 1 at constrained node index, voltage at NN+1 index, for every row
+    For ground nodes: 1 at ground node index, 0 else.
 
-        Inputs:
-        NodeData    = 1D array at length as "Nodes" corresponding to pressures at each node from "Nodes"
-        Nodes       = 1D array of nodes that have a constraint
-        GroundNodes = 1D array of nodes that have a constraint of ground (outlet)
-        NN          = int, number of nodes in network
-        EI          = 1D array of nodes at each edge beginning
-        EJ          = 1D array of nodes at each edge ending corresponding to EI
+    Inputs:
+    NodeData    = 1D array at length as "Nodes" corresponding to pressures at each node from "Nodes"
+    Nodes       = 1D array of nodes that have a constraint
+    GroundNodes = 1D array of nodes that have a constraint of ground (outlet)
+    NN          = int, number of nodes in network
+    EI          = 1D array of nodes at each edge beginning
+    EJ          = 1D array of nodes at each edge ending corresponding to EI
 
-        outputs:
-        Cstr_full = 2D array sized [Constraints, NN + 1] representing constraints on nodes and edges. last column is value of constraint
-                 (p value of row contains just +1. pressure drop if row contains +1 and -1)
-        Cstr      = 2D array without last column (which is f from Rocks and Katifori 2018 https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116)
-        f         = constraint vector (from Rocks and Katifori 2018)
-        """
+    outputs:
+    Cstr_full = 2D array sized [Constraints, NN + 1] representing constraints on nodes and edges.
+                last column is value of constraint
+                (p value of row contains just +1. pressure drop if row contains +1 and -1)
+    Cstr      = 2D array without last column
+                (which is f from Rocks and Katifori 2018 https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116)
+    f         = constraint vector (from Rocks and Katifori 2018)
+    """
 
-        # ground nodes
-        csg = len(GroundNodes)
-        idg = arange(csg)
-        CStr = zeros([csg, NN+1])
-        CStr[idg, GroundNodes] = +1.
-        CStr[:, NN] = 0.
-        
-        # constrained node pressures
-        if len(Nodes):
-            csn = len(Nodes)
-            idn = arange(csn)
-            SN = zeros([csn, NN+1])
-            SN[idn, Nodes] = +1.
-            SN[:, NN] = NodeData
-            CStr = np.r_[CStr, SN]
+    # ground nodes
+    csg = len(GroundNodes)
+    idg = arange(csg)
+    CStr = zeros([csg, NN+1])
+    CStr[idg, GroundNodes] = +1.
+    CStr[:, NN] = 0.
 
-        # to not lose functionality in the future if I want to add Edges as well
-        Edges = array([])
-        EdgeData = array([])
-        
-        # constrained edge pressure drops
-        if len(Edges):
-            cse = len(Edges)
-            ide = arange(cse)
-            SE = zeros([cse, NN+1])
-            SE[ide, EI[Edges]] = +1.
-            SE[ide, EJ[Edges]] = -1.
-            SE[:, NN] = EdgeData
-            CStr = np.r_[CStr, SE]
-            
-        # last column of CStr is vector f 
-        f = zeros([NN + len(CStr), 1])
-        f[NN:,0] = CStr[:,-1]
+    # constrained node pressures
+    if len(Nodes):
+        csn = len(Nodes)
+        idn = arange(csn)
+        SN = zeros([csn, NN+1])
+        SN[idn, Nodes] = +1.
+        SN[:, NN] = NodeData
+        CStr = np.r_[CStr, SN]
 
-        return CStr, CStr[:,:-1], f
+    # to not lose functionality in the future if I want to add Edges as well
+    Edges = array([])
+    EdgeData = array([])
+
+    # constrained edge pressure drops
+    if len(Edges):
+        cse = len(Edges)
+        ide = arange(cse)
+        SE = zeros([cse, NN+1])
+        SE[ide, EI[Edges]] = +1.
+        SE[ide, EJ[Edges]] = -1.
+        SE[:, NN] = EdgeData
+        CStr = np.r_[CStr, SE]
+
+    # last column of CStr is vector f
+    f = zeros([NN + len(CStr), 1])
+    f[NN:, 0] = CStr[:, -1]
+
+    return CStr, CStr[:, :-1], f

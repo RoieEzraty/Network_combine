@@ -4,17 +4,20 @@ import random
 import copy
 
 from typing import Tuple, List
-from numpy import array as array
-from numpy import zeros as zeros
+from numpy import array, zeros
+from numpy.typing import NDArray
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from Big_Class import Big_Class
 
-############# functions for statistical analysis #############
+
+# ==================================
+# functions for statistical analysis
+# ==================================
 
 
-def flow_MSE(u, step, u_nxt=[]):
+def flow_MSE(u: NDArray[np.float_], step: int, u_nxt=[]) -> NDArray[float_]:
 	"""
 	flow_MSE calculates the MSE between different instances of u given iteration difference step
 

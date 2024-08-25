@@ -30,7 +30,6 @@ class Network_Structure:
         self.inter_nodes_arr: NDArray[np.int_] = inter_nodes_arr
         self.ground_nodes_arr: NDArray[np.int_] = ground_nodes_arr
 
-
     def build_incidence(self) -> None:
         """
         build_incidence builds the incidence matrix DM
@@ -49,10 +48,13 @@ class Network_Structure:
         self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence(self)
 
     def build_edges(self) -> None:
-        self.output_edges: np.ndarray = array([np.where(np.append(self.EI, self.EJ)==self.output_nodes_arr[i])[0] % len(self.EI) 
-                                               for i in range(len(self.output_nodes_arr))])
-        self.input_edges: np.ndarray = array([np.where(np.append(self.EI, self.EJ)==self.input_nodes_arr[i])[0] % len(self.EI) 
-                                              for i in range(len(self.input_nodes_arr))])
-        self.ground_edges: np.ndarray = array([np.where(np.append(self.EI, self.EJ)==self.ground_nodes_arr[i])[0] % len(self.EI) 
-                                               for i in range(len(self.ground_nodes_arr))])
+        """
+        assign arrays denoting edges of the network to the Network_Structure instance using the EI and EJ 
+        """
+        self.output_edges: NDArray[np.int_] = array([np.where(np.append(self.EI, self.EJ)==self.output_nodes_arr[i])[0] % len(self.EI) 
+                                                     for i in range(len(self.output_nodes_arr))])
+        self.input_edges: NDArray[np.int_] = array([np.where(np.append(self.EI, self.EJ)==self.input_nodes_arr[i])[0] % len(self.EI) 
+                                                    for i in range(len(self.input_nodes_arr))])
+        self.ground_edges: NDArray[np.int_] = array([np.where(np.append(self.EI, self.EJ)==self.ground_nodes_arr[i])[0] % len(self.EI) 
+                                                     for i in range(len(self.ground_nodes_arr))])
 

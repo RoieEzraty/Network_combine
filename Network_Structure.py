@@ -16,7 +16,9 @@ if TYPE_CHECKING:
     from Big_Class import Big_Class
 
 
-############# Class - network structure variables #############
+# ===================================================
+# Class - network structure variables
+# ===================================================
 
 
 class Network_Structure:
@@ -24,7 +26,8 @@ class Network_Structure:
     Net_structure class save the structure of the network
     """
 
-    def __init__(self, input_nodes_arr: NDArray[np.int_], output_nodes_arr: NDArray[np.int_], inter_nodes_arr: NDArray[np.int_], ground_nodes_arr: NDArray[np.int_]) -> None:
+    def __init__(self, input_nodes_arr: NDArray[np.int_], output_nodes_arr: NDArray[np.int_],
+                 inter_nodes_arr: NDArray[np.int_], ground_nodes_arr: NDArray[np.int_]) -> None:
         self.input_nodes_arr: NDArray[np.int_] = input_nodes_arr
         self.output_nodes_arr: NDArray[np.int_] = output_nodes_arr
         self.inter_nodes_arr: NDArray[np.int_] = inter_nodes_arr
@@ -49,12 +52,14 @@ class Network_Structure:
 
     def build_edges(self) -> None:
         """
-        assign arrays denoting edges of the network to the Network_Structure instance using the EI and EJ 
+        assign arrays denoting edges of the network to the Network_Structure instance using the EI and EJ
         """
-        self.output_edges: NDArray[np.int_] = array([np.where(np.append(self.EI, self.EJ)==self.output_nodes_arr[i])[0] % len(self.EI) 
-                                                     for i in range(len(self.output_nodes_arr))])
-        self.input_edges: NDArray[np.int_] = array([np.where(np.append(self.EI, self.EJ)==self.input_nodes_arr[i])[0] % len(self.EI) 
-                                                    for i in range(len(self.input_nodes_arr))])
-        self.ground_edges: NDArray[np.int_] = array([np.where(np.append(self.EI, self.EJ)==self.ground_nodes_arr[i])[0] % len(self.EI) 
-                                                     for i in range(len(self.ground_nodes_arr))])
-
+        self.output_edges: NDArray[np.int_]  # type hint
+        self.input_edges: NDArray[np.int_]  # type hint
+        self.ground_edges: NDArray[np.int_]  # type hint
+        self.output_edges = array([np.where(np.append(self.EI, self.EJ) == self.output_nodes_arr[i])[0] % len(self.EI)
+                                   for i in range(len(self.output_nodes_arr))])
+        self.input_edges = array([np.where(np.append(self.EI, self.EJ) == self.input_nodes_arr[i])[0] % len(self.EI)
+                                  for i in range(len(self.input_nodes_arr))])
+        self.ground_edges = array([np.where(np.append(self.EI, self.EJ) == self.ground_nodes_arr[i])[0] % len(self.EI)
+                                   for i in range(len(self.ground_nodes_arr))])

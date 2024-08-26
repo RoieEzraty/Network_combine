@@ -68,10 +68,16 @@ class Network_State:
         if Variabs.task_type == 'Iris_classification':
             self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
                                                          self.target_mat)
+            print('onehot_target', Variabs.targets[i % np.shape(Variabs.dataset)[0]])
         else:
             self.desired = Variabs.targets[i % np.shape(Variabs.dataset)[0]]
         self.input_drawn_in_t.append(self.input_drawn)
         self.desired_in_t.append(self.desired)
+        if Variabs.supress_prints:
+            pass
+        else:  # print
+            print('input_drawn', self.input_drawn)
+            print('desired output=', self.desired)
 
     def draw_p_means_Iris(self, Variabs: "User_Variables", i: int) -> None:
         """
@@ -125,6 +131,10 @@ class Network_State:
         if problem in {'measure', 'measure_for_mean'}:
             # Output is at output nodes, ravel so sizes [Nout,]
             self.output: NDArray[np.float_] = self.p[BigClass.Strctr.output_nodes_arr].ravel()
+            if BigClass.Variabs.supress_prints:
+                pass
+            else:  # print
+                print('output measured=', self.output)
 
             if problem == 'measure':  # Only save in time if measuring during training
                 self.output_in_t.append(self.output)
@@ -240,7 +250,7 @@ class Network_State:
             pass
         else:  # print
             pass
-            print('R_nxt', self.R_in_t[-1])
+            # print('R_nxt', self.R_in_t[-1])
 
     # def measure_targets_iris(self, BigClass):
     #     """

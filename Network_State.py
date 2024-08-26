@@ -61,13 +61,35 @@ class Network_State:
         i       - int, iteration #
 
         outputs
-        p_drawn: np.ndarray sized [Nout,], input pressures
+        input_drawn: np.ndarray sized [Nin,], input pressures
         desired: np.ndarray sized [Nout,], desired output defined by the task M*p_input
         """
         self.input_drawn: NDArray[np.float_] = Variabs.dataset[i % np.shape(Variabs.dataset)[0]]
-        self.desired: NDArray[np.float_] = Variabs.targets[i % np.shape(Variabs.dataset)[0]]
+        if Variabs.task_type == 'Iris_classification':
+            self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
+                                                         self.target_mat)
+        else:
+            self.desired = Variabs.targets[i % np.shape(Variabs.dataset)[0]]
         self.input_drawn_in_t.append(self.input_drawn)
         self.desired_in_t.append(self.desired)
+
+    def draw_p_means_Iris(self, Variabs: "User_Variables", i: int) -> None:
+        """
+        Draw input pressure as mean value of every class of Iris dataset.
+
+        inputs:
+        Variabs - User_Variables class
+        i       - int, iteration # rangin {0-2}
+
+        outputs
+        input_drawn: np.ndarray sized [Nin,], input pressures
+        """
+        self.input_drawn = Variabs.means[i]
+
+    def assign_targets_Iris(self, targets_mat):
+        """
+        """
+        self.target_mat = targets_mat
 
     def solve_flow_given_problem(self, BigClass: "Big_Class", problem: str) -> None:
         """
@@ -76,35 +98,37 @@ class Network_State:
         given the problem in problem variable.
 
         inputs:
-        BigClass - class instance including User_Variables, Network_Structure instances, etc.
-        problem  - string stating the problem type: "measure" for no constraint on outputs
-                                                    "dual" for constrained outputs as well
+        BigClass  - class instance including User_Variables, Network_Structure instances, etc.
+        problem   - string stating the problem type: "measure" for no constraint on outputs
+                                                     "measure_for_mean" for outputs of mean of Iris class
+                                                     "dual" for constrained outputs as well
 
         outputs:
         p - pressure at every node under the specific BC, after convergence while allowing conductivities to change
         u - flow at every edge under the specific BC, after convergence while allowing conductivities to change
         """
         # Calculate pressure p and flow u
-        if problem == 'measure':
+        if problem == 'measure' or problem == 'measure_for_mean':
             CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
             CstrTuple = functions.setup_constraints_given_pin(
                         (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr),
-                        BigClass.State.input_drawn, BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
-            self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
+                        self.input_drawn, BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
         elif problem == 'dual':
             CstrTuple = functions.setup_constraints_given_pin(
                         (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr,
                          BigClass.Strctr.output_nodes_arr),
-                        (BigClass.State.input_dual_in_t[-1],
-                         BigClass.State.output_dual_in_t[-1]),
+                        (self.input_dual_in_t[-1], self.output_dual_in_t[-1]),
                         BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
-            self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
+        self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
 
-        # update the State class variables
-        if problem == 'measure':
-            # output is at output nodes, ravel so sizes [Nout,]
+        # Update the State class variables
+        if problem in {'measure', 'measure_for_mean'}:
+            # Output is at output nodes, ravel so sizes [Nout,]
             self.output: NDArray[np.float_] = self.p[BigClass.Strctr.output_nodes_arr].ravel()
-            self.output_in_t.append(self.output)
+
+            if problem == 'measure':  # Only save in time if measuring during training
+                self.output_in_t.append(self.output)
+
         # print('Rs', self.R_in_t[-1])
 
     def calc_loss(self, BigClass: "Big_Class") -> None:
@@ -216,4 +240,13 @@ class Network_State:
             pass
         else:  # print
             pass
-            # print('R_nxt', self.R_in_t[-1])
+            print('R_nxt', self.R_in_t[-1])
+
+    # def measure_targets_iris(self, BigClass):
+    #     """
+    #     """
+    #     CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
+    #     CstrTuple = functions.setup_constraints_given_pin(
+    #                     (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr),
+    #                     self.input_drawn, BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+    #     self.output_means, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])

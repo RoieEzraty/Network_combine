@@ -183,7 +183,7 @@ def ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarr
     idg = arange(csg)
     CStr = zeros([csg, NN+1])
     CStr[idg, GroundNodes] = +1.
-    CStr[:, NN] = 0.
+    CStr[:, NN] = 2.5
 
     # constrained node pressures
     if len(Nodes):

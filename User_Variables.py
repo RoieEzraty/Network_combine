@@ -77,13 +77,15 @@ class User_Variables:
             # Load the Iris dataset
             iris = load_iris()
             dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
-            # Min-Max Scale dataset to [0, 4]
-            min_max_scaler = MinMaxScaler(feature_range=(0, 4))
+            # Min-Max Scale dataset to [0, 5]
+            min_max_scaler = MinMaxScaler(feature_range=(0, 5))
             self.dataset = min_max_scaler.fit_transform(dataset)
             # One-hot encode the label
             encoder = OneHotEncoder(sparse_output=False, categories='auto')
             targets_reshaped = numerical_targets.reshape(-1, 1)  # Reshape for the encoder
             self.targets = encoder.fit_transform(targets_reshaped)
+            means = [np.mean(iris['data'][iris['target'] == i], axis=0) for i in range(3)]
+            self.means = np.array(means)
 
     def assign_alpha_vec(self, alpha: float) -> None:
         """

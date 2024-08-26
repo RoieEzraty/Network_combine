@@ -5,6 +5,7 @@ import copy
 
 from typing import Tuple, List
 from numpy import array, zeros
+from numpy.linalg import norm
 from numpy.typing import NDArray
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,17 @@ def final_err(BigClass: "Big_Class", samples: int = 40):
     numerator = np.mean(np.mean(np.mean(np.abs(BigClass.State.loss_in_t), axis=1), axis=1)[-40:])
     denominator = np.mean(np.abs(BigClass.Variabs.targets)[-40:])
     return numerator / denominator
+
+
+def calculate_accuracy(output, target_mat, target_ind):
+    """
+    add desc
+    """
+    l2_vec: NDArray[np.float_] = zeros(3)
+    for i in range(3):
+        l2_vec[i] = norm(output - target_mat[i])
+    accuracy = int(np.where(l2_vec == np.min(l2_vec)) == np.where(target_ind == 1.))
+    return accuracy
 
 
 # def flow_MSE(u: NDArray[np.float_], step: int, u_nxt=[]) -> NDArray[float_]:

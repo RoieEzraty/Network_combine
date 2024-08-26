@@ -88,8 +88,8 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
         legend3 = []
     elif Variabs.task_type == 'Iris_classification':
         legend1 = [r'$\mathrm{Setosa}$', r'$\mathrm{Verisicolor}$', r'$\mathrm{Virginica}$']
-        legend2 = [r'$\mathrm{Setosa dual}$', r'$\mathrm{Verisicolor dual}$',
-                   r'$\mathrm{Virginica dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
+        legend2 = [r'$\mathrm{Setosa\,dual}$', r'$\mathrm{Verisicolor\,dual}$',
+                   r'$\mathrm{Virginica\,dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
                    r'$p_3\,\mathrm{dual}$', r'$p_4\,\mathrm{dual}$']
         legend3 = []
     legend4 = ['|loss|']

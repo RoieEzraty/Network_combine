@@ -149,6 +149,8 @@ def K_from_R(R_vec: NDArray[np.float_], NE: int) -> Tuple[np.ndarray, np.ndarray
     K_vec - conductances as array sized [NE, NE] with off diagonal element = 0
     """
     K_vec: NDArray[np.float_] = 1/R_vec
+    # Replace -inf with a large negative value (or directly clip it)
+    K_vec = np.nan_to_num(K_vec, nan=0.0, posinf=1e+06, neginf=-1e+06)
     K_mat: NDArray[np.float_] = np.eye(NE)*K_vec
     return K_vec, K_mat
 

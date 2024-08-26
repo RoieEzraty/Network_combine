@@ -6,7 +6,7 @@ import copy
 from typing import Tuple, List
 from numpy import array, zeros, arange
 from numpy.typing import NDArray
-from typing import TYPE_CHECKING, Callable, Union
+from typing import TYPE_CHECKING, Callable, Union, Optional
 
 import matrix_functions, functions, solve, plot_functions
 
@@ -39,25 +39,33 @@ class Network_State:
         self.input_dual_in_t: List[NDArray[np.float_]] = [1.0 * np.ones(Nin)]
         self.loss_in_t: List[NDArray[np.float_]] = []
 
-    def initiate_resistances(self, BigClass: "Big_Class") -> None:
+    def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
         """
         After using build_incidence, initiate resistances
-        """
-        self.R_in_t: List[NDArray[np.float_]] = [np.ones((BigClass.Strctr.NE), dtype=float)]
 
-    def draw_p_in_and_desired(self, Variabs: "User_Variables") -> None:
+        inputs:
+        BigClass - class instance including User_Variables, Network_Structure instances, etc.
+        R_vec_i  - initial resistances, array of size [NE,]
+        """
+        if R_vec_i is not None:
+            self.R_in_t: List[NDArray[np.float_]] = [R_vec_i]
+        else:
+            self.R_in_t = [np.ones((BigClass.Strctr.NE), dtype=float)]
+
+    def draw_p_in_and_desired(self, Variabs: "User_Variables", i: int) -> None:
         """
         Every time step, draw random input pressures and calculate the desired output given input
 
         inputs:
-        Variabs: User_Variables class
+        Variabs - User_Variables class
+        i       - int, iteration #
 
         outputs
         p_drawn: np.ndarray sized [Nout,], input pressures
         desired: np.ndarray sized [Nout,], desired output defined by the task M*p_input
         """
-        self.input_drawn: np.ndarray = np.random.uniform(low=0.0, high=2.0, size=Variabs.Nin)
-        self.desired: NDArray[np.float_] = np.matmul(Variabs.M, self.input_drawn)
+        self.input_drawn: NDArray[np.float_] = Variabs.dataset[i % np.shape(Variabs.dataset)[0]]
+        self.desired: NDArray[np.float_] = Variabs.targets[i % np.shape(Variabs.dataset)[0]]
         self.input_drawn_in_t.append(self.input_drawn)
         self.desired_in_t.append(self.desired)
 
@@ -97,7 +105,7 @@ class Network_State:
             # output is at output nodes, ravel so sizes [Nout,]
             self.output: NDArray[np.float_] = self.p[BigClass.Strctr.output_nodes_arr].ravel()
             self.output_in_t.append(self.output)
-        print('Rs', self.R_in_t[-1])
+        # print('Rs', self.R_in_t[-1])
 
     def calc_loss(self, BigClass: "Big_Class") -> None:
         """
@@ -173,7 +181,7 @@ class Network_State:
             output_prev: NDArray[np.float_] = self.output_in_t[-2]
             delta: NDArray[np.float_] = BigClass.Variabs.alpha_vec * (self.output-output_prev) * (loss[0]-loss[1])
         else:
-            delta = BigClass.Variabs.alpha_vec * self.output * (loss[0]-loss[1])
+            delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
 
         # dual problem is different under schemes of change of R
         if BigClass.Variabs.R_update == 'propto':  # if resistances change with memory
@@ -207,4 +215,5 @@ class Network_State:
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('R_nxt', self.R_in_t[-1])
+            pass
+            # print('R_nxt', self.R_in_t[-1])

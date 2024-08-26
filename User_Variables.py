@@ -7,6 +7,9 @@ from typing import Tuple, List
 from numpy import array, zeros
 from numpy.typing import NDArray
 from typing import TYPE_CHECKING, Callable, Union, Optional
+from sklearn.datasets import load_iris
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.utils import shuffle
 
 import functions
 
@@ -22,13 +25,14 @@ class User_Variables:
     These remain the same along the simulation
     """
     def __init__(self, iterations: int, Nin: int, Nout: int, gamma: NDArray[np.float_], R_update: str, use_p_tag: bool,
-                 supress_prints: bool, bc_noise: float, Ninter: Optional[int] = 0) -> None:
+                 supress_prints: bool, bc_noise: float, task_type: str,
+                 M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
         self.Nout: int = Nout
-        self.Ninter: Optional[int] = Ninter if 'Ninter' in locals() else None
-        if 'Ninter' in locals() and Ninter is not None:
+        if Ninter is not None:
+            self.Ninter: int = Ninter
             self.NN: int = Nin + Nout + Ninter
         else:
             self.NN = Nin + Nout
@@ -44,8 +48,13 @@ class User_Variables:
         data_size_each_axis = 15  # size of training set is data_size**Nin, don't have to cover all of it
         self.supress_prints = supress_prints
         self.bc_noise = bc_noise
+        self.task_type = task_type
+        if task_type == 'Iris_classification' and self.Nin != 4 and self.Nout != 3:
+            print('mismatched # of inputs and outputs for Iris classification. correcting accordingly to Nin=4 Nout=3')
+            self.Nin = 4
+            self.Nout = 3
 
-    def create_M(self, M_values: NDArray[np.float_]) -> None:
+    def create_dataset_and_targets(self, M_values: Optional[NDArray[np.float_]] = None) -> None:
         """
         creates the matrix which defines the task, i.e. p_out=M*p_in
 
@@ -55,7 +64,26 @@ class User_Variables:
         outputs:
         M: np.ndarray sized [Nout, Nin], matrix defining the task p_out=M*p_in
         """
-        self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
+        if self.task_type == 'Regression':
+            if M_values is None:
+                print('M not specified, assigning zeros')
+                M_values = zeros([self.Nin*self.Nout], dtype=np.float_)
+            elif np.size(M_values) != self.Nin*self.Nout:
+                print('input M mismatches output and input')
+            self.dataset: NDArray[np.float_] = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
+            self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
+            self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M)
+        elif self.task_type == 'Iris_classification':
+            # Load the Iris dataset
+            iris = load_iris()
+            dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
+            # Min-Max Scale dataset to [0, 4]
+            min_max_scaler = MinMaxScaler(feature_range=(0, 4))
+            self.dataset = min_max_scaler.fit_transform(dataset)
+            # One-hot encode the label
+            encoder = OneHotEncoder(sparse_output=False, categories='auto')
+            targets_reshaped = numerical_targets.reshape(-1, 1)  # Reshape for the encoder
+            self.targets = encoder.fit_transform(targets_reshaped)
 
     def assign_alpha_vec(self, alpha: float) -> None:
         """

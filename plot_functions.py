@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from numpy.typing import NDArray
 
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Optional
 
 import statistics
 
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: List[NDArray[np.float_]],
-                    M: NDArray[np.int_]) -> None:
+                    M: Optional[NDArray[np.int_]] = None) -> None:
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
@@ -45,66 +45,84 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     1 matplotlib plot
     """
     if Variabs.Nin == 1 and Variabs.Nout == 1:  # 1by1, simplest
-        A: float = M[0]
-        R_theor: NDArray[np.float_] = np.array([(1-A)/A])
+        if M is not None:
+            A: float = M[0]
+            R_theor: NDArray[np.float_] = np.array([(1-A)/A])
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$p\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_1\,\mathrm{theoretical}$', r'$R_2\,\mathrm{theoretical}$']
     elif Variabs.Nin == 1 and Variabs.Nout == 2:  # Allostery
-        A = M[0]  # A = x_hat/p_in
-        B: float = M[1]  # B = y_hat/p_in
-        Rl_subs: float = 1.0
-        R_theor = State.input_drawn_in_t[0]*np.array([(1-A)/(A*(1+1/Rl_subs)-B/Rl_subs),
-                                                      (1-B)/(B*(1+1/Rl_subs)-A/Rl_subs)])
+        if M is not None:
+            A = M[0]  # A = x_hat/p_in
+            B: float = M[1]  # B = y_hat/p_in
+            Rl_subs: float = 1.0
+            R_theor = State.input_drawn_in_t[0]*np.array([(1-A)/(A*(1+1/Rl_subs)-B/Rl_subs),
+                                                          (1-B)/(B*(1+1/Rl_subs)-A/Rl_subs)])
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_1\,\mathrm{theoretical}$', r'$R_2\,\mathrm{theoretical}$']
     elif Variabs.Nin == 2 and Variabs.Nout == 1:  # Regression
-        A = M[0, 0]
-        B = M[0, 1]
-        Rl_subs = 1
-        R_theor = np.array([Rl_subs*(1-A-B)/A, Rl_subs*(1-A-B)/B])
+        if M is not None:
+            A = M[0, 0]
+            B = M[0, 1]
+            Rl_subs = 1
+            R_theor = np.array([Rl_subs*(1-A-B)/A, Rl_subs*(1-A-B)/B])
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_1\,\mathrm{theoretical}$']
     elif Variabs.Nin == 2 and Variabs.Nout == 3:
-        A = M[0, 0]
-        B = M[0, 1]
-        C: float = M[1, 0]
-        D: float = M[1, 1]
-        E: float = M[2, 0]
-        F: float = M[2, 1]
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
                    r'$\frac{z}{z\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
                    r'$p_2\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$', r'$R_6$']
-        R_theor = np.ndarray([])  # I didn't calculate it for this task
     elif Variabs.Nin == 2 and Variabs.Nout == 2:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
-        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
+        if Variabs.access_interNodes:
+            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
+                       r'$\mathrm{inter1\,dual}$', r'$\mathrm{inter2\,dual}$']
+        else:
+            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$']
-        R_theor = np.ndarray([])  # I didn't calculate it for this task
+    elif Variabs.Nin == 3 and Variabs.Nout == 3:
+        legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
+                   r'$\frac{z}{z\,\mathrm{desired}}$']
+        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
+                   r'$p_2\,\mathrm{dual}$', r'$p_3\,\mathrm{dual}$']
+        legend3 = []
+    elif Variabs.task_type == 'Iris_classification':
+        legend1 = [r'$\mathrm{Setosa}$', r'$\mathrm{Verisicolor}$', r'$\mathrm{Virginica}$']
+        legend2 = [r'$\mathrm{Setosa\,dual}$', r'$\mathrm{Verisicolor\,dual}$',
+                   r'$\mathrm{Virginica\,dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
+                   r'$p_3\,\mathrm{dual}$', r'$p_4\,\mathrm{dual}$']
+        legend3 = []
     legend4 = ['|loss|']
-    print('R theoretical', R_theor)
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(12, 3.2))
-    ax1.plot(np.linspace(0, State.t, 2*State.t-1).T,
-             np.asarray(State.output_in_t[1:])/np.asarray(State.desired_in_t[1:])-1)
-
+    if Variabs.task_type is not 'Iris_classification':
+        ax1.plot(np.linspace(0, State.t, 2*State.t-1).T,
+                 np.asarray(State.output_in_t[1:])/np.asarray(State.desired_in_t[1:])-1)
+    else:
+        ax1.plot(np.linspace(0, State.t, 2*State.t-1).T,
+                 np.asarray(State.output_in_t[1:]))
     ax1.set_title('output in time')
     ax1.set_xlabel('t')
     ax1.legend(legend1)
     ax2.plot(State.output_dual_in_t[1:])
     ax2.plot(State.input_dual_in_t[1:])
+    if Variabs.access_interNodes:
+        ax2.plot(State.inter_dual_in_t[1:])
     ax2.set_title('dual and p in time')
     ax2.set_xlabel('t')
     # ax2.set_ylim([-0.2,0.2])
     ax2.legend(legend2)
     ax3.plot(State.R_in_t[1:])
-    ax3.plot(np.outer(R_theor, np.ones(State.t)).T, '--')
+    if 'R_theor' in locals():  # if theoretical values were calculated, plot them
+        print('R theoretical', R_theor)
+        ax3.plot(np.outer(R_theor, np.ones(State.t)).T, '--')
     ax3.set_title('R in time')
     ax3.set_xlabel('t')
-    ax3.legend(legend3)
+    if legend3:
+        ax3.legend(legend3)
     ax4.plot(np.mean(np.mean(np.abs(State.loss_in_t[1:]), axis=1), axis=1))
     ax4.set_xlabel('t')
     ax4.set_yscale('log')

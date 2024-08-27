@@ -56,5 +56,5 @@ class Networkx_Net:
         pos_lattice - dict, positions of nodes from NET.nodes
         """
         pos_lattice: Dict[Any, Tuple[float, float]] = plot_functions.plotNetStructure(self.NET, plot=plot,
-																					  node_labels=node_labels)
+                                                                                      node_labels=node_labels)
         self.pos_lattice = pos_lattice

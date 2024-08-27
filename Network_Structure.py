@@ -54,12 +54,11 @@ class Network_Structure:
         """
         assign arrays denoting edges of the network to the Network_Structure instance using the EI and EJ
         """
-        self.output_edges: NDArray[np.int_]  # type hint
         self.input_edges: NDArray[np.int_]  # type hint
+        self.inter_edges: NDArray[np.int_]  # type hint
+        self.output_edges: NDArray[np.int_]  # type hint
         self.ground_edges: NDArray[np.int_]  # type hint
-        self.output_edges = array([np.where(np.append(self.EI, self.EJ) == self.output_nodes_arr[i])[0] % len(self.EI)
-                                   for i in range(len(self.output_nodes_arr))])
-        self.input_edges = array([np.where(np.append(self.EI, self.EJ) == self.input_nodes_arr[i])[0] % len(self.EI)
-                                  for i in range(len(self.input_nodes_arr))])
-        self.ground_edges = array([np.where(np.append(self.EI, self.EJ) == self.ground_nodes_arr[i])[0] % len(self.EI)
-                                   for i in range(len(self.ground_nodes_arr))])
+        self.input_edges = matrix_functions.edges_from_EI_EJ(self.input_nodes_arr, self.EI, self.EJ)
+        self.inter_edges = matrix_functions.edges_from_EI_EJ(self.inter_nodes_arr, self.EI, self.EJ)
+        self.output_edges = matrix_functions.edges_from_EI_EJ(self.output_nodes_arr, self.EI, self.EJ)
+        self.ground_edges = matrix_functions.edges_from_EI_EJ(self.ground_nodes_arr, self.EI, self.EJ)

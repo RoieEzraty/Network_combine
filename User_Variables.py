@@ -36,7 +36,7 @@ class User_Variables:
             self.NN: int = Nin + Nout + Ninter
         else:
             self.NN = Nin + Nout
-        self.gamma: np.ndarray = gamma
+        self.gamma: NDArray[np.float_] = gamma
         self.use_p_tag: bool = use_p_tag
         if use_p_tag:
             self.loss_fn: Union[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray],

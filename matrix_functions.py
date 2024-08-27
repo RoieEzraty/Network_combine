@@ -213,3 +213,12 @@ def ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarr
     f[NN:, 0] = CStr[:, -1]
 
     return CStr, CStr[:, :-1], f
+
+
+def edges_from_EI_EJ(nodes_array, EI, EJ) -> NDArray[np.int_]:
+    """
+    add descrpt
+    """
+    edges: NDArray[np.int_] = array([np.where(np.append(EI, EJ) == nodes_array[i])[0] % len(EI)
+                                     for i in range(len(nodes_array))])
+    return edges

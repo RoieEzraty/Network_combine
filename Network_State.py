@@ -171,7 +171,6 @@ class Network_State:
         self.t += 1  # update time
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
         input_dual: NDArray[np.float_] = self.input_dual_in_t[-1]
-        pert: NDArray[np.float_] = np.random.normal(size=np.size(input_dual))  # perturbation, not in use
         input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]
         # dot product for alpha in pressure update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
@@ -208,7 +207,6 @@ class Network_State:
         output_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
         """
         loss: NDArray[np.float_] = self.loss_in_t[-1]
-        pert: NDArray[np.float_] = np.random.normal(size=np.size(self.output))
         output_dual: NDArray[np.float_] = copy.copy(self.output_dual_in_t[-1])
         # element-wise multiplication for alpha in output update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken

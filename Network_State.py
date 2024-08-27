@@ -264,11 +264,11 @@ class Network_State:
 
         # dual problem is different under schemes of change of R
         if BigClass.Variabs.R_update == 'propto':  # if resistances change with memory
-            # self.inter_dual_nxt = inter_dual - delta + 0.04*np.random.randn(BigClass.Variabs.Ninter)
-            self.inter_dual_nxt = inter_dual - delta
+            self.inter_dual_nxt = inter_dual - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
+            # self.inter_dual_nxt = inter_dual - delta
         elif BigClass.Variabs.R_update == 'deltaR':  # no memory
-            # self.inter_dual_nxt = - delta + 0.04*np.random.randn(BigClass.Variabs.Ninter)
-            self.inter_dual_nxt = - delta
+            self.inter_dual_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
+            # self.inter_dual_nxt = - delta
         self.inter_dual_in_t.append(self.inter_dual_nxt)  # append into list in time
         # if user ask to not print
         if BigClass.Variabs.supress_prints:

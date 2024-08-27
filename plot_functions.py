@@ -99,11 +99,11 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     legend4 = ['|loss|']
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(12, 3.2))
     if Variabs.task_type is not 'Iris_classification':
-        ax1.plot(np.linspace(0, State.t, 2*State.t-1).T,
-                 np.asarray(State.output_in_t[1:])/np.asarray(State.desired_in_t[1:])-1)
+        ax1.plot(np.linspace(0, State.t, np.shape(State.output_in_t)[0]).T,
+                 np.asarray(State.output_in_t)/np.asarray(State.desired_in_t)-1)
     else:
-        ax1.plot(np.linspace(0, State.t, 2*State.t-1).T,
-                 np.asarray(State.output_in_t[1:]))
+        ax1.plot(np.linspace(0, State.t, np.shape(State.output_in_t)[0]).T,
+                 np.asarray(State.output_in_t))
     ax1.set_title('output in time')
     ax1.set_xlabel('t')
     ax1.legend(legend1)

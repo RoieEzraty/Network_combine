@@ -131,7 +131,6 @@ def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_
     """
     InNodes: NDArray[np.int_] = nodes_tuple[0]
     GroundNodes: NDArray[np.int_] = nodes_tuple[1]
-    print('len nodes_tuple', len(nodes_tuple))
     if len(nodes_tuple) == 2:  # system is in measure mode, not dual
         InNodeData: NDArray[np.float_] = nodeData_tuple
         OutputNodes: NDArray[np.int_] = array([], dtype=int)

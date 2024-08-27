@@ -72,7 +72,7 @@ class User_Variables:
                 print('input M mismatches output and input')
             self.dataset: NDArray[np.float_] = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
             self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
-            self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M)
+            self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M.T)
         elif self.task_type == 'Iris_classification':
             # Load the Iris dataset
             iris = load_iris()

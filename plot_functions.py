@@ -78,7 +78,11 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$', r'$R_6$']
     elif Variabs.Nin == 2 and Variabs.Nout == 2:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
-        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
+        if Variabs.access_interNodes:
+            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
+                       r'$\mathrm{inter1\,dual}$', r'$\mathrm{inter2\,dual}$']
+        else:
+            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$']
     elif Variabs.Nin == 3 and Variabs.Nout == 3:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
@@ -105,6 +109,8 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     ax1.legend(legend1)
     ax2.plot(State.output_dual_in_t[1:])
     ax2.plot(State.input_dual_in_t[1:])
+    if Variabs.access_interNodes:
+        ax2.plot(State.inter_dual_in_t[1:])
     ax2.set_title('dual and p in time')
     ax2.set_xlabel('t')
     # ax2.set_ylim([-0.2,0.2])

@@ -27,16 +27,20 @@ class Network_State:
     what ends with _in_t holds all time instances of the variable, each list index is different t
     what ends w/out _in_t is at current time instance self.t
     """
-    def __init__(self, Nin: int, Nout: int) -> None:
+    def __init__(self, Nin: int, Nout: int, Ninter: Optional[int] = None) -> None:
         super().__init__()
         self.t: int = 0  # time, defined as number of R updates, i.e. times the learning rate alpha is used.
         self.p: NDArray[np.float_] = array([])  # pressure
         self.u: NDArray[np.float_] = array([])  # flow rate
-        self.output_in_t: List[NDArray[np.float_]] = []  # pressure at outputs in time
         self.input_drawn_in_t: List[NDArray[np.float_]] = []  # pressure at inputs in time, sampled
+        if Ninter is not None:
+            self.inter_in_t: List[NDArray[np.float_]] = []
+        self.output_in_t: List[NDArray[np.float_]] = []  # pressure at outputs in time
         self.desired_in_t: List[NDArray[np.float_]] = []
-        self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Nout)]
         self.input_dual_in_t: List[NDArray[np.float_]] = [1.0 * np.ones(Nin)]
+        if Ninter is not None:
+            self.inter_dual_in_t: List[NDArray[np.float_]] = [0.75 * np.ones(Ninter)]
+        self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Nout)]
         self.loss_in_t: List[NDArray[np.float_]] = []
 
     def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
@@ -120,11 +124,18 @@ class Network_State:
                         (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr),
                         self.input_drawn, BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
         elif problem == 'dual':
-            CstrTuple = functions.setup_constraints_given_pin(
-                        (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr,
-                         BigClass.Strctr.output_nodes_arr),
-                        (self.input_dual_in_t[-1], self.output_dual_in_t[-1]),
-                        BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+            if BigClass.Variabs.access_interNodes:  # if dual problem accesses interNodes separately
+                CstrTuple = functions.setup_constraints_given_pin(
+                            (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr,
+                             BigClass.Strctr.output_nodes_arr, BigClass.Strctr.inter_nodes_arr),
+                            (self.input_dual_in_t[-1], self.output_dual_in_t[-1], self.inter_dual_in_t[-1]),
+                            BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+            else:  # if dual problem does not access interNodes separately
+                CstrTuple = functions.setup_constraints_given_pin(
+                            (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr,
+                             BigClass.Strctr.output_nodes_arr),
+                            (self.input_dual_in_t[-1], self.output_dual_in_t[-1]),
+                            BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
         self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
 
         # Update the State class variables
@@ -138,6 +149,8 @@ class Network_State:
 
             if problem == 'measure':  # Only save in time if measuring during training
                 self.output_in_t.append(self.output)
+                if BigClass.Variabs.access_interNodes:
+                    self.inter_in_t.append(self.p[BigClass.Strctr.inter_nodes_arr].ravel())
 
         # print('Rs', self.R_in_t[-1])
 
@@ -158,9 +171,9 @@ class Network_State:
             self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
         self.loss_in_t.append(self.loss)
 
-    def update_pressure_dual(self, BigClass: "Big_Class") -> None:
+    def update_input_dual(self, BigClass: "Big_Class") -> None:
         """
-        Calculates the loss given system state and desired outputs, perhaps including 1 time step ago
+        Calculates next input pressure values in dual problem given the measurement, either for 1 or 2 sampled pressures
 
         inputs:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
@@ -198,7 +211,7 @@ class Network_State:
 
     def update_output_dual(self, BigClass: "Big_Class"):
         """
-        Calculates the loss given system state and desired outputs, perhaps including 1 time step ago
+        Calculates next output pressure values in dual problem given measurement, either for 1 or 2 sampled pressures
 
         inputs:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
@@ -226,6 +239,42 @@ class Network_State:
             pass
         else:  # print
             print('output_dual_nxt', self.output_dual_nxt)
+
+    def update_inter_dual(self, BigClass: "Big_Class") -> None:
+        """
+        Calculates next inter nodes pressure values in dual problem given measurement, for 1 or 2 sampled pressures
+        only for when Variabs.access_interNodes==True
+
+        inputs:
+        BigClass: Class instance containing User_Variables, Network_Structure, etc.
+
+        outputs:
+        interNodes_dual_nxt: np.ndarray sized [Ninter,] denoting inter nodes pressure of dual problem at time t
+        """
+        loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
+        inter_dual: NDArray[np.float_] = self.inter_dual_in_t[-1]
+        inter: NDArray[np.float_] = self.inter_in_t[-1]
+        # dot product for alpha in inter nodes pressure update
+        if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
+            inter_prev: NDArray[np.float_] = self.inter_in_t[-2]
+            delta: NDArray[np.float_] = (inter-inter_prev)*np.dot(BigClass.Variabs.alpha_vec,
+                                                                  loss[0]-loss[1])
+        else:  # if one sample of p in for every loss calcaultion are to be taken
+            delta = inter*np.dot(BigClass.Variabs.alpha_vec, loss[0])
+
+        # dual problem is different under schemes of change of R
+        if BigClass.Variabs.R_update == 'propto':  # if resistances change with memory
+            # self.inter_dual_nxt = inter_dual - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
+            self.inter_dual_nxt = inter_dual - delta
+        elif BigClass.Variabs.R_update == 'deltaR':  # no memory
+            # self.inter_dual_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
+            self.inter_dual_nxt = - delta
+        self.inter_dual_in_t.append(self.inter_dual_nxt)  # append into list in time
+        # if user ask to not print
+        if BigClass.Variabs.supress_prints:
+            pass
+        else:  # print
+            print('inter_dual_nxt=', self.inter_dual_nxt)
 
     def update_Rs(self, BigClass: "Big_Class") -> None:
         """

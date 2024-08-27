@@ -25,7 +25,7 @@ class User_Variables:
     These remain the same along the simulation
     """
     def __init__(self, iterations: int, Nin: int, Nout: int, gamma: NDArray[np.float_], R_update: str, use_p_tag: bool,
-                 supress_prints: bool, bc_noise: float, task_type: str,
+                 supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
                  M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0) -> None:
 
         self.iterations: int = iterations
@@ -45,10 +45,10 @@ class User_Variables:
             self.loss_fn = functions.loss_fn_1sample
         self.R_update: str = R_update  # 'propto' if R=gamma*delta_p
                                        # 'deltaR' if deltaR=gamma*delta_p, gamma should be small
-        data_size_each_axis = 15  # size of training set is data_size**Nin, don't have to cover all of it
-        self.supress_prints = supress_prints
-        self.bc_noise = bc_noise
-        self.task_type = task_type
+        self.supress_prints: bool = supress_prints
+        self.bc_noise: float = bc_noise
+        self.access_interNodes: bool = access_interNodes
+        self.task_type: str = task_type
         if task_type == 'Iris_classification' and self.Nin != 4 and self.Nout != 3:
             print('mismatched # of inputs and outputs for Iris classification. correcting accordingly to Nin=4 Nout=3')
             self.Nin = 4

@@ -179,6 +179,7 @@ class Network_State:
         outputs:
         input_dual_nxt: np.ndarray sized [Nin,] denoting input pressure of dual problem at time t
         """
+        R_update: str = BigClass.Variabs.R_update  # dummy variable
         self.t += 1  # update time
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
         input_dual: NDArray[np.float_] = self.input_dual_in_t[-1]
@@ -192,11 +193,9 @@ class Network_State:
             delta = (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
-        # if BigClass.Variabs.R_update == 'deltaR' and np.shape(self.input_dual_in_t)[0]>1:  # make sure not init value
-        #     self.input_dual_nxt -= delta_p  # erase memory
-        if BigClass.Variabs.R_update == 'propto':  # if resistances change with memory
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
             self.input_dual_nxt: NDArray[np.float_] = input_dual - delta
-        elif BigClass.Variabs.R_update == 'deltaR':  # no memory
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q':  # no memory
             self.input_dual_nxt = - delta
         self.input_dual_in_t.append(self.input_dual_nxt)  # append into list in time
         # if user ask to not print
@@ -217,6 +216,7 @@ class Network_State:
         outputs:
         output_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
         """
+        R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]
         output_dual: NDArray[np.float_] = copy.copy(self.output_dual_in_t[-1])
         # element-wise multiplication for alpha in output update
@@ -227,9 +227,9 @@ class Network_State:
             delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
 
         # dual problem is different under schemes of change of R
-        if BigClass.Variabs.R_update == 'propto':  # if resistances change with memory
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
             self.output_dual_nxt = output_dual + delta
-        elif BigClass.Variabs.R_update == 'deltaR':  # no memory
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q':  # no memory
             self.output_dual_nxt = delta
         self.output_dual_in_t.append(self.output_dual_nxt)
         # if user ask to not print
@@ -249,6 +249,7 @@ class Network_State:
         outputs:
         interNodes_dual_nxt: np.ndarray sized [Ninter,] denoting inter nodes pressure of dual problem at time t
         """
+        R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
         inter_dual: NDArray[np.float_] = self.inter_dual_in_t[-1]
         inter: NDArray[np.float_] = self.inter_in_t[-1]
@@ -261,10 +262,10 @@ class Network_State:
             delta = inter*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
-        if BigClass.Variabs.R_update == 'propto':  # if resistances change with memory
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
             # self.inter_dual_nxt = inter_dual - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = inter_dual - delta
-        elif BigClass.Variabs.R_update == 'deltaR':  # no memory
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q':  # no memory
             # self.inter_dual_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = - delta
         self.inter_dual_in_t.append(self.inter_dual_nxt)  # append into list in time
@@ -286,11 +287,16 @@ class Network_State:
         """
         R_vec: NDArray[np.float_] = self.R_in_t[-1]
         delta_p: NDArray[np.float_] = self.u * R_vec
-        if BigClass.Variabs.R_update == 'deltaR':  # delta_R propto p_in-p_out
+        if BigClass.Variabs.R_update == 'deltaR_propto_dp':  # delta_R propto p_in-p_out
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
-        elif BigClass.Variabs.R_update == 'propto':  # R propto p_in-p_out
+        elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
             self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
-        # if user ask to not print
+        elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto p_in-p_out
+            self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)
+        elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto p_in-p_out
+            print('u', self.u)
+            self.R_in_t.append(BigClass.Variabs.gamma * self.u)
+        # if user asks to not print
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print

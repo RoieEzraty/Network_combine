@@ -41,8 +41,10 @@ class User_Variables:
                                 Callable[[np.ndarray, np.ndarray], np.ndarray]] = functions.loss_fn_2samples
         else:
             self.loss_fn = functions.loss_fn_1sample
-        self.R_update: str = R_update  # 'propto' if R=gamma*delta_p
-                                       # 'deltaR' if deltaR=gamma*delta_p, gamma should be small
+        self.R_update: str = R_update  # 'R_propto_dp' if R=gamma*delta_p
+                                       # 'deltaR_propto_dp' if deltaR=gamma*delta_p, gamma should be small
+                                       # 'R_propto_Q' if deltaR=gamma*Q where Q is flow velocity
+                                       # 'deltaR_propto_Q' if R=gamma*Q where Q is flow velocity
         self.supress_prints: bool = supress_prints
         self.bc_noise: float = bc_noise
         self.access_interNodes: bool = access_interNodes

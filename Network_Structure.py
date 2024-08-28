@@ -1,19 +1,11 @@
 from __future__ import annotations
 import numpy as np
-import random
-import copy
 
 from typing import Tuple, List
 from numpy.typing import NDArray
 from numpy import array, zeros
-from typing import TYPE_CHECKING
 
-import matrix_functions, functions
-
-
-if TYPE_CHECKING:
-    from User_Variables import User_Variables
-    from Big_Class import Big_Class
+import matrix_functions
 
 
 # ===================================================

@@ -1,7 +1,5 @@
 from __future__ import annotations
 import numpy as np
-import random
-import copy
 
 from typing import Tuple, List
 from numpy import array, zeros

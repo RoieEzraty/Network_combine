@@ -1,14 +1,12 @@
 from __future__ import annotations
 import numpy as np
-import numpy.random as rand
-import copy
 
 from numpy.linalg import inv as inv
 from numpy.typing import NDArray
 from typing import Tuple, List, Optional
 from typing import TYPE_CHECKING
 
-import matrix_functions, plot_functions
+import matrix_functions
 
 if TYPE_CHECKING:
     from Big_Class import Big_Class
@@ -20,8 +18,9 @@ if TYPE_CHECKING:
 
 
 # @lru_cache(maxsize=20)
-def solve_flow(BigClass: "Big_Class", CstrTuple: Tuple[np.ndarray, np.ndarray, np.ndarray], R_vec: np.ndarray,
-               roundto: Optional[float] = 10**-10) -> Tuple[np.ndarray, np.ndarray]:
+def solve_flow(BigClass: "Big_Class", CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
+               R_vec: NDArray[np.float_], roundto: Optional[float] = 10**-10) -> Tuple[NDArray[np.float_],
+                                                                                       NDArray[np.float_]]:
     """
     Solves for the pressure at nodes and flow at edges, given Lagrangian etc.
     flow at edge defined as difference in pressure between input and output nodes time conductivity at each edge.

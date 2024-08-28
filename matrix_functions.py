@@ -1,6 +1,5 @@
 from __future__ import annotations
 import numpy as np
-import random
 import copy
 
 from typing import Tuple, List
@@ -108,7 +107,7 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     return EI, EJ, EIEJ_plots, DM, NE, NN
 
 
-def buildL(BigClass: "Big_Class", DM: NDArray[np.int_], K_mat: NDArray[np.float_], Cstr: NDArray[np.int_],
+def buildL(BigClass: "Big_Class", DM: NDArray[np.int_], K_mat: NDArray[np.float_], Cstr: NDArray[np.float_],
            NN: int) -> Tuple[NDArray[np.float_], NDArray[np.float_]]:
     """
     Builds expanded Lagrangian with constraints

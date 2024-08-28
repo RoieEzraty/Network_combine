@@ -1,12 +1,10 @@
 from __future__ import annotations
 import numpy as np
-import random
-import copy
 
 from typing import Tuple, List
 from numpy import array, zeros
 from numpy.typing import NDArray
-from typing import TYPE_CHECKING, Callable, Union, Optional
+from typing import Callable, Union, Optional
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn.utils import shuffle

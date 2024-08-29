@@ -45,6 +45,7 @@ class User_Variables:
                                        # 'deltaR_propto_dp' if deltaR=gamma*delta_p, gamma should be small
                                        # 'R_propto_Q' if deltaR=gamma*Q where Q is flow velocity
                                        # 'deltaR_propto_Q' if R=gamma*Q where Q is flow velocity
+                                       # 'deltaR_propto_Power' if R=gamma*P where P is power dissipation
         self.supress_prints: bool = supress_prints
         self.bc_noise: float = bc_noise
         self.access_interNodes: bool = access_interNodes

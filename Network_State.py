@@ -195,7 +195,8 @@ class Network_State:
         # dual problem is different under schemes of change of R
         if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
             self.input_dual_nxt: NDArray[np.float_] = input_dual - delta
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q':  # no memory
+        # else if no memory
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
             self.input_dual_nxt = - delta
         self.input_dual_in_t.append(self.input_dual_nxt)  # append into list in time
         # if user ask to not print
@@ -229,7 +230,8 @@ class Network_State:
         # dual problem is different under schemes of change of R
         if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
             self.output_dual_nxt = output_dual + delta
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q':  # no memory
+        # else if no memory
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q'  or R_update == 'deltaR_propto_Power':
             self.output_dual_nxt = delta
         self.output_dual_in_t.append(self.output_dual_nxt)
         # if user ask to not print
@@ -265,7 +267,8 @@ class Network_State:
         if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
             # self.inter_dual_nxt = inter_dual - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = inter_dual - delta
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q':  # no memory
+        # else if no memory
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
             # self.inter_dual_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = - delta
         self.inter_dual_in_t.append(self.inter_dual_nxt)  # append into list in time
@@ -291,11 +294,12 @@ class Network_State:
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
             self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
-        elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto p_in-p_out
+        elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto flow Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)
-        elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto p_in-p_out
-            print('u', self.u)
+        elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q
             self.R_in_t.append(BigClass.Variabs.gamma * self.u)
+        elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
+            self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))
         # if user asks to not print
         if BigClass.Variabs.supress_prints:
             pass

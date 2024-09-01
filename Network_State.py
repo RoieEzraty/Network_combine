@@ -147,6 +147,14 @@ class Network_State:
             CstrTuple = functions.setup_constraints_given_pin(
                         (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr),
                         self.input_drawn, BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+        # elif problem == 'noise_to_inter':
+        #     np.random.seed(43)  # Set seed
+        #     noised_inter_nodes = self.p[BigClass.Strctr.inter_nodes_arr].ravel() + np.random.uniform(low=0.0, high=2.0, size=[BigClass.Variabs.Ninter,])
+        #     CstrTuple = functions.setup_constraints_given_pin(
+        #                     (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr,
+        #                      BigClass.Strctr.output_nodes_arr, BigClass.Strctr.inter_nodes_arr),
+        #                     (self.input_dual_in_t[-1], self.output_dual_in_t[-1], ),
+        #                     BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
         elif problem == 'dual':
             if BigClass.Variabs.access_interNodes:  # if dual problem accesses interNodes separately
                 CstrTuple = functions.setup_constraints_given_pin(
@@ -216,39 +224,6 @@ class Network_State:
             print('time=', self.t)
             print('input_dual_nxt=', self.input_dual_nxt)
 
-    def update_output_dual(self, BigClass: "Big_Class"):
-        """
-        Calculates next output pressure values in dual problem given measurement, either for 1 or 2 sampled pressures
-
-        inputs:
-        BigClass: Class instance containing User_Variables, Network_Structure, etc.
-
-        outputs:
-        output_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
-        """
-        R_update: str = BigClass.Variabs.R_update  # dummy variable
-        loss: NDArray[np.float_] = self.loss_in_t[-1]
-        output_dual: NDArray[np.float_] = copy.copy(self.output_dual_in_t[-1])
-        # element-wise multiplication for alpha in output update
-        if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
-            output_prev: NDArray[np.float_] = self.output_in_t[-2]
-            delta: NDArray[np.float_] = BigClass.Variabs.alpha_vec * (self.output-output_prev) * (loss[0]-loss[1])
-        else:
-            delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
-
-        # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
-            self.output_dual_nxt = output_dual + delta
-        # else if no memory
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
-            self.output_dual_nxt = delta
-        self.output_dual_in_t.append(self.output_dual_nxt)
-        # if user ask to not print
-        if BigClass.Variabs.supress_prints:
-            pass
-        else:  # print
-            print('output_dual_nxt', self.output_dual_nxt)
-
     def update_inter_dual(self, BigClass: "Big_Class") -> None:
         """
         Calculates next inter nodes pressure values in dual problem given measurement, for 1 or 2 sampled pressures
@@ -286,6 +261,39 @@ class Network_State:
             pass
         else:  # print
             print('inter_dual_nxt=', self.inter_dual_nxt)
+
+    def update_output_dual(self, BigClass: "Big_Class"):
+        """
+        Calculates next output pressure values in dual problem given measurement, either for 1 or 2 sampled pressures
+
+        inputs:
+        BigClass: Class instance containing User_Variables, Network_Structure, etc.
+
+        outputs:
+        output_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
+        """
+        R_update: str = BigClass.Variabs.R_update  # dummy variable
+        loss: NDArray[np.float_] = self.loss_in_t[-1]
+        output_dual: NDArray[np.float_] = copy.copy(self.output_dual_in_t[-1])
+        # element-wise multiplication for alpha in output update
+        if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
+            output_prev: NDArray[np.float_] = self.output_in_t[-2]
+            delta: NDArray[np.float_] = BigClass.Variabs.alpha_vec * (self.output-output_prev) * (loss[0]-loss[1])
+        else:
+            delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
+
+        # dual problem is different under schemes of change of R
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
+            self.output_dual_nxt = output_dual + delta
+        # else if no memory
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
+            self.output_dual_nxt = delta
+        self.output_dual_in_t.append(self.output_dual_nxt)
+        # if user ask to not print
+        if BigClass.Variabs.supress_prints:
+            pass
+        else:  # print
+            print('output_dual_nxt', self.output_dual_nxt)
 
     def update_Rs(self, BigClass: "Big_Class") -> None:
         """

@@ -211,31 +211,29 @@ def plot_comparison_pseudo(R_pseudo: NDArray[np.float_], R_network: NDArray[np.f
     1 matplotlib plot
     """
 
-    # setups
+    # Setup
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
     network_color = 'blue'
     pseudo_color = 'violet'
-    # legend1: list[str] = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$', r'$R_6$']
-    legend2: list[str] = ['network', 'pseudo']
+    legend2 = ['Network', 'Pseudo Inverse']
 
-    # Plot resistances in time
+    # Plot resistances in time (ax1)
+    network_lines = []
     for i in range(R_network.shape[1]):
-        ax1.plot(R_network[:, i], color=network_color)
-    ax1.plot(R_pseudo * np.ones([len(R_network), 1]), linestyle='--', color=pseudo_color)
+        line = ax1.plot(R_network[:, i], color=network_color)
+        network_lines.append(line[0])  # Append the first line object from the plot
 
-    # # Plot the first line with a solid line style (default) - network data
-    # ax1.plot(R_network, label='network')
+    # Plot the pseudo inverse line (dashed and violet)
+    pseudo_line = ax1.plot(R_pseudo * np.ones([len(R_network), 1]), linestyle='--', color=pseudo_color)[0]
 
-    # # Plot the second line with a dashed line style - pseudo inverse method
-    # ax1.plot(R_pseudo * np.ones([len(R_network), 1]), linestyle='--', label='pseudo inverse')
+    # Create a custom legend
+    # Only take one of the network lines since they all share the same color and appearance
+    ax1.legend([network_lines[0], pseudo_line], legend2, loc='best')
+    ax1.set_title(r'$R$')
 
-    ax1.set_title('R')
-    ax1.set_xlabel('t')
-    ax1.legend(['Network', 'Pseudo Inverse'], loc='best')
-
-    ax2.plot(np.mean(np.mean(np.abs(loss_network), axis=1), axis=1), label='network', color=network_color)
-    ax2.plot(np.mean(np.mean(np.abs(loss_pseudo), axis=1), axis=1), linestyle='--', label='pseudo inverse',
-             color=pseudo_color)
+    # Plot loss in time (ax2)
+    ax2.plot(np.mean(np.mean(np.abs(loss_network), axis=1), axis=1), label='Network', color=network_color)
+    ax2.plot(np.mean(np.mean(np.abs(loss_pseudo), axis=1), axis=1), linestyle='--', label='Pseudo Inverse', color=pseudo_color)
     ax2.set_title('|Loss|')
     ax2.set_xlabel('t')
     ax2.set_yscale('log')

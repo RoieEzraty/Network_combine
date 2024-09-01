@@ -24,7 +24,7 @@ class User_Variables:
     """
     def __init__(self, iterations: int, Nin: int, Nout: int, gamma: NDArray[np.float_], R_update: str, use_p_tag: bool,
                  supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
-                 M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0) -> None:
+                 M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0, meausure_accuracy_every: Optional[int] = None) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
@@ -54,6 +54,8 @@ class User_Variables:
             print('mismatched # of inputs and outputs for Iris classification. correcting accordingly to Nin=4 Nout=3')
             self.Nin = 4
             self.Nout = 3
+        if meausure_accuracy_every is not None:
+            self.meausure_accuracy_every = meausure_accuracy_every
 
     def create_dataset_and_targets(self, M_values: Optional[NDArray[np.float_]] = None) -> None:
         """
@@ -71,13 +73,16 @@ class User_Variables:
                 M_values = zeros([self.Nin*self.Nout], dtype=np.float_)
             elif np.size(M_values) != self.Nin*self.Nout:
                 print('input M mismatches output and input')
+            np.random.seed(42)  # Set seed
+            # Generate random numbers as dataset and multiply by task matrix M
             self.dataset: NDArray[np.float_] = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
             self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
             self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M.T)
         elif self.task_type == 'Iris_classification':
             # Load the Iris dataset
             iris = load_iris()
-            dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
+            # dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
+            dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=3)
             # Min-Max Scale dataset to [0, 5]
             min_max_scaler = MinMaxScaler(feature_range=(0, 5))
             self.dataset = min_max_scaler.fit_transform(dataset)

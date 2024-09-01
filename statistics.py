@@ -25,14 +25,14 @@ def final_err(BigClass: "Big_Class", samples: int = 40):
     return numerator / denominator
 
 
-def calculate_accuracy(output, target_mat, target_ind):
+def calculate_accuracy_1sample(output, targets_mat: NDArray[np.float_], target_ind: int) -> int:
     """
     add desc
     """
     l2_vec: NDArray[np.float_] = zeros(3)
     for i in range(3):
-        l2_vec[i] = norm(output - target_mat[i])
-    accuracy = int(np.where(l2_vec == np.min(l2_vec)) == np.where(target_ind == 1.))
+        l2_vec[i] = norm(output - targets_mat[i])
+    accuracy: int = int(np.where(l2_vec == np.min(l2_vec)) == np.where(target_ind == 1.))
     return accuracy
 
 

@@ -20,7 +20,8 @@ if TYPE_CHECKING:
 
 
 def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: List[NDArray[np.float_]],
-                    M: Optional[NDArray[np.int_]] = None) -> None:
+                    M: Optional[NDArray[np.int_]] = None, include_network: Optional[bool] = False,
+                    NET: Optional[nx.DiGraph] = None) -> None:
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
@@ -96,7 +97,10 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
         legend2 = []
         legend3 = []
     legend4 = ['|loss|']
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(12, 3.2))
+    if include_network:
+        fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(15, 3))
+    else:
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(12, 3.2))
     if Variabs.task_type != 'Iris_classification':
         ax1.plot(np.linspace(0, State.t, np.shape(State.output_in_t)[0]).T,
                  np.asarray(State.output_in_t)/np.asarray(State.desired_in_t)-1)
@@ -124,16 +128,24 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     ax3.set_xlabel('t')
     if legend3:
         ax3.legend(legend3)
+    for t in range(State.t):
+        if t % len(Variabs.dataset) == 0 and t != 0:
+            ax4.axvline(x=t, color='red', linestyle='--', linewidth=1)
     ax4.plot(np.mean(np.mean(np.abs(State.loss_in_t[1:]), axis=1), axis=1))
     ax4.set_xlabel('t')
     ax4.set_yscale('log')
     if legend4:
         ax4.legend(legend4)
-    fig.suptitle(f'alpha={Variabs.alpha_vec}')
+    # fig.suptitle(f'alpha={Variabs.alpha_vec}')
+    if include_network:
+        if NET is not None:
+            nx.draw_networkx(NET.NET, pos=NET.pos_lattice, edge_color='b', node_color='b', with_labels=True, ax=ax5)
+        else:
+            print('no NET assigned in input')
     plt.show()
 
 
-def plotNetStructure(NET: nx.DiGraph, plot=False, node_labels=False) -> Dict[Any, Tuple[float, float]]:
+def plotNetStructure(NET: nx.DiGraph, plot: bool = False, node_labels: bool = False) -> Dict[Any, Tuple[float, float]]:
     """
     Plots the structure (nodes and edges) of networkx NET
 
@@ -153,6 +165,148 @@ def plotNetStructure(NET: nx.DiGraph, plot=False, node_labels=False) -> Dict[Any
     print('NET is ready')
     return pos_lattice
 
+
+def plot_accuracy(Variabs: "User_Variables", State: "Network_State"):
+    """
+    Plots the accuracy in time for the Iris problem
+
+    input:
+    State   - class instance of the state variables of network
+    Variabs - class instance of the variables by the user
+
+    output:
+    plot of accuracy a.f.o time
+    """
+    # Add vertical lines at times where t equals iterations
+    for t in range(State.t):
+        if t % len(Variabs.dataset) == 0:
+            plt.axvline(x=t, color='red', linestyle='--', linewidth=1)
+
+    plt.plot(State.t_for_accuracy, State.accuracy_in_t, label='accuracy')
+
+    plt.xlabel('t', fontsize=14)  # Set x-axis label with font size
+    plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
+    plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
+
+
+def plot_comparison_pseudo(R_pseudo: NDArray[np.float_], R_network: NDArray[np.float_],
+                           loss_pseudo: NDArray[np.float_], loss_network: NDArray[np.float_]) -> None:
+    """
+    plot comparison of performance of network to those of resistances calculated using
+    pseudo inverse method, as in the matlab file "Calculate_desired_resistances_2in3out_theoretical.m"
+    one plot with 2 subfigures of
+    1) resistances in time
+    2) loss in time
+    calculated by pseudo inverse (dashed) and network (solid)
+
+    inputs:
+    R_pseudo     - resistances calculated using pseudo inverse
+    R_network    - resistances of network in time
+    loss_pseudo  - loss in time using those found using pseudo inverse (resistances are constant in t)
+    loss_network - loss in time using the network (resistances change)
+    State   - class instance of the state variables of network
+    Variabs - class instance of the variables by the user
+
+    outputs:
+    1 matplotlib plot
+    """
+
+    # setups
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    network_color = 'blue'
+    pseudo_color = 'violet'
+    # legend1: list[str] = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$', r'$R_6$']
+    legend2: list[str] = ['network', 'pseudo']
+
+    # Plot resistances in time
+    for i in range(R_network.shape[1]):
+        ax1.plot(R_network[:, i], color=network_color)
+    ax1.plot(R_pseudo * np.ones([len(R_network), 1]), linestyle='--', color=pseudo_color)
+
+    # # Plot the first line with a solid line style (default) - network data
+    # ax1.plot(R_network, label='network')
+
+    # # Plot the second line with a dashed line style - pseudo inverse method
+    # ax1.plot(R_pseudo * np.ones([len(R_network), 1]), linestyle='--', label='pseudo inverse')
+
+    ax1.set_title('R')
+    ax1.set_xlabel('t')
+    ax1.legend(['Network', 'Pseudo Inverse'], loc='best')
+
+    ax2.plot(np.mean(np.mean(np.abs(loss_network), axis=1), axis=1), label='network', color=network_color)
+    ax2.plot(np.mean(np.mean(np.abs(loss_pseudo), axis=1), axis=1), linestyle='--', label='pseudo inverse',
+             color=pseudo_color)
+    ax2.set_title('|Loss|')
+    ax2.set_xlabel('t')
+    ax2.set_yscale('log')
+    ax2.legend(legend2, loc='best')
+
+    plt.show()
+
+
+def plot_comparison_R_type(R_propto_deltap: NDArray[np.float_], deltaR_propto_deltap: NDArray[np.float_],
+                           deltaR_propto_Q: NDArray[np.float_], deltaR_propto_Power: NDArray[np.float_],
+                           loss_R_propto_deltap: NDArray[np.float_],
+                           loss_deltaR_propto_deltap: NDArray[np.float_],
+                           loss_propto_Q: NDArray[np.float_],
+                           loss_propto_Power: NDArray[np.float_]) -> None:
+    """
+    plot comparison of performance of network to those of resistances calculated using
+    pseudo inverse method, as in the matlab file "Calculate_desired_resistances_2in3out_theoretical.m"
+    one plot with 2 subfigures of
+    1) resistances in time
+    2) loss in time
+    calculated by pseudo inverse (dashed) and network (solid)
+
+    inputs:
+    R_pseudo     - resistances calculated using pseudo inverse
+    R_network    - resistances of network in time
+    loss_pseudo  - loss in time using those found using pseudo inverse (resistances are constant in t)
+    loss_network - loss in time using the network (resistances change)
+    State   - class instance of the state variables of network
+    Variabs - class instance of the variables by the user
+
+    outputs:
+    1 matplotlib plot
+    """
+
+    # setups
+    fig, axs = plt.subplots(2, 4, figsize=(12, 4))
+    (ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8) = axs
+    R_color = 'blue'
+    legend1 = r'$R$'
+    legend2 = '|Loss|'
+
+    # Titles for the plots
+    titles = [
+        r'$R \propto \Delta p$',
+        r'$\Delta R \propto \Delta p$',
+        r'$R \propto Q$',
+        r'$\Delta R \propto \mathrm{Power}$'
+    ]
+
+    # Data for the plots
+    resistance_data = [R_propto_deltap, deltaR_propto_deltap, deltaR_propto_Q, deltaR_propto_Power]
+    loss_data = [loss_R_propto_deltap, loss_deltaR_propto_deltap, loss_propto_Q, loss_propto_Power]
+
+    # Manually set the y-axis sharing for the top row
+    for ax in [ax2, ax3, ax4]:
+        ax.sharey(ax1)  # Share y-axis with the first subplot (ax1)
+
+    # Plot resistance data (top row)
+    for ax, data, title in zip([ax1, ax2, ax3, ax4], resistance_data, titles):
+        ax.plot(data)
+        ax.set_title(title)
+        ax.legend([legend1], loc='best')
+
+    # Plot loss data (bottom row) with independent y-axes
+    for ax, data, title in zip([ax5, ax6, ax7, ax8], loss_data, titles):
+        ax.plot(np.mean(np.abs(data), axis=1), color=R_color)
+        ax.legend([legend2], loc='best')
+        ax.set_xlabel('t')
+        ax.set_yscale('log')  # Logarithmic scale, auto-scaled to data
+
+    plt.show()
 
 # def PlotNetwork(p: np.ndarray, u: np.ndarray, K: np.ndarray, BigClass: "Big_Class", mode: str = 'u_p',
 #                 nodes: bool = True, edges: bool = True, savefig: bool = False) -> None:

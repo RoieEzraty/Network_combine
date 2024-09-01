@@ -7,7 +7,7 @@ from numpy import array, zeros
 from numpy.typing import NDArray
 from typing import TYPE_CHECKING, Callable, Union, Optional
 
-import functions, solve
+import functions, solve, statistics
 
 if TYPE_CHECKING:
     from User_Variables import User_Variables
@@ -50,9 +50,25 @@ class Network_State:
         R_vec_i  - initial resistances, array of size [NE,]
         """
         if R_vec_i is not None:
-            self.R_in_t: List[NDArray[np.float_]] = [R_vec_i]
+            if np.size(R_vec_i) != BigClass.Strctr.NE:
+                print('R_vec_i has wrong size, initializing all ones')
+                self.R_in_t: List[NDArray[np.float_]] = [np.ones((BigClass.Strctr.NE), dtype=float)]
+            else:
+                self.R_in_t = [R_vec_i]
         else:
             self.R_in_t = [np.ones((BigClass.Strctr.NE), dtype=float)]
+
+    def initiate_accuracy_vec(self, BigClass: "Big_Class", measure_accuracy_every: int) -> None:
+        """
+        Initiate array for accuracy with length=iteration/measure_accuracy_every
+
+        inputs:
+        BigClass               - class instance including User_Variables, Network_Structure instances, etc.
+        measure_accuracy_every - measure accuracy every # steps, user input
+        """
+        accuracy_size = int(np.floor(BigClass.Variabs.iterations/measure_accuracy_every))
+        self.accuracy_in_t: NDArray[np.float_] = zeros(accuracy_size)
+        self.t_for_accuracy: NDArray[np.int_] = zeros(accuracy_size, dtype=np.int_)
 
     def draw_p_in_and_desired(self, Variabs: "User_Variables", i: int) -> None:
         """
@@ -69,7 +85,7 @@ class Network_State:
         self.input_drawn: NDArray[np.float_] = Variabs.dataset[i % np.shape(Variabs.dataset)[0]]
         if Variabs.task_type == 'Iris_classification':
             self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
-                                                         self.target_mat)
+                                                         self.targets_mat)
             print('onehot_target', Variabs.targets[i % np.shape(Variabs.dataset)[0]])
         else:
             self.desired = Variabs.targets[i % np.shape(Variabs.dataset)[0]]
@@ -94,10 +110,20 @@ class Network_State:
         """
         self.input_drawn = Variabs.means[i]
 
-    def assign_targets_Iris(self, targets_mat):
+    def assign_targets_Iris(self, BigClass: "Big_Class") -> None:
         """
         """
-        self.target_mat = targets_mat
+        targets_mat: NDArray[np.float_] = zeros([3, 3], dtype=np.float_)
+        for j in range(3):  # go over all 3 Iris classes
+            self.draw_p_means_Iris(BigClass.Variabs, j)  # take the mean of all data inputs of a specific Iris class
+            # measure output while input is mean, don't change resistances
+            self.solve_flow_given_problem(BigClass, "measure_for_mean")
+            targets_mat[j] = self.output  # The new target is the outputs of the mean input
+        self.targets_mat: NDArray[np.float_] = targets_mat  # save into targets_mat array
+        if BigClass.Variabs.supress_prints:  # don't print outputs
+            pass
+        else:  # print
+            print('targets_mat', self.targets_mat)
 
     def solve_flow_given_problem(self, BigClass: "Big_Class", problem: str) -> None:
         """
@@ -116,7 +142,7 @@ class Network_State:
         u - flow at every edge under the specific BC, after convergence while allowing conductivities to change
         """
         # Calculate pressure p and flow u
-        if problem == 'measure' or problem == 'measure_for_mean':
+        if problem == 'measure' or problem == 'measure_for_mean' or problem == 'measure_for_accuracy':
             CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
             CstrTuple = functions.setup_constraints_given_pin(
                         (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr),
@@ -137,7 +163,7 @@ class Network_State:
         self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
 
         # Update the State class variables
-        if problem in {'measure', 'measure_for_mean'}:
+        if problem in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:
             # Output is at output nodes, ravel so sizes [Nout,]
             self.output: NDArray[np.float_] = self.p[BigClass.Strctr.output_nodes_arr].ravel()
             if BigClass.Variabs.supress_prints:
@@ -151,23 +177,6 @@ class Network_State:
                     self.inter_in_t.append(self.p[BigClass.Strctr.inter_nodes_arr].ravel())
 
         # print('Rs', self.R_in_t[-1])
-
-    def calc_loss(self, BigClass: "Big_Class") -> None:
-        """
-        Calculates the loss given system state and desired outputs, perhaps including 1 time step ago
-
-        inputs:
-        BigClass: Class instance containing User_Variables, Network_Structure, etc.
-
-        outputs:
-        loss: np.ndarray sized [Nout,]
-        """
-        if BigClass.Variabs.loss_fn == functions.loss_fn_2samples:
-            self.loss: NDArray[np.float_] = BigClass.Variabs.loss_fn(self.output, self.output_in_t[-2], self.desired,
-                                                                     self.desired_in_t[-2])
-        elif BigClass.Variabs.loss_fn == functions.loss_fn_1sample:
-            self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
-        self.loss_in_t.append(self.loss)
 
     def update_input_dual(self, BigClass: "Big_Class") -> None:
         """
@@ -231,7 +240,7 @@ class Network_State:
         if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
             self.output_dual_nxt = output_dual + delta
         # else if no memory
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q'  or R_update == 'deltaR_propto_Power':
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
             self.output_dual_nxt = delta
         self.output_dual_in_t.append(self.output_dual_nxt)
         # if user ask to not print
@@ -306,6 +315,33 @@ class Network_State:
         else:  # print
             pass
             # print('R_nxt', self.R_in_t[-1])
+
+    def calc_loss(self, BigClass: "Big_Class") -> None:
+        """
+        Calculates the loss given system state and desired outputs, perhaps including 1 time step ago
+
+        inputs:
+        BigClass: Class instance containing User_Variables, Network_Structure, etc.
+
+        outputs:
+        loss: np.ndarray sized [Nout,]
+        """
+        if BigClass.Variabs.loss_fn == functions.loss_fn_2samples:
+            self.loss: NDArray[np.float_] = BigClass.Variabs.loss_fn(self.output, self.output_in_t[-2], self.desired,
+                                                                     self.desired_in_t[-2])
+        elif BigClass.Variabs.loss_fn == functions.loss_fn_1sample:
+            self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
+        self.loss_in_t.append(self.loss)
+
+    def calculate_accuracy_fullDataset(self, BigClass: "Big_Class") -> None:
+        self.accuracy_vec: NDArray[np.int_] = zeros(np.shape(BigClass.Variabs.dataset)[0], dtype=np.int_)
+        for i, datapoint in enumerate(BigClass.Variabs.dataset):
+            self.draw_p_in_and_desired(BigClass.Variabs, i)
+            self.solve_flow_given_problem(BigClass, "measure_for_accuracy")  # measure and don't change resistances
+            print('net prediction', np.sum((self.targets_mat - self.output)**2, axis=1))
+            self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
+                                                                         BigClass.Variabs.targets[i])
+        self.accuracy = np.mean(self.accuracy_vec)
 
     # def measure_targets_iris(self, BigClass):
     #     """

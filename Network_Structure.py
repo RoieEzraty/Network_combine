@@ -18,12 +18,12 @@ class Network_Structure:
     Net_structure class save the structure of the network
     """
 
-    def __init__(self, input_nodes_arr: NDArray[np.int_], output_nodes_arr: NDArray[np.int_],
-                 inter_nodes_arr: NDArray[np.int_], ground_nodes_arr: NDArray[np.int_]) -> None:
-        self.input_nodes_arr: NDArray[np.int_] = input_nodes_arr
-        self.output_nodes_arr: NDArray[np.int_] = output_nodes_arr
-        self.inter_nodes_arr: NDArray[np.int_] = inter_nodes_arr
-        self.ground_nodes_arr: NDArray[np.int_] = ground_nodes_arr
+    def __init__(self, inOutInterGround_tuple: Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                     NDArray[np.int_], NDArray[np.int_]]) -> None:
+        self.input_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[0]
+        self.inter_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[1]
+        self.output_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[2]
+        self.ground_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[3]
 
     def build_incidence(self) -> None:
         """

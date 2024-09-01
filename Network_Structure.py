@@ -18,12 +18,14 @@ class Network_Structure:
     Net_structure class save the structure of the network
     """
 
-    def __init__(self, inOutInterGround_tuple: Tuple[NDArray[np.int_], NDArray[np.int_],
-                                                     NDArray[np.int_], NDArray[np.int_]]) -> None:
+    def __init__(self, inOutInterGround_tuple: Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
+                                                     NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],]) -> None:
         self.input_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[0]
-        self.inter_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[1]
-        self.output_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[2]
-        self.ground_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[3]
+        self.extraInput_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[1]
+        self.inter_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[2]
+        self.output_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[3]
+        self.extraOutput_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[4]
+        self.ground_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[5]
 
     def build_incidence(self) -> None:
         """
@@ -47,10 +49,14 @@ class Network_Structure:
         assign arrays denoting edges of the network to the Network_Structure instance using the EI and EJ
         """
         self.input_edges: NDArray[np.int_]  # type hint
+        self.extraInput_edges: NDArray[np.int_]  # type hint
         self.inter_edges: NDArray[np.int_]  # type hint
         self.output_edges: NDArray[np.int_]  # type hint
+        self.extraOutput_edges: NDArray[np.int_]  # type hint
         self.ground_edges: NDArray[np.int_]  # type hint
         self.input_edges = matrix_functions.edges_from_EI_EJ(self.input_nodes_arr, self.EI, self.EJ)
+        self.extraInput_edges = matrix_functions.edges_from_EI_EJ(self.extraInput_nodes_arr, self.EI, self.EJ)
         self.inter_edges = matrix_functions.edges_from_EI_EJ(self.inter_nodes_arr, self.EI, self.EJ)
         self.output_edges = matrix_functions.edges_from_EI_EJ(self.output_nodes_arr, self.EI, self.EJ)
+        self.extraOutput_edges = matrix_functions.edges_from_EI_EJ(self.extraOutput_nodes_arr, self.EI, self.EJ)
         self.ground_edges = matrix_functions.edges_from_EI_EJ(self.ground_nodes_arr, self.EI, self.EJ)

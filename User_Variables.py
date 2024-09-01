@@ -22,13 +22,16 @@ class User_Variables:
     Class with variables given by user.
     These remain the same along the simulation
     """
-    def __init__(self, iterations: int, Nin: int, Nout: int, gamma: NDArray[np.float_], R_update: str, use_p_tag: bool,
-                 supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
-                 M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0, meausure_accuracy_every: Optional[int] = None) -> None:
+    def __init__(self, iterations: int, Nin: int, extraNin: int, Nout: int, extraNout: int, gamma: NDArray[np.float_],
+                 R_update: str, use_p_tag: bool, supress_prints: bool, bc_noise: float, access_interNodes: bool,
+                 task_type: str, M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0,
+                 meausure_accuracy_every: Optional[int] = None) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
+        self.extraNin: int = extraNin
         self.Nout: int = Nout
+        self.extraNout: int = extraNout
         if Ninter is not None:
             self.Ninter: int = Ninter
             self.NN: int = Nin + Nout + Ninter

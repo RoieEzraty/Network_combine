@@ -151,14 +151,6 @@ class Network_State:
             CstrTuple = functions.setup_constraints_given_pin(
                         (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr),
                         self.input_drawn, BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
-        # elif problem == 'noise_to_inter':
-        #     np.random.seed(43)  # Set seed
-        #     noised_inter_nodes = self.p[BigClass.Strctr.inter_nodes_arr].ravel() + np.random.uniform(low=0.0, high=2.0, size=[BigClass.Variabs.Ninter,])
-        #     CstrTuple = functions.setup_constraints_given_pin(
-        #                     (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr,
-        #                      BigClass.Strctr.output_nodes_arr, BigClass.Strctr.inter_nodes_arr),
-        #                     (self.input_dual_in_t[-1], self.output_dual_in_t[-1], ),
-        #                     BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
         elif problem == 'dual':
             if BigClass.Variabs.access_interNodes:  # if dual problem accesses interNodes separately
                 CstrTuple = functions.setup_constraints_given_pin(

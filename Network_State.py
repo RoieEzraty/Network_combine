@@ -25,7 +25,7 @@ class Network_State:
     what ends with _in_t holds all time instances of the variable, each list index is different t
     what ends w/out _in_t is at current time instance self.t
     """
-    def __init__(self, Nin: int, Nout: int, Ninter: Optional[int] = None) -> None:
+    def __init__(self, Variabs: "User_Variables", Ninter: Optional[int] = None) -> None:
         super().__init__()
         self.t: int = 0  # time, defined as number of R updates, i.e. times the learning rate alpha is used.
         self.p: NDArray[np.float_] = array([])  # pressure
@@ -33,12 +33,16 @@ class Network_State:
         self.input_drawn_in_t: List[NDArray[np.float_]] = []  # pressure at inputs in time, sampled
         if Ninter is not None:
             self.inter_in_t: List[NDArray[np.float_]] = []
+        self.extraInput_in_t: List[NDArray[np.float_]] = []  # pressure at extra inputs in time
         self.output_in_t: List[NDArray[np.float_]] = []  # pressure at outputs in time
+        self.extraOutput_in_t: List[NDArray[np.float_]] = []  # pressure at extra outputs in time
         self.desired_in_t: List[NDArray[np.float_]] = []
-        self.input_dual_in_t: List[NDArray[np.float_]] = [1.0 * np.ones(Nin)]
+        self.input_dual_in_t: List[NDArray[np.float_]] = [1.0 * np.ones(Variabs.Nin)]  # inputs at dual problem in time
+        self.extraInput_dual_in_t: List[NDArray[np.float_]] = []  # extra inputs at dual problem in time
         if Ninter is not None:
             self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Ninter)]
-        self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Nout)]
+        self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.Nout)]
+        self.extraOutput_dual_in_t: List[NDArray[np.float_]] = []  # extra outputs during dual problem in time
         self.loss_in_t: List[NDArray[np.float_]] = []
 
     def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:

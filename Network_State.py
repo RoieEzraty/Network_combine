@@ -193,7 +193,6 @@ class Network_State:
         input_dual_nxt: np.ndarray sized [Nin,] denoting input pressure of dual problem at time t
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
-        self.t += 1  # update time
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
         input_dual: NDArray[np.float_] = self.input_dual_in_t[-1]
         input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]

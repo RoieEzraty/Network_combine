@@ -39,11 +39,12 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int,
     """
     input_nodes_arr: NDArray[np.int_] = array([i for i in range(Nin)])  # input nodes are first ones named
     # extra inputs not accounted in loss
-    extraInputs_nodes_arr: NDArray[np.int_] = array([Nin + i for i in range(extraNin)])
+    extraInputs_nodes_arr: NDArray[np.int_] = array([Nin + i for i in range(extraNin)], dtype=np.int_)
     inter_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + i for i in range(Ninter)])  # intermediate nodes
     output_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + i for i in range(Nout)])  # output nodes
     # extra outputs not accounted in loss
-    extraOutput_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)])
+    extraOutput_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)],
+                                                    dtype=np.int_)
     ground_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + extraNout])  # last node is ground
     inInterOutGround_tuple = (input_nodes_arr, extraInputs_nodes_arr, inter_nodes_arr, output_nodes_arr,
                               extraOutput_nodes_arr, ground_nodes_arr)

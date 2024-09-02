@@ -89,8 +89,8 @@ class Network_State:
         input_drawn: np.ndarray sized [Nin,], input pressures
         desired: np.ndarray sized [Nout,], desired output defined by the task M*p_input
         """
-        self.input_drawn: NDArray[np.float_] = Variabs.dataset[i % np.shape(Variabs.dataset)[0]]
-        self.extraInput: NDArray[np.float_] = self.extraInput_dual_in_t[-1]
+        self.input_drawn: NDArray[np.float_] = copy.copy(Variabs.dataset[i % np.shape(Variabs.dataset)[0]])
+        self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
         if noise_to_extra:
             self.extraInput += Variabs.noise[i % np.shape(Variabs.noise)[0]]
         if Variabs.task_type == 'Iris_classification':
@@ -230,7 +230,6 @@ class Network_State:
             pass
         else:  # print
             print('loss=', loss)
-            print('time=', self.t)
             print('input_dual_nxt=', self.input_dual_nxt)
 
     def update_inter_dual(self, BigClass: "Big_Class") -> None:
@@ -304,7 +303,7 @@ class Network_State:
         else:  # print
             print('output_dual_nxt', self.output_dual_nxt)
 
-    def update_extreInput_dual(self, BigClass: "Big_Class"):
+    def update_extraInput_dual(self, BigClass: "Big_Class"):
         """
         Calculates next pressure values for extra input nodes in dual problem given measurement,
         either for 1 or 2 sampled pressures
@@ -317,30 +316,32 @@ class Network_State:
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
-        input_dual: NDArray[np.float_] = self.input_dual_in_t[-1]
-        input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]
+        extraInput_dual: NDArray[np.float_] = self.extraInput_dual_in_t[-1]
+        print('extraInput_dual', extraInput_dual)
+        extraInput: NDArray[np.float_] = self.extraInput_in_t[-1]
+        print('extraInput', extraInput)
         # dot product for alpha in pressure update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
-            input_drawn_prev: NDArray[np.float_] = self.input_drawn_in_t[-2]
-            delta: NDArray[np.float_] = (input_drawn-input_drawn_prev)*np.dot(BigClass.Variabs.alpha_vec,
-                                                                              loss[0]-loss[1])
+            extraInput_prev: NDArray[np.float_] = self.extraInput_in_t[-2]
+            print('extraInput_prev', extraInput_prev)
+            delta: NDArray[np.float_] = (extraInput-extraInput_prev)*np.dot(BigClass.Variabs.alpha_vec,
+                                                                            loss[0]-loss[1])
+            print('delta extra input', delta)
         else:  # if one sample of p in for every loss calcaultion are to be taken
-            delta = (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
+            delta = (extraInput)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
         if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
-            self.input_dual_nxt: NDArray[np.float_] = input_dual - delta
+            self.extraInput_dual_nxt: NDArray[np.float_] = extraInput_dual - delta
         # else if no memory
         elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
-            self.input_dual_nxt = - delta
-        self.input_dual_in_t.append(self.input_dual_nxt)  # append into list in time
+            self.extraInput_dual_nxt = - delta
+        self.extraInput_dual_in_t.append(self.extraInput_dual_nxt)  # append into list in time
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('loss=', loss)
-            print('time=', self.t)
-            print('input_dual_nxt=', self.input_dual_nxt)
+            print('extraInput_dual_nxt=', self.extraInput_dual_nxt)
 
     def update_Rs(self, BigClass: "Big_Class") -> None:
         """

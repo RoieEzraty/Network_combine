@@ -149,22 +149,22 @@ def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_
         if len(nodeData_tuple) != 4:
             print('nodeData_tuple incompatible')
         else:
-            OutputNodes = nodes_tuple[2]
-            OutputNodeData = nodeData_tuple[1]
-            extraOutputNodes = nodes_tuple[3]
-            extraOutputNodeData = nodeData_tuple[2]
+            OutputNodes = nodes_tuple[3]
+            OutputNodeData = nodeData_tuple[2]
+            extraOutputNodes = nodes_tuple[4]
+            extraOutputNodeData = nodeData_tuple[3]
             InterNodes = array([], dtype=int)
             InterNodeData = array([], dtype=float)
     elif len(nodes_tuple) == 6:  # system is in dual mode with inter nodes
-        if len(nodeData_tuple) != 4:
+        if len(nodeData_tuple) != 5:
             print('nodeData_tuple incompatible')
         else:
-            OutputNodes = nodes_tuple[2]
-            OutputNodeData = nodeData_tuple[1]
-            extraOutputNodes = nodes_tuple[3]
-            extraOutputNodeData = nodeData_tuple[2]
-            InterNodes = nodes_tuple[4]
-            InterNodeData = nodeData_tuple[3]
+            OutputNodes = nodes_tuple[3]
+            OutputNodeData = nodeData_tuple[2]
+            extraOutputNodes = nodes_tuple[4]
+            extraOutputNodeData = nodeData_tuple[3]
+            InterNodes = nodes_tuple[5]
+            InterNodeData = nodeData_tuple[4]
     # print('InNodeData', InNodeData)
     # print('OutputNodes', OutputNodes)
     # print('OutputNodeData', OutputNodeData)

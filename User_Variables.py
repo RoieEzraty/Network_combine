@@ -95,6 +95,11 @@ class User_Variables:
             self.targets = encoder.fit_transform(targets_reshaped)
             means = [np.mean(iris['data'][iris['target'] == i], axis=0) for i in range(3)]
             self.means = np.array(means)
+        if self.extraNin != 0:
+            rand_noise = (np.random.uniform(low=0.0, high=1.0, size=[np.shape(self.dataset)[0], self.extraNin]) - 0.5)
+            self.noise = self.bc_noise * rand_noise
+        else:
+            self.noise = zeros([np.shape(self.dataset)[0], self.extraNin])
 
     def assign_alpha_vec(self, alpha: float) -> None:
         """

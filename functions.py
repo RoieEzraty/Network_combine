@@ -49,13 +49,16 @@ def loss_fn_1sample(output: np.ndarray, desired: np.ndarray) -> np.ndarray:
     return loss
 
 
-def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_]],
-                                                   Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]],
+def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]],
                                                    Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
-                                                         NDArray[np.int_]]],
-                                nodeData_tuple: Union[NDArray[np.float_],
-                                                      Tuple[NDArray[np.float_], NDArray[np.float_]],
+                                                         NDArray[np.int_], NDArray[np.int_]],
+                                                   Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
+                                                         NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]],
+                                nodeData_tuple: Union[Tuple[NDArray[np.float_], NDArray[np.float_]],
                                                       Tuple[NDArray[np.float_], NDArray[np.float_],
+                                                            NDArray[np.float_], NDArray[np.float_]],
+                                                      Tuple[NDArray[np.float_], NDArray[np.float_],
+                                                            NDArray[np.float_], NDArray[np.float_],
                                                             NDArray[np.float_]]],
                                 NN: int,
                                 EI: NDArray[np.int_],
@@ -102,14 +105,17 @@ def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArr
     return Cstr_full, Cstr, f
 
 
-def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_]],
-                                         Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]],
+def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]],
                                          Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
-                                               NDArray[np.int_]]],
-                      nodeData_tuple: Union[NDArray[np.float_],
-                                            Tuple[NDArray[np.float_], NDArray[np.float_]],
+                                               NDArray[np.int_], NDArray[np.int_]],
+                                         Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
+                                               NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]],
+                      nodeData_tuple: Union[Tuple[NDArray[np.float_], NDArray[np.float_]],
                                             Tuple[NDArray[np.float_], NDArray[np.float_],
-                                                  NDArray[np.float_]]]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+                                                  NDArray[np.float_], NDArray[np.float_]],
+                                            Tuple[NDArray[np.float_], NDArray[np.float_],
+                                                  NDArray[np.float_], NDArray[np.float_],
+                                                  NDArray[np.float_]]],) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Constraints_nodes sets up the constraints on nodes for specific problem ("measure" or "dual"),
     for specific sampled pressure input_drawn.
@@ -128,30 +134,44 @@ def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_
     GroundNodes - 1D array of nodes that have a constraint of ground (outlet)
     """
     InNodes: NDArray[np.int_] = nodes_tuple[0]
-    GroundNodes: NDArray[np.int_] = nodes_tuple[1]
-    if len(nodes_tuple) == 2:  # system is in measure mode, not dual
-        InNodeData: NDArray[np.float_] = nodeData_tuple
+    InNodeData: NDArray[np.float_] = nodeData_tuple[0]
+    extraInNodes: NDArray[np.int_] = nodes_tuple[1]
+    extraInNodeData: NDArray[np.float_] = nodeData_tuple[1]
+    GroundNodes: NDArray[np.int_] = nodes_tuple[2]
+    if len(nodes_tuple) == 3:  # system is in measure mode, not dual
         OutputNodes: NDArray[np.int_] = array([], dtype=int)
         OutputNodeData: NDArray[np.float_] = array([], dtype=float)
+        extraOutputNodes: NDArray[np.int_] = array([], dtype=int)
+        extraOutputNodeData: NDArray[np.float_] = array([], dtype=float)
         InterNodes: NDArray[np.int_] = array([], dtype=int)
         InterNodeData: NDArray[np.float_] = array([], dtype=float)
-    elif len(nodes_tuple) == 3:  # system is in dual mode
-        InNodeData = nodeData_tuple[0]
-        OutputNodes = nodes_tuple[2]
-        OutputNodeData = nodeData_tuple[1]
-        InterNodes = array([], dtype=int)
-        InterNodeData = array([], dtype=float)
-    elif len(nodes_tuple) == 4:
-        InNodeData = nodeData_tuple[0]
-        OutputNodes = nodes_tuple[2]
-        OutputNodeData = nodeData_tuple[1]
-        InterNodes = nodes_tuple[3]
-        InterNodeData = nodeData_tuple[2]
+    elif len(nodes_tuple) == 5:  # system is in dual mode
+        if len(nodeData_tuple) != 4:
+            print('nodeData_tuple incompatible')
+        else:
+            OutputNodes = nodes_tuple[2]
+            OutputNodeData = nodeData_tuple[1]
+            extraOutputNodes = nodes_tuple[3]
+            extraOutputNodeData = nodeData_tuple[2]
+            InterNodes = array([], dtype=int)
+            InterNodeData = array([], dtype=float)
+    elif len(nodes_tuple) == 6:  # system is in dual mode with inter nodes
+        if len(nodeData_tuple) != 4:
+            print('nodeData_tuple incompatible')
+        else:
+            OutputNodes = nodes_tuple[2]
+            OutputNodeData = nodeData_tuple[1]
+            extraOutputNodes = nodes_tuple[3]
+            extraOutputNodeData = nodeData_tuple[2]
+            InterNodes = nodes_tuple[4]
+            InterNodeData = nodeData_tuple[3]
     # print('InNodeData', InNodeData)
     # print('OutputNodes', OutputNodes)
     # print('OutputNodeData', OutputNodeData)
     # print('InterNodes', InterNodes)
     # print('InterNodeData', InterNodeData)
-    NodeData: NDArray[np.float_] = np.append(np.append(InNodeData, InterNodeData), OutputNodeData)
-    Nodes: NDArray[np.int_] = np.append(np.append(InNodes, InterNodes), OutputNodes)
+    NodeData: NDArray[np.float_] = np.append(np.append(np.append(np.append(InNodeData, extraInNodeData), InterNodeData),
+                                                       OutputNodeData), extraOutputNodeData)
+    Nodes: NDArray[np.int_] = np.append(np.append(np.append(np.append(InNodes, extraInNodes), InterNodes),
+                                                  OutputNodes), extraOutputNodes)
     return NodeData, Nodes, GroundNodes

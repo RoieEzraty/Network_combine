@@ -178,6 +178,7 @@ class Network_State:
                             (self.input_dual_in_t[-1], self.extraInput_dual_in_t[-1], self.output_dual_in_t[-1],
                              self.extraOutput_dual_in_t[-1]),
                             BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+        # print('CstrTuple', CstrTuple)
         self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
 
         # Update the State class variables
@@ -231,6 +232,46 @@ class Network_State:
         else:  # print
             print('loss=', loss)
             print('input_dual_nxt=', self.input_dual_nxt)
+
+    def update_extraInput_dual(self, BigClass: "Big_Class"):
+        """
+        Calculates next pressure values for extra input nodes in dual problem given measurement,
+        either for 1 or 2 sampled pressures
+
+        inputs:
+        BigClass: Class instance containing User_Variables, Network_Structure, etc.
+
+        outputs:
+        extraInput_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
+        """
+        R_update: str = BigClass.Variabs.R_update  # dummy variable
+        loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
+        extraInput_dual: NDArray[np.float_] = self.extraInput_dual_in_t[-1]
+        # print('extraInput_dual', extraInput_dual)
+        extraInput: NDArray[np.float_] = self.extraInput_in_t[-1]
+        # print('extraInput', extraInput)
+        # dot product for alpha in pressure update
+        if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
+            extraInput_prev: NDArray[np.float_] = self.extraInput_in_t[-2]
+            # print('extraInput_prev', extraInput_prev)
+            delta: NDArray[np.float_] = (extraInput-extraInput_prev)*np.dot(BigClass.Variabs.alpha_vec,
+                                                                            loss[0]-loss[1])
+            # print('delta extra input', delta)
+        else:  # if one sample of p in for every loss calcaultion are to be taken
+            delta = (extraInput)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
+
+        # dual problem is different under schemes of change of R
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
+            self.extraInput_dual_nxt: NDArray[np.float_] = extraInput_dual - delta
+        # else if no memory
+        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
+            self.extraInput_dual_nxt = - delta
+        self.extraInput_dual_in_t.append(self.extraInput_dual_nxt)  # append into list in time
+        # if user ask to not print
+        if BigClass.Variabs.supress_prints:
+            pass
+        else:  # print
+            print('extraInput_dual_nxt=', self.extraInput_dual_nxt)
 
     def update_inter_dual(self, BigClass: "Big_Class") -> None:
         """
@@ -303,45 +344,42 @@ class Network_State:
         else:  # print
             print('output_dual_nxt', self.output_dual_nxt)
 
-    def update_extraInput_dual(self, BigClass: "Big_Class"):
+    def update_extraOutput_dual(self, BigClass: "Big_Class"):
         """
-        Calculates next pressure values for extra input nodes in dual problem given measurement,
-        either for 1 or 2 sampled pressures
+        Calculates next output pressure values in dual problem given measurement, either for 1 or 2 sampled pressures
 
         inputs:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
 
         outputs:
-        extraInput_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
+        extraOutput_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
-        loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
-        extraInput_dual: NDArray[np.float_] = self.extraInput_dual_in_t[-1]
-        print('extraInput_dual', extraInput_dual)
-        extraInput: NDArray[np.float_] = self.extraInput_in_t[-1]
-        print('extraInput', extraInput)
-        # dot product for alpha in pressure update
+        loss: NDArray[np.float_] = self.loss_in_t[-1]
+        extraOutput_dual: NDArray[np.float_] = copy.copy(self.extraOutput_dual_in_t[-1])
+        print('extraOutput_dual', extraOutput_dual)
+        # element-wise multiplication for alpha in output update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
-            extraInput_prev: NDArray[np.float_] = self.extraInput_in_t[-2]
-            print('extraInput_prev', extraInput_prev)
-            delta: NDArray[np.float_] = (extraInput-extraInput_prev)*np.dot(BigClass.Variabs.alpha_vec,
-                                                                            loss[0]-loss[1])
-            print('delta extra input', delta)
-        else:  # if one sample of p in for every loss calcaultion are to be taken
-            delta = (extraInput)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
-
+            extraOutput_prev: NDArray[np.float_] = self.extraOutput_in_t[-2]
+            print('self extraOutput', self.extraOutput)
+            print('extraOutput_prev', extraOutput_prev)
+            delta: NDArray[np.float_] = (self.extraOutput-extraOutput_prev) * np.dot(BigClass.Variabs.alpha_vec,
+                                                                                     loss[0]-loss[1])
+        else:
+            delta = self.extraOutput * np.dot(BigClass.Variabs.alpha_vec, loss[0])
+        print('delta', delta)
         # dual problem is different under schemes of change of R
         if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
-            self.extraInput_dual_nxt: NDArray[np.float_] = extraInput_dual - delta
+            self.extraOutput_dual_nxt = extraOutput_dual + delta
         # else if no memory
         elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
-            self.extraInput_dual_nxt = - delta
-        self.extraInput_dual_in_t.append(self.extraInput_dual_nxt)  # append into list in time
+            self.extraOutput_dual_nxt = delta
+        self.extraOutput_dual_in_t.append(self.extraOutput_dual_nxt)
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('extraInput_dual_nxt=', self.extraInput_dual_nxt)
+            print('extraOutput_dual_nxt', self.extraOutput_dual_nxt)
 
     def update_Rs(self, BigClass: "Big_Class") -> None:
         """

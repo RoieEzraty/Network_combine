@@ -69,7 +69,7 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     """
 
     NN: int = len(Strctr.input_nodes_arr) + len(Strctr.extraInput_nodes_arr) + len(Strctr.inter_nodes_arr) + \
-        len(Strctr.output_nodes_arr) + len(Strctr.extraInput_nodes_arr) + 1
+        len(Strctr.output_nodes_arr) + len(Strctr.extraOutput_nodes_arr) + 1
     ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
     EIlst: List[int] = []
     EJlst: List[int] = []

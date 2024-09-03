@@ -19,8 +19,10 @@ if TYPE_CHECKING:
 # ===================================================
 
 
-def build_input_output_and_ground(Nin: int, Ninter: int, Nout: int) -> Tuple[NDArray[np.int_], NDArray[np.int_],
-                                                                             NDArray[np.int_], NDArray[np.int_]]:
+def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int,
+                                  Nout: int, extraNout: int) -> Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                                      NDArray[np.int_], NDArray[np.int_],
+                                                                      NDArray[np.int_], NDArray[np.int_],]:
     """
     build_input_output_and_ground builds the input and output pairs and ground node values as arrays
 
@@ -36,10 +38,17 @@ def build_input_output_and_ground(Nin: int, Ninter: int, Nout: int) -> Tuple[NDA
     output_nodes     - array of nodes with fixed values, for 'XOR' task. default=0
     """
     input_nodes_arr: NDArray[np.int_] = array([i for i in range(Nin)])  # input nodes are first ones named
-    inter_nodes_arr: NDArray[np.int_] = array([Nin + i for i in range(Ninter)])  # output nodes are named later
-    output_nodes_arr: NDArray[np.int_] = array([Nin + Ninter + i for i in range(Nout)])  # output nodes are named later
-    ground_nodes_arr: NDArray[np.int_] = array([Nin + Ninter + Nout])  # last node is ground
-    return input_nodes_arr, inter_nodes_arr, output_nodes_arr, ground_nodes_arr
+    # extra inputs not accounted in loss
+    extraInputs_nodes_arr: NDArray[np.int_] = array([Nin + i for i in range(extraNin)], dtype=np.int_)
+    inter_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + i for i in range(Ninter)])  # intermediate nodes
+    output_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + i for i in range(Nout)])  # output nodes
+    # extra outputs not accounted in loss
+    extraOutput_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)],
+                                                    dtype=np.int_)
+    ground_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + extraNout])  # last node is ground
+    inInterOutGround_tuple = (input_nodes_arr, extraInputs_nodes_arr, inter_nodes_arr, output_nodes_arr,
+                              extraOutput_nodes_arr, ground_nodes_arr)
+    return inInterOutGround_tuple
 
 
 def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDArray[np.int_], List[NDArray[np.int_]],
@@ -59,7 +68,8 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     NN         - NNodes, int
     """
 
-    NN: int = len(Strctr.input_nodes_arr) + len(Strctr.output_nodes_arr) + len(Strctr.inter_nodes_arr) + 1
+    NN: int = len(Strctr.input_nodes_arr) + len(Strctr.extraInput_nodes_arr) + len(Strctr.inter_nodes_arr) + \
+        len(Strctr.output_nodes_arr) + len(Strctr.extraOutput_nodes_arr) + 1
     ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
     EIlst: List[int] = []
     EJlst: List[int] = []
@@ -70,8 +80,32 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
             EIlst.append(inNode)
             EJlst.append(outNode)
 
+    # connect inputs to extraOutputs
+    for i, inNode in enumerate(Strctr.input_nodes_arr):
+        for j, outNode in enumerate(Strctr.extraOutput_nodes_arr):
+            EIlst.append(inNode)
+            EJlst.append(outNode)
+
     # connect input to inter
     for i, inNode in enumerate(Strctr.input_nodes_arr):
+        for j, interNode in enumerate(Strctr.inter_nodes_arr):
+            EIlst.append(inNode)
+            EJlst.append(interNode)
+
+    # connect extraInputs to outputs
+    for i, inNode in enumerate(Strctr.extraInput_nodes_arr):
+        for j, outNode in enumerate(Strctr.output_nodes_arr):
+            EIlst.append(inNode)
+            EJlst.append(outNode)
+
+    # connect extraInputs to extraOutputs
+    for i, inNode in enumerate(Strctr.extraInput_nodes_arr):
+        for j, outNode in enumerate(Strctr.extraOutput_nodes_arr):
+            EIlst.append(inNode)
+            EJlst.append(outNode)
+
+    # connect extraInputs to inter
+    for i, inNode in enumerate(Strctr.extraInput_nodes_arr):
         for j, interNode in enumerate(Strctr.inter_nodes_arr):
             EIlst.append(inNode)
             EJlst.append(interNode)
@@ -82,13 +116,29 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
             EIlst.append(interNode)
             EJlst.append(outNode)
 
+    # connect inter to extraOutput
+    for i, interNode in enumerate(Strctr.inter_nodes_arr):
+        for j, outNode in enumerate(Strctr.extraOutput_nodes_arr):
+            EIlst.append(interNode)
+            EJlst.append(outNode)
+
     # connect input to ground
     for i, inNode in enumerate(Strctr.input_nodes_arr):
         EIlst.append(inNode)
         EJlst.append(ground_node)
 
+    # connect extraInput to ground
+    for i, inNode in enumerate(Strctr.extraInput_nodes_arr):
+        EIlst.append(inNode)
+        EJlst.append(ground_node)
+
     # connect output to ground
     for i, outNode in enumerate(Strctr.output_nodes_arr):
+        EIlst.append(outNode)
+        EJlst.append(ground_node)
+
+    # connect extraOutput to ground
+    for i, outNode in enumerate(Strctr.extraOutput_nodes_arr):
         EIlst.append(outNode)
         EJlst.append(ground_node)
 

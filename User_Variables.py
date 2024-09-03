@@ -22,13 +22,16 @@ class User_Variables:
     Class with variables given by user.
     These remain the same along the simulation
     """
-    def __init__(self, iterations: int, Nin: int, Nout: int, gamma: NDArray[np.float_], R_update: str, use_p_tag: bool,
-                 supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
-                 M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0, meausure_accuracy_every: Optional[int] = None) -> None:
+    def __init__(self, iterations: int, Nin: int, extraNin: int, Nout: int, extraNout: int, gamma: NDArray[np.float_],
+                 R_update: str, use_p_tag: bool, supress_prints: bool, bc_noise: float, access_interNodes: bool,
+                 task_type: str, M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0,
+                 meausure_accuracy_every: Optional[int] = None) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
+        self.extraNin: int = extraNin
         self.Nout: int = Nout
+        self.extraNout: int = extraNout
         if Ninter is not None:
             self.Ninter: int = Ninter
             self.NN: int = Nin + Nout + Ninter
@@ -92,6 +95,11 @@ class User_Variables:
             self.targets = encoder.fit_transform(targets_reshaped)
             means = [np.mean(iris['data'][iris['target'] == i], axis=0) for i in range(3)]
             self.means = np.array(means)
+        if self.extraNin != 0:
+            rand_noise = (np.random.uniform(low=0.0, high=1.0, size=[np.shape(self.dataset)[0], self.extraNin]) - 0.5)
+            self.noise = self.bc_noise * rand_noise
+        else:
+            self.noise = zeros([np.shape(self.dataset)[0], self.extraNin])
 
     def assign_alpha_vec(self, alpha: float) -> None:
         """

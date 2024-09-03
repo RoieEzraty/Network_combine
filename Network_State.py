@@ -93,6 +93,8 @@ class Network_State:
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
         if noise_to_extra:
             self.extraInput += Variabs.noise[i % np.shape(Variabs.noise)[0]]
+            self.extraOutput: NDArray[np.float_] = copy.copy(self.extraOutput_in_t[-1])
+            self.extraOutput += Variabs.noise[i % np.shape(Variabs.noise)[0]]
         if Variabs.task_type == 'Iris_classification':
             self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
                                                          self.targets_mat)
@@ -106,8 +108,10 @@ class Network_State:
             pass
         else:  # print
             print('input_drawn', self.input_drawn)
-            print('extraInput', self.extraInput)
+            # print('extraInput', self.extraInput)
             print('desired output=', self.desired)
+            if i % 2:
+                print('extraOutput', self.extraOutput)
 
     def draw_p_means_Iris(self, Variabs: "User_Variables", i: int) -> None:
         """
@@ -137,7 +141,8 @@ class Network_State:
         else:  # print
             print('targets_mat', self.targets_mat)
 
-    def solve_flow_given_problem(self, BigClass: "Big_Class", problem: str) -> None:
+    def solve_flow_given_problem(self, BigClass: "Big_Class", problem: str,
+                                 noise_to_extra: Optional[bool] = False) -> None:
         """
         Calculates the constraint matrix Cstr, then solves the flow,
         using functions from functions.py and solve.py,
@@ -155,12 +160,20 @@ class Network_State:
         """
         # Calculate pressure p and flow u
         if problem == 'measure' or problem == 'measure_for_mean' or problem == 'measure_for_accuracy':
-            CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
-            CstrTuple = functions.setup_constraints_given_pin(
-                        (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
-                         BigClass.Strctr.ground_nodes_arr),
-                        (self.input_drawn, self.extraInput), BigClass.Strctr.NN, BigClass.Strctr.EI,
-                        BigClass.Strctr.EJ)
+            if noise_to_extra:
+                CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
+                CstrTuple = functions.setup_constraints_given_pin(
+                            (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
+                             BigClass.Strctr.extraInput_nodes_arr, BigClass.Strctr.ground_nodes_arr),
+                            (self.input_drawn, self.extraInput, self.extraOutput), BigClass.Strctr.NN,
+                            BigClass.Strctr.EI, BigClass.Strctr.EJ)
+            else:
+                CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
+                CstrTuple = functions.setup_constraints_given_pin(
+                            (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
+                             BigClass.Strctr.ground_nodes_arr),
+                            (self.input_drawn, self.extraInput), BigClass.Strctr.NN, BigClass.Strctr.EI,
+                            BigClass.Strctr.EJ)
         elif problem == 'dual':
             if BigClass.Variabs.access_interNodes:  # if dual problem accesses interNodes separately
                 CstrTuple = functions.setup_constraints_given_pin(

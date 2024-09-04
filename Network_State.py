@@ -92,9 +92,10 @@ class Network_State:
         self.input_drawn: NDArray[np.float_] = copy.copy(Variabs.dataset[i % np.shape(Variabs.dataset)[0]])
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
         if noise_to_extra:
-            self.extraInput += Variabs.noise[i % np.shape(Variabs.noise)[0]]
+            self.extraInput += Variabs.noise_in[i % np.shape(Variabs.noise_in)[0]]
             self.extraOutput: NDArray[np.float_] = copy.copy(self.extraOutput_in_t[-1])
-            self.extraOutput += Variabs.noise[i % np.shape(Variabs.noise)[0]]
+            print('extraOutput before noise', self.extraOutput)
+            self.extraOutput += Variabs.noise_out[i % np.shape(Variabs.noise_out)[0]]
         if Variabs.task_type == 'Iris_classification':
             self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
                                                          self.targets_mat)
@@ -164,11 +165,11 @@ class Network_State:
                 CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
                 CstrTuple = functions.setup_constraints_given_pin(
                             (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
-                             BigClass.Strctr.extraInput_nodes_arr, BigClass.Strctr.ground_nodes_arr),
+                             BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.extraOutput_nodes_arr),
                             (self.input_drawn, self.extraInput, self.extraOutput), BigClass.Strctr.NN,
                             BigClass.Strctr.EI, BigClass.Strctr.EJ)
+                print('CstrTuple', CstrTuple)
             else:
-                CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
                 CstrTuple = functions.setup_constraints_given_pin(
                             (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
                              BigClass.Strctr.ground_nodes_arr),
@@ -198,11 +199,12 @@ class Network_State:
         if problem in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:
             # Output is at output nodes, ravel so sizes [Nout,]
             self.output: NDArray[np.float_] = self.p[BigClass.Strctr.output_nodes_arr].ravel()
-            self.extraOutput: NDArray[np.float_] = self.p[BigClass.Strctr.extraOutput_nodes_arr].ravel()
+            self.extraOutput = self.p[BigClass.Strctr.extraOutput_nodes_arr].ravel()
             if BigClass.Variabs.supress_prints:
                 pass
             else:  # print
                 print('output measured=', self.output)
+                print('extraOutput measured=', self.extraOutput)
 
             if problem == 'measure':  # Only save in time if measuring during training
                 self.output_in_t.append(self.output)

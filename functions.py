@@ -151,6 +151,16 @@ def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_
         extraOutputNodeData: NDArray[np.float_] = array([], dtype=float)
         InterNodes: NDArray[np.int_] = array([], dtype=int)
         InterNodeData: NDArray[np.float_] = array([], dtype=float)
+    elif len(nodes_tuple) == 4:  # system is in measure mode, not dual
+        if len(nodeData_tuple) != 3:
+            print('nodeData_tuple incompatible')
+        else:
+            OutputNodes = array([], dtype=int)
+            OutputNodeData = array([], dtype=float)
+            extraOutputNodes = nodes_tuple[3]
+            extraOutputNodeData = nodeData_tuple[2]
+            InterNodes = array([], dtype=int)
+            InterNodeData = array([], dtype=float)
     elif len(nodes_tuple) == 5:  # system is in dual mode
         if len(nodeData_tuple) != 4:
             print('nodeData_tuple incompatible')

@@ -95,11 +95,30 @@ class User_Variables:
             self.targets = encoder.fit_transform(targets_reshaped)
             means = [np.mean(iris['data'][iris['target'] == i], axis=0) for i in range(3)]
             self.means = np.array(means)
-        if self.extraNin != 0:
-            rand_noise = (np.random.uniform(low=0.0, high=1.0, size=[np.shape(self.dataset)[0], self.extraNin]) - 0.5)
-            self.noise = self.bc_noise * rand_noise
+
+    def create_noise_for_extras(self) -> None:
+        """
+        add desc
+        """
+        dataset_size = np.shape(self.dataset)[0]
+
+        def generate_uniform_noise(size: list[int]) -> NDArray[np.float_]:
+            """
+            add descr
+            """
+            return (np.random.uniform(low=0.0, high=1.0, size=size) - 0.5) * self.bc_noise
+
+        if self.extraNin != 0:  # generate noise to add to extra input nodes
+            self.noise_in = generate_uniform_noise([dataset_size, self.extraNin])
         else:
-            self.noise = zeros([np.shape(self.dataset)[0], self.extraNin])
+            print('no extra input nodes, no noise added')
+            self.noise_in = zeros([dataset_size, self.extraNin])
+
+        if self.extraNout != 0:  # generate noise to add to extra output nodes
+            self.noise_out = generate_uniform_noise([dataset_size, self.extraNout])
+        else:
+            print('no extra output nodes, no noise added')
+            self.noise_out = zeros([dataset_size, self.extraNout])
 
     def assign_alpha_vec(self, alpha: float) -> None:
         """

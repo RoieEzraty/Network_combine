@@ -25,15 +25,14 @@ class Network_State:
     what ends with _in_t holds all time instances of the variable, each list index is different t
     what ends w/out _in_t is at current time instance self.t
     """
-    def __init__(self, Variabs: "User_Variables", Ninter: Optional[int] = None) -> None:
+    def __init__(self, Variabs: "User_Variables") -> None:
         super().__init__()
         self.t: int = 0  # time, defined as number of R updates, i.e. times the learning rate alpha is used.
         self.p: NDArray[np.float_] = array([])  # pressure
         self.u: NDArray[np.float_] = array([])  # flow rate
         self.input_drawn_in_t: List[NDArray[np.float_]] = []  # pressure at inputs in time, sampled
         self.extraInput_in_t: List[NDArray[np.float_]] = []  # pressure at extra inputs in time
-        if Ninter is not None:
-            self.inter_in_t: List[NDArray[np.float_]] = []
+        self.inter_in_t: List[NDArray[np.float_]] = []
         # pressure at outputs and extra in time
         self.output_in_t: List[NDArray[np.float_]] = []
         self.extraOutput_in_t: List[NDArray[np.float_]] = []
@@ -41,8 +40,7 @@ class Network_State:
         # inputs and extra inputs at dual problem in time
         self.input_dual_in_t: List[NDArray[np.float_]] = [1.0 * np.ones(Variabs.Nin)]
         self.extraInput_dual_in_t: List[NDArray[np.float_]] = [1.0 * np.ones(Variabs.extraNin)]
-        if Ninter is not None:
-            self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Ninter)]
+        self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
         # outputs and extra outputs during dual problem in time
         self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.Nout)]
         self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
@@ -94,8 +92,10 @@ class Network_State:
         if noise_to_extra:
             self.extraInput += Variabs.noise_in[i % np.shape(Variabs.noise_in)[0]]
             self.extraOutput: NDArray[np.float_] = copy.copy(self.extraOutput_in_t[-1])
-            print('extraOutput before noise', self.extraOutput)
             self.extraOutput += Variabs.noise_out[i % np.shape(Variabs.noise_out)[0]]
+            print('inter before noise', self.inter)
+            self.inter = copy.copy(self.inter) + Variabs.noise_inter[i % np.shape(Variabs.noise_inter)[0]]
+            print('inter after noise', self.inter)
         if Variabs.task_type == 'Iris_classification':
             self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
                                                          self.targets_mat)
@@ -111,8 +111,6 @@ class Network_State:
             print('input_drawn', self.input_drawn)
             # print('extraInput', self.extraInput)
             print('desired output=', self.desired)
-            if i % 2:
-                print('extraOutput', self.extraOutput)
 
     def draw_p_means_Iris(self, Variabs: "User_Variables", i: int) -> None:
         """
@@ -165,8 +163,8 @@ class Network_State:
                 CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
                 CstrTuple = functions.setup_constraints_given_pin(
                             (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
-                             BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.extraOutput_nodes_arr),
-                            (self.input_drawn, self.extraInput, self.extraOutput), BigClass.Strctr.NN,
+                             BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.inter_nodes_arr),
+                            (self.input_drawn, self.extraInput, self.inter), BigClass.Strctr.NN,
                             BigClass.Strctr.EI, BigClass.Strctr.EJ)
                 print('CstrTuple', CstrTuple)
             else:
@@ -192,25 +190,24 @@ class Network_State:
                             (self.input_dual_in_t[-1], self.extraInput_dual_in_t[-1], self.output_dual_in_t[-1],
                              self.extraOutput_dual_in_t[-1]),
                             BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
-        # print('CstrTuple', CstrTuple)
         self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
 
         # Update the State class variables
         if problem in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:
-            # Output is at output nodes, ravel so sizes [Nout,]
-            self.output: NDArray[np.float_] = self.p[BigClass.Strctr.output_nodes_arr].ravel()
-            self.extraOutput = self.p[BigClass.Strctr.extraOutput_nodes_arr].ravel()
+            self.inter = copy.copy(self.p[BigClass.Strctr.inter_nodes_arr].ravel())
+            self.output: NDArray[np.float_] = copy.copy(self.p[BigClass.Strctr.output_nodes_arr].ravel())
+            self.extraOutput = copy.copy(self.p[BigClass.Strctr.extraOutput_nodes_arr].ravel())
             if BigClass.Variabs.supress_prints:
                 pass
             else:  # print
+                print('inter measured=', self.inter)
                 print('output measured=', self.output)
                 print('extraOutput measured=', self.extraOutput)
 
             if problem == 'measure':  # Only save in time if measuring during training
                 self.output_in_t.append(self.output)
                 self.extraOutput_in_t.append(self.extraOutput)
-                if BigClass.Variabs.access_interNodes:
-                    self.inter_in_t.append(self.p[BigClass.Strctr.inter_nodes_arr].ravel())
+                self.inter_in_t.append(self.inter)
 
     def update_input_dual(self, BigClass: "Big_Class") -> None:
         """
@@ -245,7 +242,6 @@ class Network_State:
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('loss=', loss)
             print('input_dual_nxt=', self.input_dual_nxt)
 
     def update_extraInput_dual(self, BigClass: "Big_Class"):
@@ -299,15 +295,20 @@ class Network_State:
         outputs:
         interNodes_dual_nxt: np.ndarray sized [Ninter,] denoting inter nodes pressure of dual problem at time t
         """
+        print('updating inters')
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
+        print('loss for inters update', loss)
         inter_dual: NDArray[np.float_] = self.inter_dual_in_t[-1]
         inter: NDArray[np.float_] = self.inter_in_t[-1]
         # dot product for alpha in inter nodes pressure update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
             inter_prev: NDArray[np.float_] = self.inter_in_t[-2]
+            print('inter for delta', inter)
+            print('inter_prev for delta', inter_prev)
             delta: NDArray[np.float_] = (inter-inter_prev)*np.dot(BigClass.Variabs.alpha_vec,
                                                                   loss[0]-loss[1])
+            print('delta', delta)
         else:  # if one sample of p in for every loss calcaultion are to be taken
             delta = inter*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
@@ -372,12 +373,9 @@ class Network_State:
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]
         extraOutput_dual: NDArray[np.float_] = copy.copy(self.extraOutput_dual_in_t[-1])
-        print('extraOutput_dual', extraOutput_dual)
         # element-wise multiplication for alpha in output update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
             extraOutput_prev: NDArray[np.float_] = self.extraOutput_in_t[-2]
-            print('self extraOutput', self.extraOutput)
-            print('extraOutput_prev', extraOutput_prev)
             delta: NDArray[np.float_] = (self.extraOutput-extraOutput_prev) * np.dot(BigClass.Variabs.alpha_vec,
                                                                                      loss[0]-loss[1])
         else:
@@ -440,6 +438,7 @@ class Network_State:
                                                                      self.desired_in_t[-2])
         elif BigClass.Variabs.loss_fn == functions.loss_fn_1sample:
             self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
+        print('loss after calc_loss', self.loss)
         self.loss_in_t.append(self.loss)
 
     def calculate_accuracy_fullDataset(self, BigClass: "Big_Class") -> None:

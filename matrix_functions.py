@@ -40,7 +40,7 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int,
     input_nodes_arr: NDArray[np.int_] = array([i for i in range(Nin)])  # input nodes are first ones named
     # extra inputs not accounted in loss
     extraInputs_nodes_arr: NDArray[np.int_] = array([Nin + i for i in range(extraNin)], dtype=np.int_)
-    inter_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + i for i in range(Ninter)])  # intermediate nodes
+    inter_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + i for i in range(Ninter)], dtype=np.int_)  # intermediate nodes
     output_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + i for i in range(Nout)])  # output nodes
     # extra outputs not accounted in loss
     extraOutput_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)],

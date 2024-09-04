@@ -22,9 +22,9 @@ class User_Variables:
     Class with variables given by user.
     These remain the same along the simulation
     """
-    def __init__(self, iterations: int, Nin: int, extraNin: int, Nout: int, extraNout: int, gamma: NDArray[np.float_],
-                 R_update: str, use_p_tag: bool, supress_prints: bool, bc_noise: float, access_interNodes: bool,
-                 task_type: str, M_values: NDArray[np.float_] = array([0]), Ninter: Optional[int] = 0,
+    def __init__(self, iterations: int, Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int,
+                 gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, supress_prints: bool, bc_noise: float,
+                 access_interNodes: bool, task_type: str, M_values: NDArray[np.float_] = array([0]),
                  meausure_accuracy_every: Optional[int] = None) -> None:
 
         self.iterations: int = iterations
@@ -32,11 +32,8 @@ class User_Variables:
         self.extraNin: int = extraNin
         self.Nout: int = Nout
         self.extraNout: int = extraNout
-        if Ninter is not None:
-            self.Ninter: int = Ninter
-            self.NN: int = Nin + Nout + Ninter
-        else:
-            self.NN = Nin + Nout
+        self.Ninter: int = Ninter
+        self.NN: int = Nin + extraNin + Nout + extraNout + Ninter
         self.gamma: NDArray[np.float_] = gamma
         self.use_p_tag: bool = use_p_tag
         if use_p_tag:
@@ -113,6 +110,12 @@ class User_Variables:
         else:
             print('no extra input nodes, no noise added')
             self.noise_in = zeros([dataset_size, self.extraNin])
+
+        if self.Ninter != 0:  # generate noise to add to extra input nodes
+            self.noise_inter = generate_uniform_noise([dataset_size, self.Ninter])
+        else:
+            print('no inter nodes, no noise added')
+            self.noise_inter = zeros([dataset_size, self.extraNin])
 
         if self.extraNout != 0:  # generate noise to add to extra output nodes
             self.noise_out = generate_uniform_noise([dataset_size, self.extraNout])

@@ -157,6 +157,66 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     return EI, EJ, EIEJ_plots, DM, NE, NN
 
 
+def build_incidence_partialInter(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                                       List[NDArray[np.int_]], NDArray[np.int_],
+                                                                       int, int]:
+    """
+    Builds incidence matrix DM as np.array [NEdges, NNodes]
+    its meaning is 1 at input node and -1 at outpus for every row which resembles one edge.
+
+    input (extracted from Variabs input):
+    Strctr: "Network_Structure" class instance with the input, intermediate and output nodes
+
+    output:
+    EI, EJ     - 1D np.arrays sized NEdges such that EI[i] is node connected to EJ[i] at certain edge
+    EIEJ_plots - EI, EJ divided to pairs for ease of use
+    DM         - Incidence matrix as np.array [NEdges, NNodes]
+    NE         - NEdges, int
+    NN         - NNodes, int
+    """
+
+    NN: int = len(Strctr.input_nodes_arr) + len(Strctr.extraInput_nodes_arr) + len(Strctr.inter_nodes_arr) + \
+        len(Strctr.output_nodes_arr) + len(Strctr.extraOutput_nodes_arr) + 1
+    ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
+    EIlst: List[int] = []
+    EJlst: List[int] = []
+
+    # connect input to inter
+    k = 0
+    for i, inNode in enumerate(Strctr.input_nodes_arr):
+        for j, outputNode in enumerate(Strctr.output_nodes_arr):
+            interNode = Strctr.inter_nodes_arr[k]
+            EIlst.append(inNode)
+            EJlst.append(interNode)
+            EIlst.append(interNode)
+            EJlst.append(outputNode)
+            k += 1
+
+    # connect input to ground
+    for i, inNode in enumerate(Strctr.input_nodes_arr):
+        EIlst.append(inNode)
+        EJlst.append(ground_node)
+
+    # connect output to ground
+    for i, outNode in enumerate(Strctr.output_nodes_arr):
+        EIlst.append(outNode)
+        EJlst.append(ground_node)
+
+    EI: NDArray[np.int_] = array(EIlst)
+    EJ: NDArray[np.int_] = array(EJlst)
+    NE: int = len(EI)
+
+    # for plots
+    EIEJ_plots: List = [(EI[i], EJ[i]) for i in range(len(EI))]
+
+    DM: NDArray[np.int_] = zeros([NE, NN], dtype=np.int_)  # Incidence matrix
+    for i in range(NE):
+        DM[i, int(EI[i])] = +1.
+        DM[i, int(EJ[i])] = -1.
+
+    return EI, EJ, EIEJ_plots, DM, NE, NN
+
+
 def buildL(BigClass: "Big_Class", DM: NDArray[np.int_], K_mat: NDArray[np.float_], Cstr: NDArray[np.float_],
            NN: int) -> Tuple[NDArray[np.float_], NDArray[np.float_]]:
     """

@@ -94,7 +94,8 @@ class Network_State:
             self.extraOutput: NDArray[np.float_] = copy.copy(self.extraOutput_in_t[-1])
             self.extraOutput += Variabs.noise_out[i % np.shape(Variabs.noise_out)[0]]
             print('inter before noise', self.inter)
-            self.inter = copy.copy(self.inter) + Variabs.noise_inter[i % np.shape(Variabs.noise_inter)[0]]
+            self.inter: NDArray[np.float_] = copy.copy(self.inter) + \
+                Variabs.noise_inter[i % np.shape(Variabs.noise_inter)[0]]
             print('inter after noise', self.inter)
         if Variabs.task_type == 'Iris_classification':
             self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
@@ -141,7 +142,7 @@ class Network_State:
             print('targets_mat', self.targets_mat)
 
     def solve_flow_given_problem(self, BigClass: "Big_Class", problem: str,
-                                 noise_to_extra: Optional[bool] = False) -> None:
+                                 noise_to_extra: Optional[bool] = False, access_inters: Optional[bool] = False) -> None:
         """
         Calculates the constraint matrix Cstr, then solves the flow,
         using functions from functions.py and solve.py,
@@ -166,7 +167,6 @@ class Network_State:
                              BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.inter_nodes_arr),
                             (self.input_drawn, self.extraInput, self.inter), BigClass.Strctr.NN,
                             BigClass.Strctr.EI, BigClass.Strctr.EJ)
-                print('CstrTuple', CstrTuple)
             else:
                 CstrTuple = functions.setup_constraints_given_pin(
                             (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
@@ -174,7 +174,7 @@ class Network_State:
                             (self.input_drawn, self.extraInput), BigClass.Strctr.NN, BigClass.Strctr.EI,
                             BigClass.Strctr.EJ)
         elif problem == 'dual':
-            if BigClass.Variabs.access_interNodes:  # if dual problem accesses interNodes separately
+            if BigClass.Variabs.access_interNodes or access_inters:  # if dual problem accesses interNodes separately
                 CstrTuple = functions.setup_constraints_given_pin(
                             (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
                              BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.output_nodes_arr,
@@ -190,6 +190,7 @@ class Network_State:
                             (self.input_dual_in_t[-1], self.extraInput_dual_in_t[-1], self.output_dual_in_t[-1],
                              self.extraOutput_dual_in_t[-1]),
                             BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+        # print('CStr Tuple', CstrTuple)
         self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
 
         # Update the State class variables
@@ -295,7 +296,6 @@ class Network_State:
         outputs:
         interNodes_dual_nxt: np.ndarray sized [Ninter,] denoting inter nodes pressure of dual problem at time t
         """
-        print('updating inters')
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
         print('loss for inters update', loss)
@@ -409,7 +409,8 @@ class Network_State:
         if BigClass.Variabs.R_update == 'deltaR_propto_dp':  # delta_R propto p_in-p_out
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
-            self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
+            self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
+            # self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto flow Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q

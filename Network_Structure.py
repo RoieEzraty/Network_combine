@@ -27,7 +27,7 @@ class Network_Structure:
         self.extraOutput_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[4]
         self.ground_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[5]
 
-    def build_incidence(self) -> None:
+    def build_incidence(self, type: str = 'FC') -> None:
         """
         build_incidence builds the incidence matrix DM
 
@@ -42,7 +42,11 @@ class Network_Structure:
         NE         - int, # edges in network
         NN         - int, # nodes in network
         """
-        self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence(self)
+        if type == 'FC':
+            self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence(self)
+        elif type == 'partialInter':
+            print('partialInter is true')
+            self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence_partialInter(self)
 
     def build_edges(self) -> None:
         """

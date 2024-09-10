@@ -298,7 +298,6 @@ class Network_State:
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
-        print('loss for inters update', loss)
         inter_dual: NDArray[np.float_] = self.inter_dual_in_t[-1]
         inter: NDArray[np.float_] = self.inter_in_t[-1]
         # dot product for alpha in inter nodes pressure update
@@ -407,10 +406,11 @@ class Network_State:
         R_vec: NDArray[np.float_] = self.R_in_t[-1]
         delta_p: NDArray[np.float_] = self.u * R_vec
         if BigClass.Variabs.R_update == 'deltaR_propto_dp':  # delta_R propto p_in-p_out
-            self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
+            self.R_in_t.append(np.abs(R_vec + BigClass.Variabs.gamma * delta_p))
+            # self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
-            # self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
-            self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
+            self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
+            # self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto flow Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q

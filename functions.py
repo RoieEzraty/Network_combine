@@ -94,8 +94,6 @@ def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArr
     NodeData: NDArray[np.float_]  # type hint
     Nodes: NDArray[np.int_]  # type hint
     GroundNodes: NDArray[np.int_]  # type hint
-    print('nodes_tuple', nodes_tuple)
-    print('nodeData_tuple', nodeData_tuple)
     NodeData, Nodes, GroundNodes = Constraints_nodes(nodes_tuple, nodeData_tuple)
 
     print('NodeData', NodeData)

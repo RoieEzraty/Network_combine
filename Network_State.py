@@ -45,6 +45,8 @@ class Network_State:
         self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.Nout)]
         self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
         self.loss_in_t: List[NDArray[np.float_]] = []
+        # Other sizes that make problems sometimes
+        self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
 
     def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
         """
@@ -75,7 +77,8 @@ class Network_State:
         self.accuracy_in_t: NDArray[np.float_] = zeros(accuracy_size)
         self.t_for_accuracy: NDArray[np.int_] = zeros(accuracy_size, dtype=np.int_)
 
-    def draw_p_in_and_desired(self, Variabs: "User_Variables", i: int, noise_to_extra: Optional[bool] = False) -> None:
+    def draw_p_in_and_desired(self, Variabs: "User_Variables", i: int, noise_to_extra: Optional[bool] = False,
+                              problem: Optional[str] = "measure") -> None:
         """
         Every time step, draw random input pressures and calculate the desired output given input
 
@@ -88,7 +91,6 @@ class Network_State:
         desired: np.ndarray sized [Nout,], desired output defined by the task M*p_input
         """
         self.input_drawn: NDArray[np.float_] = copy.copy(Variabs.dataset[i % np.shape(Variabs.dataset)[0]])
-        self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
         if noise_to_extra:
             self.extraInput += Variabs.noise_in[i % np.shape(Variabs.noise_in)[0]]
             self.extraOutput: NDArray[np.float_] = copy.copy(self.extraOutput_in_t[-1])
@@ -103,9 +105,12 @@ class Network_State:
             print('onehot_target', Variabs.targets[i % np.shape(Variabs.dataset)[0]])
         else:
             self.desired = Variabs.targets[i % np.shape(Variabs.dataset)[0]]
-        self.input_drawn_in_t.append(self.input_drawn)
-        self.extraInput_in_t.append(self.extraInput)
-        self.desired_in_t.append(self.desired)
+        if problem == 'measure_for_accuracy':  # don't add to time vector if this is accuracy calculation
+            pass
+        else:
+            self.input_drawn_in_t.append(self.input_drawn)
+            self.extraInput_in_t.append(self.extraInput)
+            self.desired_in_t.append(self.desired)
         if Variabs.supress_prints:
             pass
         else:  # print
@@ -125,6 +130,7 @@ class Network_State:
         input_drawn: np.ndarray sized [Nin,], input pressures
         """
         self.input_drawn = Variabs.means[i]
+        print('input_drawn', self.input_drawn)
 
     def assign_targets_Iris(self, BigClass: "Big_Class") -> None:
         """
@@ -409,8 +415,8 @@ class Network_State:
             self.R_in_t.append(np.abs(R_vec + BigClass.Variabs.gamma * delta_p))
             # self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
-            self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
-            # self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
+            # self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
+            self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto flow Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q
@@ -445,7 +451,7 @@ class Network_State:
     def calculate_accuracy_fullDataset(self, BigClass: "Big_Class") -> None:
         self.accuracy_vec: NDArray[np.int_] = zeros(np.shape(BigClass.Variabs.dataset)[0], dtype=np.int_)
         for i, datapoint in enumerate(BigClass.Variabs.dataset):
-            self.draw_p_in_and_desired(BigClass.Variabs, i)
+            self.draw_p_in_and_desired(BigClass.Variabs, i, problem='measure_for_accuracy')
             self.solve_flow_given_problem(BigClass, "measure_for_accuracy")  # measure and don't change resistances
             print('net prediction', np.sum((self.targets_mat - self.output)**2, axis=1))
             self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,

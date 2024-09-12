@@ -81,8 +81,8 @@ class User_Variables:
         elif self.task_type == 'Iris_classification':
             # Load the Iris dataset
             iris = load_iris()
-            # dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
-            dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=3)
+            dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
+            # dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=3)
             # Min-Max Scale dataset to [0, 5]
             min_max_scaler = MinMaxScaler(feature_range=(0, 5))
             self.dataset = min_max_scaler.fit_transform(dataset)

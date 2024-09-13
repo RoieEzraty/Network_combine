@@ -95,14 +95,11 @@ class Network_State:
             self.extraInput += Variabs.noise_in[i % np.shape(Variabs.noise_in)[0]]
             self.extraOutput: NDArray[np.float_] = copy.copy(self.extraOutput_in_t[-1])
             self.extraOutput += Variabs.noise_out[i % np.shape(Variabs.noise_out)[0]]
-            print('inter before noise', self.inter)
             self.inter: NDArray[np.float_] = copy.copy(self.inter) + \
                 Variabs.noise_inter[i % np.shape(Variabs.noise_inter)[0]]
-            print('inter after noise', self.inter)
         if Variabs.task_type == 'Iris_classification':
             self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
                                                          self.targets_mat)
-            print('onehot_target', Variabs.targets[i % np.shape(Variabs.dataset)[0]])
         else:
             self.desired = Variabs.targets[i % np.shape(Variabs.dataset)[0]]
         if problem == 'measure_for_accuracy':  # don't add to time vector if this is accuracy calculation
@@ -130,7 +127,6 @@ class Network_State:
         input_drawn: np.ndarray sized [Nin,], input pressures
         """
         self.input_drawn = Variabs.means[i]
-        print('input_drawn', self.input_drawn)
 
     def assign_targets_Iris(self, BigClass: "Big_Class") -> None:
         """
@@ -309,11 +305,8 @@ class Network_State:
         # dot product for alpha in inter nodes pressure update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
             inter_prev: NDArray[np.float_] = self.inter_in_t[-2]
-            print('inter for delta', inter)
-            print('inter_prev for delta', inter_prev)
             delta: NDArray[np.float_] = (inter-inter_prev)*np.dot(BigClass.Variabs.alpha_vec,
                                                                   loss[0]-loss[1])
-            print('delta', delta)
         else:  # if one sample of p in for every loss calcaultion are to be taken
             delta = inter*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
@@ -385,7 +378,6 @@ class Network_State:
                                                                                      loss[0]-loss[1])
         else:
             delta = self.extraOutput * np.dot(BigClass.Variabs.alpha_vec, loss[0])
-        print('delta', delta)
         # dual problem is different under schemes of change of R
         if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
             self.extraOutput_dual_nxt = extraOutput_dual + delta
@@ -445,7 +437,6 @@ class Network_State:
                                                                      self.desired_in_t[-2])
         elif BigClass.Variabs.loss_fn == functions.loss_fn_1sample:
             self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
-        print('loss after calc_loss', self.loss)
         self.loss_in_t.append(self.loss)
 
     def calculate_accuracy_fullDataset(self, BigClass: "Big_Class") -> None:
@@ -453,7 +444,7 @@ class Network_State:
         for i, datapoint in enumerate(BigClass.Variabs.dataset):
             self.draw_p_in_and_desired(BigClass.Variabs, i, problem='measure_for_accuracy')
             self.solve_flow_given_problem(BigClass, "measure_for_accuracy")  # measure and don't change resistances
-            print('net prediction', np.sum((self.targets_mat - self.output)**2, axis=1))
+            # print('net prediction', np.sum((self.targets_mat - self.output)**2, axis=1))
             self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
                                                                          BigClass.Variabs.targets[i])
         self.accuracy = np.mean(self.accuracy_vec)

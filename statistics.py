@@ -36,6 +36,21 @@ def calculate_accuracy_1sample(output, targets_mat: NDArray[np.float_], target_i
     return accuracy
 
 
+def power_dissip(u: NDArray[np.float_], R: NDArray[np.float_]) -> NDArray[np.float_]:
+    """
+    power_dissip calculates the power dissipation in network given flow and conductivity constellation
+
+    input:
+    u - 1D np.array [Nedges] of velocities at edges
+    R - 1D np.array [Nedges] of resistances at edges
+
+    output:
+    P - float, power dissipation in network
+    """
+    P = np.sum(u**2 * R)
+    return P
+
+
 # def flow_MSE(u: NDArray[np.float_], step: int, u_nxt=[]) -> NDArray[float_]:
 # 	"""
 # 	flow_MSE calculates the MSE between different instances of u given iteration difference step
@@ -80,22 +95,6 @@ def calculate_accuracy_1sample(output, targets_mat: NDArray[np.float_], target_i
 # 	else:
 # 		Hamming = np.mean(K_cells_nxt != K_cells)
 # 	return Hamming
-
-
-# def power_dissip(u, K):
-# 	"""
-# 	power_dissip calculates the power dissipation in network given flow and conductivity constellation
-
-# 	input:
-# 	u - 1D np.array [Nedges] of velocities at edges
-# 	K - 1D np.array [Nedges] of conductivities at edges
-
-# 	output:
-# 	P - float, power dissipation in network
-# 	"""
-# 	P = np.sum(u**2/K)
-# 	return P
-
 
 # def calc_loss(output, target, function):
 # 	"""

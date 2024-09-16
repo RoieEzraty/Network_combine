@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Optional
 from numpy.typing import NDArray
 from numpy import array
 
@@ -13,8 +13,10 @@ import matrix_functions
 # ===================================================
 
 
-def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_], desired1: NDArray[np.float_],
-                     desired2: NDArray[np.float_]) -> NDArray[np.float_]:
+def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_],
+                     desired1: NDArray[np.float_], desired2: NDArray[np.float_],
+                     Power1: Optional[np.float_] = None, Power2: Optional[np.float_] = None,
+                     lam: Optional[np.float_] = None) -> NDArray[np.float_]:
     """
     loss functions for regression task out=M*in using two sampled input pressures
 
@@ -30,10 +32,18 @@ def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_], d
     L1: NDArray[np.float_] = desired1-output1
     L2: NDArray[np.float_] = desired2-output2
     loss: NDArray[np.float_] = np.array([L1, L2])
+    if Power1:
+        if not Power2 or not lam:
+            print('not enough arguments input to loss function')
+        else:
+            print('using power')
+            loss += lam * (Power1 - Power2)
     return loss
 
 
-def loss_fn_1sample(output: np.ndarray, desired: np.ndarray) -> np.ndarray:
+def loss_fn_1sample(output: np.ndarray, desired: np.ndarray,
+                    Power1: Optional[np.float_] = None,
+                    lam: Optional[np.float_] = None) -> np.ndarray:
     """
     loss functions for regression task out=M*in using a single drawn input pressure
 
@@ -46,6 +56,12 @@ def loss_fn_1sample(output: np.ndarray, desired: np.ndarray) -> np.ndarray:
     """
     L1: NDArray[np.float_] = desired-output
     loss: NDArray[np.float_] = np.array([L1])
+    if Power1:
+        if not lam:
+            print('not enough arguments input to loss function')
+        else:
+            print('using power')
+            loss += lam * Power1
     return loss
 
 

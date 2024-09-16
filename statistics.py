@@ -51,6 +51,23 @@ def power_dissip(u: NDArray[np.float_], R: NDArray[np.float_]) -> NDArray[np.flo
     return P
 
 
+def power_dissip_norm(u: NDArray[np.float_], R: NDArray[np.float_], input: NDArray[np.float_]) -> NDArray[np.float_]:
+    """
+    power_dissip calculates the power dissipation in network given flow and conductivity constellation
+
+    input:
+    u     - 1D np.array [Nedges] of velocities at edges
+    R     - 1D np.array [Nedges] of resistances at edges
+    input - 1D np.array [Nin] of input pressure
+
+    output:
+    P_norm - float, power dissipation in network
+    """
+    input_squared = np.mean(input**2)
+    P_norm = np.sum(u**2 * R)/input_squared
+    return P_norm
+
+
 # def flow_MSE(u: NDArray[np.float_], step: int, u_nxt=[]) -> NDArray[float_]:
 # 	"""
 # 	flow_MSE calculates the MSE between different instances of u given iteration difference step

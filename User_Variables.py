@@ -23,9 +23,9 @@ class User_Variables:
     These remain the same along the simulation
     """
     def __init__(self, iterations: int, Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int,
-                 gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, supress_prints: bool, bc_noise: float,
-                 access_interNodes: bool, task_type: str, M_values: NDArray[np.float_] = array([0]),
-                 meausure_accuracy_every: Optional[int] = None) -> None:
+                 gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, include_Power: bool, lam: np.float_,
+                 supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
+                 M_values: NDArray[np.float_] = array([0]), meausure_accuracy_every: Optional[int] = None) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
@@ -36,9 +36,13 @@ class User_Variables:
         self.NN: int = Nin + extraNin + Nout + extraNout + Ninter
         self.gamma: NDArray[np.float_] = gamma
         self.use_p_tag: bool = use_p_tag
+        self.include_Power = include_Power
+        self.lam = lam
         if use_p_tag:
-            self.loss_fn: Union[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray],
-                                Callable[[np.ndarray, np.ndarray], np.ndarray]] = functions.loss_fn_2samples
+            self.loss_fn: Union[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+                                          Optional[np.float_], Optional[np.float_], Optional[np.float_]], np.ndarray],
+                                Callable[[np.ndarray, np.ndarray, Optional[np.float_], Optional[np.float_]],
+                                         np.ndarray]] = functions.loss_fn_2samples
         else:
             self.loss_fn = functions.loss_fn_1sample
         self.R_update: str = R_update  # 'R_propto_dp' if R=gamma*delta_p

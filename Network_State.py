@@ -45,6 +45,7 @@ class Network_State:
         self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.Nout)]
         self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
         self.loss_in_t: List[NDArray[np.float_]] = []
+        self.Power_norm_in_t: List[NDArray[np.float_]] = []
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
 
@@ -433,11 +434,24 @@ class Network_State:
         loss: np.ndarray sized [Nout,]
         """
         if BigClass.Variabs.loss_fn == functions.loss_fn_2samples:
-            self.loss: NDArray[np.float_] = BigClass.Variabs.loss_fn(self.output, self.output_in_t[-2], self.desired,
-                                                                     self.desired_in_t[-2])
+            if BigClass.Variabs.include_Power:
+                self.loss: NDArray[np.float_] = BigClass.Variabs.loss_fn(self.output, self.output_in_t[-2],
+                                                                         self.desired, self.desired_in_t[-2],
+                                                                         self.Power_norm, self.Power_norm_in_t[-2],
+                                                                         BigClass.Variabs.lam)
+            else:
+                self.loss: NDArray[np.float_] = BigClass.Variabs.loss_fn(self.output, self.output_in_t[-2],
+                                                                         self.desired, self.desired_in_t[-2])
         elif BigClass.Variabs.loss_fn == functions.loss_fn_1sample:
-            self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
+            if BigClass.Variabs.include_Power:
+                self.loss = BigClass.Variabs.loss_fn(self.output, self.desired, self.Power_norm, BigClass.Variabs.lam)
+            else:
+                self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
         self.loss_in_t.append(self.loss)
+
+    def calc_Power_norm(self, BigClass: "Big_Class"):
+        self.Power_norm = statistics.power_dissip_norm(self.u, self.R_in_t[-1], self.input_drawn)
+        self.Power_norm_in_t.append(self.Power_norm)
 
     def calculate_accuracy_fullDataset(self, BigClass: "Big_Class") -> None:
         self.accuracy_vec: NDArray[np.int_] = zeros(np.shape(BigClass.Variabs.dataset)[0], dtype=np.int_)

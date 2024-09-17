@@ -192,3 +192,10 @@ def plot_accuracy(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_i
     plt.xlabel('t', fontsize=14)  # Set x-axis label with font size
     plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
     plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
+
+
+def plot_Power(State: "Network_State") -> None:
+    plt.plot(np.linspace(0, State.t, np.shape(State.Power_norm_in_t)[0]).T, State.Power_norm_in_t, color='blue')
+    plt.xlabel(r'$t$')
+    plt.ylabel(r'$\mathcal{P}$')
+    plt.yscale('log')

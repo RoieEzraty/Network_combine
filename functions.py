@@ -37,12 +37,15 @@ def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_],
             print('not enough arguments input to loss function')
         else:
             print('using power')
-            loss += lam * (Power1 - Power2)
+            print('loss before power', loss)
+            print('delta_loss', lam * np.array([[Power1], [Power2]]))
+            loss += lam * np.array([[Power1], [Power2]])
+            print('loss after power ', loss)
     return loss
 
 
 def loss_fn_1sample(output: np.ndarray, desired: np.ndarray,
-                    Power1: Optional[np.float_] = None,
+                    Power: Optional[np.float_] = None,
                     lam: Optional[np.float_] = None) -> np.ndarray:
     """
     loss functions for regression task out=M*in using a single drawn input pressure
@@ -56,12 +59,14 @@ def loss_fn_1sample(output: np.ndarray, desired: np.ndarray,
     """
     L1: NDArray[np.float_] = desired-output
     loss: NDArray[np.float_] = np.array([L1])
-    if Power1:
+    if Power:
         if not lam:
             print('not enough arguments input to loss function')
         else:
             print('using power')
-            loss += lam * Power1
+            print('loss before power', loss)
+            loss += lam * Power
+            print('loss after power ', loss)
     return loss
 
 

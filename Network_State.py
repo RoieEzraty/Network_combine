@@ -204,9 +204,9 @@ class Network_State:
             if BigClass.Variabs.supress_prints:
                 pass
             else:  # print
-                print('inter measured=', self.inter)
+                # print('inter measured=', self.inter)
                 print('output measured=', self.output)
-                print('extraOutput measured=', self.extraOutput)
+                # print('extraOutput measured=', self.extraOutput)
 
             if problem == 'measure':  # Only save in time if measuring during training
                 self.output_in_t.append(self.output)
@@ -452,6 +452,10 @@ class Network_State:
     def calc_Power_norm(self, BigClass: "Big_Class"):
         self.Power_norm = statistics.power_dissip_norm(self.u, self.R_in_t[-1], self.input_drawn)
         self.Power_norm_in_t.append(self.Power_norm)
+        if BigClass.Variabs.supress_prints:
+            pass
+        else:
+            print('Power dissipation normalized', self.Power_norm)
 
     def calculate_accuracy_fullDataset(self, BigClass: "Big_Class") -> None:
         self.accuracy_vec: NDArray[np.int_] = zeros(np.shape(BigClass.Variabs.dataset)[0], dtype=np.int_)

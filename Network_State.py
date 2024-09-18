@@ -38,12 +38,12 @@ class Network_State:
         self.extraOutput_in_t: List[NDArray[np.float_]] = []
         self.desired_in_t: List[NDArray[np.float_]] = []
         # inputs and extra inputs at dual problem in time
-        self.input_dual_in_t: List[NDArray[np.float_]] = [1.0 * np.ones(Variabs.Nin)]
-        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [1.0 * np.ones(Variabs.extraNin)]
+        self.input_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.Nin)]
+        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.extraNin)]
         self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
         # outputs and extra outputs during dual problem in time
-        self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.Nout)]
-        self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
+        self.output_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
+        self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
         self.loss_in_t: List[NDArray[np.float_]] = []
         self.Power_norm_in_t: List[NDArray[np.float_]] = []
         # Other sizes that make problems sometimes
@@ -408,8 +408,8 @@ class Network_State:
             self.R_in_t.append(np.abs(R_vec + BigClass.Variabs.gamma * delta_p))
             # self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
-            # self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
-            self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
+            self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
+            # self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto flow Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q
@@ -444,6 +444,8 @@ class Network_State:
                                                                          self.desired, self.desired_in_t[-2])
         elif BigClass.Variabs.loss_fn == functions.loss_fn_1sample:
             if BigClass.Variabs.include_Power:
+                print('Power_norm', self.Power_norm)
+                print('lam', BigClass.Variabs.lam)
                 self.loss = BigClass.Variabs.loss_fn(self.output, self.desired, self.Power_norm, BigClass.Variabs.lam)
             else:
                 self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)

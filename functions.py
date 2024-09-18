@@ -36,11 +36,9 @@ def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_],
         if not Power2 or not lam:
             print('not enough arguments input to loss function')
         else:
-            print('using power')
             print('loss before power', loss)
             print('delta_loss', lam * np.array([[Power1], [Power2]]))
             loss += lam * np.array([[Power1], [Power2]])
-            print('loss after power ', loss)
     return loss
 
 

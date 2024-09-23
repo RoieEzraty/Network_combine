@@ -422,6 +422,7 @@ class Network_State:
         else:  # print
             pass
             # print('R_nxt', self.R_in_t[-1])
+        # self.R_in_t[-1][BigClass.Strctr.EJ == BigClass.Strctr.ground_nodes_arr] = 1.
 
     def calc_loss(self, BigClass: "Big_Class") -> None:
         """

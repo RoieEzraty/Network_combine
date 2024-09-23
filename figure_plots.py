@@ -34,7 +34,7 @@ def loss_afo_in_out(loss_mat):
 
     # Use imshow to plot the loss matrix without interpolation, setting color limits
     plt.imshow(loss_mat, cmap='cool', origin='lower', extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-               vmin=0, vmax=1)  # Set color limits between 0 and 1
+               vmin=0, vmax=0.4)  # Set color limits between 0 and 1
 
     # Labeling
     plt.xlabel('# Outputs')
@@ -100,6 +100,11 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
 
     # figure
     fig, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8)) = plt.subplots(2, 4, figsize=(17, 6))
+
+    # plt.text(0.5, 0.5, 'matplotlib',
+    #          horizontalalignment='center',
+    #          verticalalignment='center',
+    #          transform = ax.transAxes)
 
     # plot 1 input 2 output
     # ax1.plot(np.linspace(0, t, np.shape(output_1in2out)[0]).T, np.asarray(output_1in2out))

@@ -25,7 +25,7 @@ class User_Variables:
     def __init__(self, iterations: int, Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int,
                  gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, include_Power: bool, lam: np.float_,
                  supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
-                 M_values: NDArray[np.float_] = array([0]), meausure_accuracy_every: Optional[int] = None) -> None:
+                 meausure_accuracy_every: Optional[int] = None) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin

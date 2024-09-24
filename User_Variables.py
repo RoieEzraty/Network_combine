@@ -25,7 +25,7 @@ class User_Variables:
     def __init__(self, iterations: int, Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int,
                  gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, include_Power: bool, lam: np.float_,
                  supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
-                 meausure_accuracy_every: Optional[int] = None) -> None:
+                 measure_accuracy_every: Optional[int] = None) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
@@ -58,8 +58,8 @@ class User_Variables:
             print('mismatched # of inputs and outputs for Iris classification. correcting accordingly to Nin=4 Nout=3')
             self.Nin = 4
             self.Nout = 3
-        if meausure_accuracy_every is not None:
-            self.meausure_accuracy_every = meausure_accuracy_every
+        if measure_accuracy_every is not None:
+            self.measure_accuracy_every = measure_accuracy_every
 
     def create_dataset_and_targets(self, M_values: Optional[NDArray[np.float_]] = None) -> None:
         """

@@ -85,8 +85,8 @@ class User_Variables:
         elif self.task_type == 'Iris_classification':
             # Load the Iris dataset
             iris = load_iris()
-            dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
-            # dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=3)
+            # dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
+            dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=30)
             # dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=14)
             # Min-Max Scale dataset to [0, 5]
             min_max_scaler = MinMaxScaler(feature_range=(0, 5))
@@ -113,19 +113,19 @@ class User_Variables:
         if self.extraNin != 0:  # generate noise to add to extra input nodes
             self.noise_in = generate_uniform_noise([dataset_size, self.extraNin])
         else:
-            print('no extra input nodes, no noise added')
+            # print('no extra input nodes, no noise added')
             self.noise_in = zeros([dataset_size, self.extraNin])
 
         if self.Ninter != 0:  # generate noise to add to extra input nodes
             self.noise_inter = generate_uniform_noise([dataset_size, self.Ninter])
         else:
-            print('no inter nodes, no noise added')
+            # print('no inter nodes, no noise added')
             self.noise_inter = zeros([dataset_size, self.extraNin])
 
         if self.extraNout != 0:  # generate noise to add to extra output nodes
             self.noise_out = generate_uniform_noise([dataset_size, self.extraNout])
         else:
-            print('no extra output nodes, no noise added')
+            # print('no extra output nodes, no noise added')
             self.noise_out = zeros([dataset_size, self.extraNout])
 
     def assign_alpha_vec(self, alpha: float) -> None:

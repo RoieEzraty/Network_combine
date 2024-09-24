@@ -132,6 +132,7 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
         if t % len(Variabs.dataset) == 0 and t != 0:
             ax4.axvline(x=t, color='red', linestyle='--', linewidth=1)
     ax4.plot(np.mean(np.mean(np.abs(State.loss_in_t[1:]), axis=1), axis=1))
+    # ax4.plot(np.mean(np.mean(np.abs(State.loss_in_t[1:]), axis=1), axis=1)/np.mean(np.abs(Variabs.targets), axis=1))
     ax4.set_xlabel('t')
     ax4.set_yscale('log')
     if legend4:
@@ -192,6 +193,7 @@ def plot_accuracy(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_i
     plt.xlabel('t', fontsize=14)  # Set x-axis label with font size
     plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
     plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
+    plt.ylim([0, 1])
 
 
 def plot_Power(State: "Network_State") -> None:

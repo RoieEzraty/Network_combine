@@ -22,19 +22,19 @@ if TYPE_CHECKING:
 
 
 def loss_afo_in_out(loss_mat):
-    # Ensure loss_mat is a 4x4 np.array
-    if loss_mat.shape != (4, 4):
-        raise ValueError("loss_mat must be a 4x4 array")
+    # # Ensure loss_mat is a 4x4 np.array
+    # if loss_mat.shape != (4, 4):
+    #     raise ValueError("loss_mat must be a 4x4 array")
 
-    Nin = np.arange(1, 5)  # Equivalent to 1:4 in MATLAB
-    Nout = np.arange(1, 5)
+    Nin = np.arange(1, np.shape(loss_mat)[0]+1)  # Equivalent to 1:4 in MATLAB
+    Nout = np.arange(1, np.shape(loss_mat)[1]+1)
 
     # Create the figure and plot
     plt.figure()
 
     # Use imshow to plot the loss matrix without interpolation, setting color limits
     plt.imshow(loss_mat, cmap='cool', origin='lower', extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-               vmin=0, vmax=0.4)  # Set color limits between 0 and 1
+               vmin=0, vmax=1.0)  # Set color limits between 0 and 1
 
     # Labeling
     plt.xlabel('# Outputs')

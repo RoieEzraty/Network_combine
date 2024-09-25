@@ -63,13 +63,15 @@ class User_Variables:
         if measure_accuracy_every is not None:
             self.measure_accuracy_every = measure_accuracy_every
 
-    def create_dataset_and_targets(self, random_state, M_values: Optional[NDArray[np.float_]] = None) -> None:
+    def create_dataset_and_targets(self, random_state, M_values: Optional[NDArray[np.float_]] = None,
+                                   train_size: Optional[int] = 30) -> None:
         """
         creates the matrix which defines the task, i.e. p_out=M*p_in
 
         inputs:
-        random_state = int, seed for random function
-        M_values: 1D np.ndarray of all values to be inserted to M, consecutively, regardless of structure
+        random_state - int, seed for random function
+        M_values     - 1D np.ndarray of all values to be inserted to M, consecutively, regardless of structure
+        train_size   - how many samples for train dataset
 
         outputs:
         M: np.ndarray sized [Nout, Nin], matrix defining the task p_out=M*p_in
@@ -102,10 +104,11 @@ class User_Variables:
             targets_reshaped = iris['target'].reshape(-1, 1)  # Reshape for the encoder
             self.targets = encoder.fit_transform(targets_reshaped)
 
-            # Split the dataset: 30 for training, the rest for testing
+            # Split the dataset: 30 for training, the rest for testing, Ensure balanced class representation
             self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset, self.targets,
-                                                                                    train_size=30,
-                                                                                    random_state=random_state)
+                                                                                    train_size=train_size,
+                                                                                    random_state=random_state,
+                                                                                    stratify=iris['target'])
 
             # Calculate the means for each class using only the training set
             # First, decode the one-hot encoded y_train back to numerical labels

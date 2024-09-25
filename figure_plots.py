@@ -41,7 +41,7 @@ def loss_afo_in_out(loss_mat: NDArray[np.float_]) -> None:
 
     # Use imshow to plot the loss matrix without interpolation, setting color limits
     plt.imshow(loss_mat, cmap='cool', origin='lower', extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-               vmin=0, vmax=1.0)  # Set color limits between 0 and 1
+               vmin=0, vmax=0.25)  # Set color limits between 0 and 1
 
     # Labeling
     plt.xlabel('# Outputs')

@@ -21,12 +21,19 @@ if TYPE_CHECKING:
 # ================================
 
 
-def loss_afo_in_out(loss_mat):
-    # # Ensure loss_mat is a 4x4 np.array
-    # if loss_mat.shape != (4, 4):
-    #     raise ValueError("loss_mat must be a 4x4 array")
+def loss_afo_in_out(loss_mat: NDArray[np.float_]) -> None:
+    """
+    Nice boxes in cool color scheme of loss a.f.o #inputs and #outputs, lin scale
+    use loss_mat outputed from multiple_Nin_Nout.ipynb
 
-    Nin = np.arange(1, np.shape(loss_mat)[0]+1)  # Equivalent to 1:4 in MATLAB
+    inputs:
+    loss_mat: NDArray [Nin, Nout]
+
+    outputs:
+    matplotlib figure
+    """
+
+    Nin = np.arange(1, np.shape(loss_mat)[0]+1)  # Equivalent to 1:Nin in MATLAB
     Nout = np.arange(1, np.shape(loss_mat)[1]+1)
 
     # Create the figure and plot
@@ -209,7 +216,7 @@ def plot_compare_R_type_loss(Network_1in2out: nx.DiGraph, Network_2in1out: nx.Di
                              loss_2in1out_R_propto_deltap: NDArray[np.float_],
                              loss_2in1out_deltaR_propto_deltap: NDArray[np.float_],
                              loss_2in1out_propto_Q: NDArray[np.float_],
-                             loss_2in1out_propto_Power: NDArray[np.float_]):  
+                             loss_2in1out_propto_Power: NDArray[np.float_]):
     t = np.shape(loss_1in2out_propto_Power)[0]
     range_vec = range(t)
     range_vec = range(t)
@@ -271,6 +278,51 @@ def plot_compare_R_type_loss(Network_1in2out: nx.DiGraph, Network_2in1out: nx.Di
                      font_color='white', font_size=14, ax=ax4)
 
     plt.show()
+
+
+def plot_accuracy_4_materials(t_final, dataset_shape,
+                              t_for_accuracy_R_propto_deltap, accuracy_in_t_R_propto_deltap,
+                              t_for_accuracy_deltaR_propto_deltap, accuracy_in_t_deltaR_propto_deltap,
+                              t_for_accuracy_deltaR_propto_Q, accuracy_in_t_deltaR_propto_Q,
+                              t_for_accuracy_deltaR_propto_Power, accuracy_in_t_deltaR_propto_Power):
+    """
+    Plots the accuracy in time for the Iris problem using 4 materials
+    inputs calculated at multiple_stay_alpha.ipynb. Function itself used inside Network_main.ipynb
+
+    input:
+    t_final          - int, final time step
+    dataset_shape    - NDarray sized [2,], shape of the classified dataset - [150, 4] for Iris
+    t_for_accuracy_X - array of ints, times during simulation when accuracy was calculated, for material X
+    accuracy_in_t_X  - array of floats, accuracy at simulation times "t_for_accuracy", for material X
+
+    output:
+    plot of accuracy a.f.o time
+    """
+    # length of classification dataset
+    dataset_len = dataset_shape[0]
+
+    # legend - 4 materials
+    legend = [r'$R \propto \Delta p$',
+              r'$\Delta R \propto \Delta p$',
+              r'$\Delta R \propto Q$',
+              r'$\Delta R \propto \mathrm{Power}$']
+
+    # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
+    for t in range(t_final):
+        if t % dataset_len == 0:
+            plt.axvline(x=t, color='red', linestyle='--', linewidth=1)
+
+    # plot accuracy a.f.o time
+    plt.plot(t_for_accuracy_R_propto_deltap[1:], accuracy_in_t_R_propto_deltap[1:], label=legend[0])
+    plt.plot(t_for_accuracy_deltaR_propto_deltap[1:], accuracy_in_t_deltaR_propto_deltap[1:], label=legend[1])
+    plt.plot(t_for_accuracy_deltaR_propto_Q[1:], accuracy_in_t_deltaR_propto_Q[1:], label=legend[2])
+    plt.plot(t_for_accuracy_deltaR_propto_Power[1:], accuracy_in_t_deltaR_propto_Power[1:], label=legend[3])
+
+    # axes
+    plt.xlabel('t', fontsize=14)  # Set x-axis label with font size
+    plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
+    plt.ylim([0, 1])
+    plt.legend(loc='best')
 
 
 def plot_comparison_R_type(R_propto_deltap: NDArray[np.float_], deltaR_propto_deltap: NDArray[np.float_],

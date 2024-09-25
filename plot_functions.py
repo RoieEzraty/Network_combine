@@ -187,7 +187,7 @@ def plot_accuracy(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_i
             plt.axvline(x=t, color='red', linestyle='--', linewidth=1)
 
     # plot accuracy a.f.o time
-    plt.plot(t_for_accuracy, accuracy_in_t, label='accuracy')
+    plt.plot(t_for_accuracy[1:], accuracy_in_t[1:], label='accuracy')  # plot from t=1 since starts at 0.3 and not 0
 
     # axes
     plt.xlabel('t', fontsize=14)  # Set x-axis label with font size

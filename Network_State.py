@@ -91,24 +91,40 @@ class Network_State:
         input_drawn: np.ndarray sized [Nin,], input pressures
         desired: np.ndarray sized [Nout,], desired output defined by the task M*p_input
         """
-        self.input_drawn: NDArray[np.float_] = copy.copy(Variabs.dataset[i % np.shape(Variabs.dataset)[0]])
+        # draw  input from train or test sets
+        if problem == 'measure_for_accuracy':
+            self.input_drawn: NDArray[np.float_] = copy.copy(Variabs.X_test[i % np.shape(Variabs.X_test)[0]])
+        else:
+            self.input_drawn = copy.copy(Variabs.X_train[i % np.shape(Variabs.X_train)[0]])
+
+        # draw noise if needed
         if noise_to_extra:
             self.extraInput += Variabs.noise_in[i % np.shape(Variabs.noise_in)[0]]
             self.extraOutput: NDArray[np.float_] = copy.copy(self.extraOutput_in_t[-1])
             self.extraOutput += Variabs.noise_out[i % np.shape(Variabs.noise_out)[0]]
             self.inter: NDArray[np.float_] = copy.copy(self.inter) + \
                 Variabs.noise_inter[i % np.shape(Variabs.noise_inter)[0]]
+
+        # calculate desired output from train or test sets
         if Variabs.task_type == 'Iris_classification':
-            self.desired: NDArray[np.float_] = np.matmul(Variabs.targets[i % np.shape(Variabs.dataset)[0]],
-                                                         self.targets_mat)
+            if problem == 'measure_for_accuracy':
+                self.desired: NDArray[np.float_] = np.matmul(Variabs.y_test[i % np.shape(Variabs.X_test)[0]],
+                                                             self.targets_mat)
+            else:
+                self.desired = np.matmul(Variabs.y_train[i % np.shape(Variabs.X_train)[0]],
+                                         self.targets_mat)
         else:
-            self.desired = Variabs.targets[i % np.shape(Variabs.dataset)[0]]
+            self.desired = Variabs.y_train[i % np.shape(Variabs.X_train)[0]]
+
+        # append to arrays in time
         if problem == 'measure_for_accuracy':  # don't add to time vector if this is accuracy calculation
             pass
         else:
             self.input_drawn_in_t.append(self.input_drawn)
             self.extraInput_in_t.append(self.extraInput)
             self.desired_in_t.append(self.desired)
+
+        # optionally print to user
         if Variabs.supress_prints:
             pass
         else:  # print
@@ -466,6 +482,15 @@ class Network_State:
             self.draw_p_in_and_desired(BigClass.Variabs, i, problem='measure_for_accuracy')
             self.solve_flow_given_problem(BigClass, "measure_for_accuracy")  # measure and don't change resistances
             # print('net prediction', np.sum((self.targets_mat - self.output)**2, axis=1))
+            self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
+                                                                         BigClass.Variabs.targets[i])
+        self.accuracy = np.mean(self.accuracy_vec)
+
+    def calculate_accuracy_testset(self, BigClass: "Big_Class") -> None:
+        self.accuracy_vec = zeros(np.shape(BigClass.Variabs.X_test)[0], dtype=np.int_)
+        for i, datapoint in enumerate(BigClass.Variabs.X_test):
+            self.draw_p_in_and_desired(BigClass.Variabs, i, problem='measure_for_accuracy')
+            self.solve_flow_given_problem(BigClass, "measure_for_accuracy")  # measure and don't change resistances
             self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
                                                                          BigClass.Variabs.targets[i])
         self.accuracy = np.mean(self.accuracy_vec)

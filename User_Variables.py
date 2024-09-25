@@ -1,11 +1,13 @@
 from __future__ import annotations
 import numpy as np
+import copy
 
 from typing import Tuple, List
 from numpy import array, zeros
 from numpy.typing import NDArray
 from typing import Callable, Union, Optional
 from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn.utils import shuffle
 
@@ -61,11 +63,12 @@ class User_Variables:
         if measure_accuracy_every is not None:
             self.measure_accuracy_every = measure_accuracy_every
 
-    def create_dataset_and_targets(self, M_values: Optional[NDArray[np.float_]] = None) -> None:
+    def create_dataset_and_targets(self, random_state, M_values: Optional[NDArray[np.float_]] = None) -> None:
         """
         creates the matrix which defines the task, i.e. p_out=M*p_in
 
         inputs:
+        random_state = int, seed for random function
         M_values: 1D np.ndarray of all values to be inserted to M, consecutively, regardless of structure
 
         outputs:
@@ -82,27 +85,41 @@ class User_Variables:
             self.dataset: NDArray[np.float_] = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
             self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
             self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M.T)
+            self.X_train = copy.copy(self.dataset)  # train and test are the full dataset, no difference
+            self.y_train = copy.copy(self.targets)  # train and test are the full dataset, no difference
+            self.X_test = copy.copy(self.dataset)  # train and test are the full dataset, no difference
+            self.y_test = copy.copy(self.targets)  # train and test are the full dataset, no difference
         elif self.task_type == 'Iris_classification':
             # Load the Iris dataset
             iris = load_iris()
-            # dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=42)
-            dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=22)
-            # dataset, numerical_targets = shuffle(iris['data'], iris['target'], random_state=14)
+
             # Min-Max Scale dataset to [0, 5]
             min_max_scaler = MinMaxScaler(feature_range=(0, 5))
-            self.dataset = min_max_scaler.fit_transform(dataset)
-            # One-hot encode the label
+            self.dataset = min_max_scaler.fit_transform(iris['data'])
+
+            # One-hot encode the labels
             encoder = OneHotEncoder(sparse_output=False, categories='auto')
-            targets_reshaped = numerical_targets.reshape(-1, 1)  # Reshape for the encoder
+            targets_reshaped = iris['target'].reshape(-1, 1)  # Reshape for the encoder
             self.targets = encoder.fit_transform(targets_reshaped)
-            means = [np.mean(iris['data'][iris['target'] == i], axis=0) for i in range(3)]
+
+            # Split the dataset: 30 for training, the rest for testing
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset, self.targets,
+                                                                                    train_size=30,
+                                                                                    random_state=random_state)
+
+            # Calculate the means for each class using only the training set
+            # First, decode the one-hot encoded y_train back to numerical labels
+            y_train_dec = np.argmax(self.y_train, axis=1)
+
+            # Calculate means for each class based on training set
+            means = [np.mean(self.X_train[y_train_dec == i], axis=0) for i in range(3)]
             self.means = np.array(means)
 
     def create_noise_for_extras(self) -> None:
         """
         add desc
         """
-        dataset_size = np.shape(self.dataset)[0]
+        dataset_size = np.shape(self.X_train)[0]
 
         def generate_uniform_noise(size: list[int]) -> NDArray[np.float_]:
             """

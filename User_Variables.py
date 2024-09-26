@@ -64,7 +64,7 @@ class User_Variables:
             self.measure_accuracy_every = measure_accuracy_every
 
     def create_dataset_and_targets(self, random_state, M_values: Optional[NDArray[np.float_]] = None,
-                                   train_size: Optional[int] = 30) -> None:
+                                   train_size: Optional[int] = None) -> None:
         """
         creates the matrix which defines the task, i.e. p_out=M*p_in
 

@@ -105,10 +105,16 @@ class User_Variables:
             self.targets = encoder.fit_transform(targets_reshaped)
 
             # Split the dataset: 30 for training, the rest for testing, Ensure balanced class representation
-            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset, self.targets,
-                                                                                    train_size=train_size,
-                                                                                    random_state=random_state,
-                                                                                    stratify=iris['target'])
+            if train_size:
+                self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset, self.targets,
+                                                                                        train_size=train_size,
+                                                                                        random_state=random_state,
+                                                                                        stratify=iris['target'])
+            else:  # or use all dataset as train and test if not specified
+                self.X_train = copy.copy(self.dataset)
+                self.X_test = copy.copy(self.dataset)
+                self.y_train = copy.copy(self.targets)
+                self.y_test = copy.copy(self.targets)
 
             # Calculate the means for each class using only the training set
             # First, decode the one-hot encoded y_train back to numerical labels

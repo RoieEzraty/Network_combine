@@ -10,6 +10,7 @@ from numpy.typing import NDArray
 from brokenaxes import brokenaxes
 
 from typing import Tuple, List, Union, Optional
+import statistics
 
 if TYPE_CHECKING:
     from User_Variables import User_Variables
@@ -280,23 +281,14 @@ def plot_compare_R_type_loss(Network_1in2out: nx.DiGraph, Network_2in1out: nx.Di
     plt.show()
 
 
-def plot_accuracy_4_materials(t_final, dataset_shape,
-                              t_for_accuracy_R_propto_deltap, accuracy_in_t_R_propto_deltap,
-                              t_for_accuracy_deltaR_propto_deltap, accuracy_in_t_deltaR_propto_deltap,
-                              t_for_accuracy_deltaR_propto_Q, accuracy_in_t_deltaR_propto_Q,
-                              t_for_accuracy_deltaR_propto_Power, accuracy_in_t_deltaR_propto_Power):
+def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_accuracy: np.ndarray,
+                              accuracy_in_t_R_propto_deltap: np.ndarray,
+                              accuracy_in_t_deltaR_propto_deltap: np.ndarray,
+                              accuracy_in_t_deltaR_propto_Q: np.ndarray,
+                              accuracy_in_t_deltaR_propto_Power: np.ndarray,
+                              smooth: bool = True, window_size: int = 5):
     """
-    Plots the accuracy in time for the Iris problem using 4 materials
-    inputs calculated at multiple_stay_alpha.ipynb. Function itself used inside Network_main.ipynb
-
-    input:
-    t_final          - int, final time step
-    dataset_shape    - NDarray sized [2,], shape of the classified dataset - [150, 4] for Iris
-    t_for_accuracy_X - array of ints, times during simulation when accuracy was calculated, for material X
-    accuracy_in_t_X  - array of floats, accuracy at simulation times "t_for_accuracy", for material X
-
-    output:
-    plot of accuracy a.f.o time
+    Plots the accuracy in time for the Iris problem using 4 materials.
     """
     # length of classification dataset
     dataset_len = dataset_shape[0]
@@ -307,22 +299,93 @@ def plot_accuracy_4_materials(t_final, dataset_shape,
               r'$\Delta R \propto Q$',
               r'$\Delta R \propto \mathrm{Power}$']
 
+    colors = ['blue', 'red', 'cyan', 'purple']
+
     # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
     for t in range(t_final):
         if t % dataset_len == 0:
             plt.axvline(x=t, color='red', linestyle='--', linewidth=1)
 
+    # Opacities to use
+    opacities = np.linspace(0.15, 0.151, accuracy_in_t_R_propto_deltap.shape[0])
+
+    # Plot each set of accuracy curves with varying opacity but no connecting lines
+    for i, alpha in enumerate(opacities):
+        plt.plot(t_for_accuracy, accuracy_in_t_R_propto_deltap[i],
+                 color=colors[0], alpha=alpha, marker='.', linestyle='')  # No line, just markers
+        plt.plot(t_for_accuracy, accuracy_in_t_deltaR_propto_deltap[i],
+                 color=colors[1], alpha=alpha, marker='.', linestyle='')  # No line, just markers
+        plt.plot(t_for_accuracy, accuracy_in_t_deltaR_propto_Q[i],
+                 color=colors[2], alpha=alpha, marker='.', linestyle='')  # No line, just markers
+        plt.plot(t_for_accuracy, accuracy_in_t_deltaR_propto_Power[i],
+                 color=colors[3], alpha=alpha, marker='.', linestyle='')  # No line, just markers
+
+    # Apply smoothing for the average accuracy lines
+    if smooth:
+        mean_accuracy_R_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_R_propto_deltap, axis=0), window_size)
+        mean_accuracy_deltaR_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_deltap, axis=0),
+                                                                window_size)
+        mean_accuracy_deltaR_propto_Q = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_Q, axis=0), window_size)
+        mean_accuracy_deltaR_propto_Power = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_Power, axis=0),
+                                                               window_size)
+
+        t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracy_R_propto_deltap)]  # t_for_accuracy after smoothing
+    else:
+        mean_accuracy_R_propto_deltap = np.mean(accuracy_in_t_R_propto_deltap, axis=0)
+        mean_accuracy_deltaR_propto_deltap = np.mean(accuracy_in_t_deltaR_propto_deltap, axis=0)
+        mean_accuracy_deltaR_propto_Q = np.mean(accuracy_in_t_deltaR_propto_Q, axis=0)
+        mean_accuracy_deltaR_propto_Power = np.mean(accuracy_in_t_deltaR_propto_Power, axis=0)
+        t_for_accuracy_smoothed = t_for_accuracy
+
+    # Plot the smoothed mean accuracy with lines connecting points
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
+             color=colors[0], alpha=1., marker=None, linestyle='-', linewidth=4)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap,
+             color=colors[1], alpha=1., marker=None, linestyle='-', linewidth=4)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q,
+             color=colors[2], alpha=1., marker=None, linestyle='-', linewidth=4)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power,
+             color=colors[3], alpha=1., marker=None, linestyle='-', linewidth=4)
+
+    # Adding a single line for each legend entry with the same colors
+    for i in range(4):
+        plt.plot([], [], color=colors[i], label=legend[i])
+
+    # axes
+    plt.xlabel('t', fontsize=14)
+    plt.ylabel('Accuracy', fontsize=14)
+    plt.ylim([0, 1])
+    plt.legend(loc='best')
+    plt.show()
+
+
+def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],
+                             dataset_shape: NDArray[np.int_]) -> None:
+    """
+    Plots the accuracy in time for the Iris problem
+
+    input:
+    t_final        - int, final time step
+    t_for_accuracy - array of ints, times during simulation when accuracy was calculated
+    accuracy_in_t  - array of floats, accuracy at simulation times "t_for_accuracy"
+    dataset_len    - length of dataset used, for Iris it is 150
+
+    output:
+    plot of accuracy a.f.o time
+    """
+    # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
+    for t in range(t_final):
+        if t % dataset_shape[0] == 0:
+            plt.axvline(x=t, color='red', linestyle='--', linewidth=1)
+
     # plot accuracy a.f.o time
-    plt.plot(t_for_accuracy_R_propto_deltap[1:], accuracy_in_t_R_propto_deltap[1:], label=legend[0])
-    plt.plot(t_for_accuracy_deltaR_propto_deltap[1:], accuracy_in_t_deltaR_propto_deltap[1:], label=legend[1])
-    plt.plot(t_for_accuracy_deltaR_propto_Q[1:], accuracy_in_t_deltaR_propto_Q[1:], label=legend[2])
-    plt.plot(t_for_accuracy_deltaR_propto_Power[1:], accuracy_in_t_deltaR_propto_Power[1:], label=legend[3])
+    plt.plot(t_for_accuracy, accuracy_in_t, label='accuracy', color='blue', marker='.', linestyle='')
 
     # axes
     plt.xlabel('t', fontsize=14)  # Set x-axis label with font size
     plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
+    # plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
     plt.ylim([0, 1])
-    plt.legend(loc='best')
 
 
 def plot_comparison_R_type(R_propto_deltap: NDArray[np.float_], deltaR_propto_deltap: NDArray[np.float_],

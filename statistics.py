@@ -6,6 +6,7 @@ from numpy import array, zeros
 from numpy.linalg import norm
 from numpy.typing import NDArray
 from typing import TYPE_CHECKING
+from scipy.signal import savgol_filter
 
 if TYPE_CHECKING:
     from Big_Class import Big_Class
@@ -25,14 +26,33 @@ def final_err(BigClass: "Big_Class", samples: int = 40):
     return numerator / denominator
 
 
-def calculate_accuracy_1sample(output, targets_mat: NDArray[np.float_], target_ind: int) -> int:
+def calculate_accuracy_1sample(output, targets_mat: NDArray[np.float_], target_i: NDArray[np.float_]) -> float:
     """
     add desc
     """
-    l2_vec: NDArray[np.float_] = zeros(3)
+    # l2_vec: NDArray[np.float_] = zeros(3)
+    # for i in range(3):
+    #     l2_vec[i] = norm(output - targets_mat[i])
+    # accuracy: int = int(np.where(l2_vec == np.min(l2_vec)) == np.where(target_i == 1.))
+
+    l2_vec = np.zeros(3)
     for i in range(3):
         l2_vec[i] = norm(output - targets_mat[i])
-    accuracy: int = int(np.where(l2_vec == np.min(l2_vec)) == np.where(target_ind == 1.))
+
+    # The problematic line, wrapped in try-except
+    try:
+        accuracy: int = int(np.where(l2_vec == np.min(l2_vec)) == np.where(target_i == 1.))
+    except ValueError as e:
+        # Print the values to inspect what's happening
+        print(f"output: {output}")
+        print(f"targets_mat: {targets_mat}")
+        print(f"l2_vec: {l2_vec}")
+        print(f"np.min(l2_vec): {np.min(l2_vec)}")
+        print(f"np.where(l2_vec == np.min(l2_vec)): {np.where(l2_vec == np.min(l2_vec))}")
+        print(f"np.where(target_ind == 1.): {np.where(target_i == 1.)}")
+        print(f"ValueError: {e}")
+        accuracy = 0  # or handle it in a way that's meaningful to your logic
+
     return accuracy
 
 
@@ -66,6 +86,11 @@ def power_dissip_norm(u: NDArray[np.float_], R: NDArray[np.float_], input: NDArr
     input_squared = np.mean(input**2)
     P_norm = np.sum(u**2 * R)/input_squared
     return P_norm
+
+
+def mov_ave(data, window_size):
+    """Apply a simple moving average filter."""
+    return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
 
 # def flow_MSE(u: NDArray[np.float_], step: int, u_nxt=[]) -> NDArray[float_]:

@@ -491,8 +491,10 @@ class Network_State:
         for i, datapoint in enumerate(BigClass.Variabs.X_test):
             self.draw_p_in_and_desired(BigClass.Variabs, i, problem='measure_for_accuracy')
             self.solve_flow_given_problem(BigClass, "measure_for_accuracy")  # measure and don't change resistances
+            # self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
+            #                                                              BigClass.Variabs.targets[i])
             self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
-                                                                         BigClass.Variabs.targets[i])
+                                                                         BigClass.Variabs.y_test[i])
         self.accuracy = np.mean(self.accuracy_vec)
 
     # def measure_targets_iris(self, BigClass):

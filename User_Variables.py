@@ -111,10 +111,10 @@ class User_Variables:
                                                                                         random_state=random_state,
                                                                                         stratify=iris['target'])
             else:  # or use all dataset as train and test if not specified
-                self.X_train = copy.copy(self.dataset)
-                self.X_test = copy.copy(self.dataset)
-                self.y_train = copy.copy(self.targets)
-                self.y_test = copy.copy(self.targets)
+                self.X_train = shuffle(copy.copy(self.dataset), random_state=random_state)
+                self.X_test = shuffle(copy.copy(self.dataset), random_state=random_state)
+                self.y_train = shuffle(copy.copy(self.targets), random_state=random_state)
+                self.y_test = shuffle(copy.copy(self.targets), random_state=random_state)
 
             # Calculate the means for each class using only the training set
             # First, decode the one-hot encoded y_train back to numerical labels

@@ -308,20 +308,6 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
         if t % dataset_len == 0:
             plt.axvline(x=t, color=red, linestyle='--', linewidth=1)
 
-    # # Opacities to use
-    # opacities = np.linspace(0.15, 0.151, accuracy_in_t_R_propto_deltap.shape[0])
-
-    # # Plot each set of accuracy curves with varying opacity but no connecting lines
-    # for i, alpha in enumerate(opacities):
-    #     plt.plot(t_for_accuracy, accuracy_in_t_R_propto_deltap[i],
-    #              color=colors[0], alpha=alpha, marker='.', linestyle='')  # No line, just markers
-    #     plt.plot(t_for_accuracy, accuracy_in_t_deltaR_propto_deltap[i],
-    #              color=colors[1], alpha=alpha, marker='.', linestyle='')  # No line, just markers
-    #     plt.plot(t_for_accuracy, accuracy_in_t_deltaR_propto_Q[i],
-    #              color=colors[2], alpha=alpha, marker='.', linestyle='')  # No line, just markers
-    #     plt.plot(t_for_accuracy, accuracy_in_t_deltaR_propto_Power[i],
-    #              color=colors[3], alpha=alpha, marker='.', linestyle='')  # No line, just markers
-
     # Apply smoothing for the average accuracy lines
     if smooth:
         mean_accuracy_R_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_R_propto_deltap, axis=0), window_size)
@@ -358,13 +344,13 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
 
     # Plot the smoothed mean accuracy with lines connecting points
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q,
-             color=colors[0], alpha=1., marker=None, linestyle='-', linewidth=3)
+             color=colors[2], alpha=1., marker=None, linestyle='-', linewidth=3)
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap,
              color=colors[1], alpha=1., marker=None, linestyle='-', linewidth=3)
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power,
-             color=colors[2], alpha=1., marker=None, linestyle='--', linewidth=3)
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
              color=colors[3], alpha=1., marker=None, linestyle='--', linewidth=3)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
+             color=colors[0], alpha=1., marker=None, linestyle='--', linewidth=3)
 
     # Plot confidence intervals using fill_between
     plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q - std_deltaR_propto_Q,
@@ -390,7 +376,8 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
 
 
 def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],
-                             dataset_shape: NDArray[np.int_]) -> None:
+                             dataset_shape: NDArray[np.int_], colors: List[str], red: str,
+                             smooth: bool = True, window_size: int = 5) -> None:
     """
     Plots the accuracy in time for the Iris problem
 
@@ -403,13 +390,36 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
     output:
     plot of accuracy a.f.o time
     """
+    opacity = 0.25
+
+    # Apply smoothing for the average accuracy lines
+    if smooth:
+        mean_accuracy = statistics.mov_ave(np.mean(accuracy_in_t, axis=0), window_size)
+
+        # Standard deviations for confidence bounds
+        std = statistics.mov_ave(np.std(accuracy_in_t, axis=0), window_size)
+
+        t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracy)]  # t_for_accuracy after smoothing
+    else:
+        mean_accuracy = np.mean(accuracy_in_t, axis=0)
+
+        std = np.std(accuracy_in_t, axis=0)
+
+        t_for_accuracy_smoothed = t_for_accuracy
+
+    mean_accuracy[0] = 1/3
+
     # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
     for t in range(t_final):
         if t % dataset_shape[0] == 0:
-            plt.axvline(x=t, color='red', linestyle='--', linewidth=1)
+            plt.axvline(x=t, color=red, linestyle='--', linewidth=1)
 
     # plot accuracy a.f.o time
-    plt.plot(t_for_accuracy, accuracy_in_t, label='accuracy', color='blue', marker='.', linestyle='')
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy, label='accuracy', color=colors[0], marker='.', linestyle='')
+
+    # Plot confidence intervals using fill_between
+    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy - std,
+                     mean_accuracy + std, color=colors[0], alpha=opacity)
 
     # axes
     plt.xlabel('t', fontsize=14)  # Set x-axis label with font size

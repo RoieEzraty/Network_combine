@@ -28,11 +28,11 @@ def color_scheme(show: bool = False) -> Tuple[list[str], str, Colormap]:
 
     # Define the custom color scheme as a colormap
 
-    colors_lst = ['#4500E0', '#CD23E1', '#54CCE0', '#9EE1B1', '#E04F68']
+    colors_lst = ['#4500E0', '#54CCE0', '#CD23E1', '#9EE1B1', '#E04F68']
     red = '#E04F68'
 
     # Create the custom colormap for the gradient
-    custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', [colors_lst[2], colors_lst[1], colors_lst[0]], N=256)
+    custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', [colors_lst[1], colors_lst[2], colors_lst[0]], N=256)
 
     if show:
         # Create a gradient and plot it with log scale on the y-axis

@@ -32,7 +32,7 @@ def color_scheme(show: bool = False) -> Tuple[list[str], str, Colormap]:
     red = '#E04F68'
 
     # Create the custom colormap for the gradient
-    custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', [colors[1], colors[0], colors[2]], N=256)
+    custom_cmap = LinearSegmentedColormap.from_list('custom_cmap', [colors_lst[1], colors_lst[0], colors_lst[2]], N=256)
 
     if show:
         # Create a gradient and plot it with log scale on the y-axis
@@ -45,14 +45,15 @@ def color_scheme(show: bool = False) -> Tuple[list[str], str, Colormap]:
         plt.subplot(1, 2, 1)
         plt.imshow(gradient, aspect='auto', cmap=custom_cmap, extent=[0, 1, 1, 256])
         # plt.imshow(gradient, cmap=custom_cmap)
-        plt.title("Custom Color Gradient (Log Y)")
+        plt.title("Custom Color Gradient")
         plt.xticks([])  # Remove x ticks
         plt.yticks([])  # Remove y ticks
 
         # Plot the solid red block using a 1x1 matrix with the red color mapped
         plt.subplot(1, 2, 2)
-        plt.imshow([[1]], aspect='auto', cmap=LinearSegmentedColormap.from_list('red_cmap', [red, red]), extent=[0, 1, 1, 256])
-        plt.title("Solid Red Color (Log Y)")
+        plt.imshow([[1]], aspect='auto', cmap=LinearSegmentedColormap.from_list('red_cmap', [red, red]),
+                   extent=[0, 1, 1, 256])
+        plt.title("Solid Red Color")
         plt.xticks([])  # Remove x ticks
         plt.yticks([])  # Remove y ticks
 

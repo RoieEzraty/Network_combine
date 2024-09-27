@@ -496,12 +496,3 @@ class Network_State:
             self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
                                                                          BigClass.Variabs.y_test[i])
         self.accuracy = np.mean(self.accuracy_vec)
-
-    # def measure_targets_iris(self, BigClass):
-    #     """
-    #     """
-    #     CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
-    #     CstrTuple = functions.setup_constraints_given_pin(
-    #                     (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.ground_nodes_arr),
-    #                     self.input_drawn, BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
-    #     self.output_means, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])

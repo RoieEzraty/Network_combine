@@ -2,8 +2,10 @@ from __future__ import annotations
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+
 import copy
 
+from matplotlib.colors import Colormap
 from typing import Tuple, List, Dict, Any
 from typing import TYPE_CHECKING
 from numpy.typing import NDArray
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
 # ================================
 
 
-def loss_afo_in_out(loss_mat: NDArray[np.float_]) -> None:
+def loss_afo_in_out(loss_mat: np.ndarray, cmap: Colormap) -> None:
     """
     Nice boxes in cool color scheme of loss a.f.o #inputs and #outputs, lin scale
     use loss_mat outputed from multiple_Nin_Nout.ipynb
@@ -41,7 +43,7 @@ def loss_afo_in_out(loss_mat: NDArray[np.float_]) -> None:
     plt.figure()
 
     # Use imshow to plot the loss matrix without interpolation, setting color limits
-    plt.imshow(loss_mat, cmap='cool', origin='lower', extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
+    plt.imshow(loss_mat, cmap=cmap, origin='lower', extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
                vmin=0, vmax=0.25)  # Set color limits between 0 and 1
 
     # Labeling
@@ -299,12 +301,14 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
               r'$\Delta R \propto Q$',
               r'$\Delta R \propto \mathrm{Power}$']
 
-    colors = ['blue', 'red', 'cyan', 'purple']
+    # colors = ['blue', 'red', 'cyan', 'purple']
+    colors = ['#4500E0', '#54CCE0', '#CD23E1', '#9EE1B1', '#926FE1', '#E1C0A9', '#A197FF', '#D964FF', '#5442FF']
+    red = ['#E04F68']
 
     # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
     for t in range(t_final):
         if t % dataset_len == 0:
-            plt.axvline(x=t, color='red', linestyle='--', linewidth=1)
+            plt.axvline(x=t, color=red[0], linestyle='--', linewidth=1)
 
     # Opacities to use
     opacities = np.linspace(0.15, 0.151, accuracy_in_t_R_propto_deltap.shape[0])
@@ -338,14 +342,14 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
         t_for_accuracy_smoothed = t_for_accuracy
 
     # Plot the smoothed mean accuracy with lines connecting points
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
-             color=colors[0], alpha=1., marker=None, linestyle='-', linewidth=4)
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap,
              color=colors[1], alpha=1., marker=None, linestyle='-', linewidth=4)
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q,
-             color=colors[2], alpha=1., marker=None, linestyle='-', linewidth=4)
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power,
              color=colors[3], alpha=1., marker=None, linestyle='-', linewidth=4)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q,
+             color=colors[2], alpha=1., marker=None, linestyle='-', linewidth=4)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
+             color=colors[0], alpha=1., marker=None, linestyle='-', linewidth=4)
 
     # Adding a single line for each legend entry with the same colors
     for i in range(4):
@@ -356,6 +360,7 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
     plt.ylabel('Accuracy', fontsize=14)
     plt.ylim([0, 1])
     plt.legend(loc='best')
+    plt.xscale('log')
     plt.show()
 
 

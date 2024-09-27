@@ -34,6 +34,8 @@ def loss_afo_in_out(loss_mat: np.ndarray, cmap: Colormap) -> None:
     outputs:
     matplotlib figure
     """
+    # calculate ensemble mean of loss_mat
+    loss_mat_mean = np.mean(loss_mat, axis=2)
 
     Nin = np.arange(1, np.shape(loss_mat)[0]+1)  # Equivalent to 1:Nin in MATLAB
     Nout = np.arange(1, np.shape(loss_mat)[1]+1)
@@ -41,9 +43,9 @@ def loss_afo_in_out(loss_mat: np.ndarray, cmap: Colormap) -> None:
     # Create the figure and plot
     plt.figure()
 
-    # Use imshow to plot the loss matrix without interpolation, setting color limits
-    plt.imshow(loss_mat, cmap=cmap, origin='lower', extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-               vmin=0, vmax=0.25)  # Set color limits between 0 and 1
+    # plot loss_mat without interpolation, setting color limits [0-1]
+    plt.imshow(loss_mat_mean, cmap=cmap, origin='lower',
+               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5], vmin=0, vmax=0.25)
 
     # Labeling
     plt.xlabel('# Outputs')

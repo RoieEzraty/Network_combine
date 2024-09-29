@@ -45,7 +45,7 @@ def loss_afo_in_out(loss_mat: np.ndarray, cmap: Colormap) -> None:
 
     # plot loss_mat without interpolation, setting color limits [0-1]
     plt.imshow(loss_mat_mean, cmap=cmap, origin='lower',
-               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5], vmin=0, vmax=0.25)
+               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5], vmin=0, vmax=0.3)
 
     # Labeling
     plt.xlabel('# Outputs')
@@ -70,7 +70,8 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
                        R_1in2out: NDArray[np.float_], R_2in1out: NDArray[np.float_],
                        loss_1in2out: NDArray[np.float_], loss_2in1out: NDArray[np.float_],
                        NET_1in2out: nx.DiGraph, NET_2in1out: nx.DiGraph,
-                       pos_lattice_1in2out: dict, pos_lattice_2in1out: dict,) -> None:
+                       pos_lattice_1in2out: dict, pos_lattice_2in1out: dict,
+                       color_lst: list[str], red: str) -> None:
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
@@ -87,6 +88,9 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     outputs:
     1 matplotlib plot
     """
+
+    # Set the custom color cycle globally without cycler
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', color_lst)
 
     # sizes for 1 input 2 output
     A_1in2out: float = M[0]  # A = x_hat/p_in
@@ -121,28 +125,29 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # ax1.plot(np.linspace(0, t, np.shape(output_1in2out)[0]).T, np.asarray(output_1in2out))
     # ax1.set_title('output in time')
     # ax1.legend(legend1_1in2out)
-    ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1), color='blue')
+    ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1))
     ax1.set_yscale('log')
+    ax1.set_title(r'$\|\mathcal{L}\|$')
     ax1.legend(legend4)
     ax2.plot(input_dual_1in2out)
     ax2.plot(output_dual_1in2out)
-    ax2.set_title('dual and p in time')
+    ax2.set_title(r'$\mathrm{dual}$')
     ax2.legend(legend2_1in2out)
     ax3.plot(R_1in2out)
     # ax3.plot(np.outer(R_theor_1in2out, np.ones(t)).T, '--')
-    ax3.set_title('R in time')
+    ax3.set_title(r'$R$')
     # ax3.legend(legend3_1in2out)
-    nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color='b', node_color='b', with_labels=True,
-                     font_color='white', font_size=14, ax=ax4)
+    nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color=color_lst[0], node_color=color_lst[0],
+                     with_labels=True, font_color='white', font_size=14, ax=ax4)
+    ax4.set_title('Network Structure')
 
     # plot 2 input 1 output
     # ax5.plot(np.linspace(0, t, np.shape(output_2in1out)[0]).T, np.asarray(output_2in1out))
     # ax5.set_xlabel('t')
-    # ax5.legend(legend1_2in1out)
-    ax5.plot(np.mean(np.mean(np.abs(loss_2in1out), axis=1), axis=1), color='blue')
+    ax5.plot(np.mean(np.mean(np.abs(loss_2in1out), axis=1), axis=1))
     ax5.set_xlabel('t')
     ax5.set_yscale('log')
-    ax5.legend(legend4)
+    # ax5.legend(legend4)
     ax6.plot(input_dual_2in1out)
     ax6.plot(output_dual_2in1out)
     ax6.set_xlabel('t')
@@ -151,8 +156,8 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # ax8.plot(np.outer(R_theor_2in1out, np.ones(t)).T, '--')
     ax7.set_xlabel('t')
     # ax8.legend(legend3_2in1out)
-    nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color='b', node_color='b', with_labels=True,
-                     font_color='white', font_size=14, ax=ax8)
+    nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color=color_lst[0], node_color=color_lst[0],
+                     with_labels=True, font_color='white', font_size=14, ax=ax8)
 
     plt.show()
 

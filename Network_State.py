@@ -467,7 +467,7 @@ class Network_State:
                 self.loss = BigClass.Variabs.loss_fn(self.output, self.desired, self.Power_norm, BigClass.Variabs.lam)
             else:
                 self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
-        self.loss_norm = loss/np.mean(np.abs(desired))
+        self.loss_norm = self.loss/np.mean(np.abs(self.desired))
         
         self.loss_in_t.append(self.loss)
         self.loss_norm_in_t.append(self.loss_norm)

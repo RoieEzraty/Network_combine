@@ -131,8 +131,8 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     for t in range(State.t):
         if t % len(Variabs.dataset) == 0 and t != 0:
             ax4.axvline(x=t, color='red', linestyle='--', linewidth=1)
-    ax4.plot(np.mean(np.mean(np.abs(State.loss_in_t[1:]), axis=1), axis=1))
-    # ax4.plot(np.mean(np.mean(np.abs(State.loss_in_t[1:]), axis=1), axis=1)/np.mean(np.abs(Variabs.targets), axis=1))
+    ax4.plot(np.mean(np.mean(np.abs(State.loss_norm_in_t[1:]), axis=1), axis=1))
+    # ax4.plot(np.mean(np.mean(np.abs(State.loss_norm_in_t[1:]), axis=1), axis=1)/np.mean(np.abs(Variabs.targets), axis=1))
     ax4.set_xlabel('t')
     ax4.set_yscale('log')
     if legend4:

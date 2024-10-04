@@ -22,6 +22,14 @@ if TYPE_CHECKING:
 # functions for paper figure plots
 # ================================
 
+## setup params
+
+plt.rcParams['lines.linewidth'] = 2  # Set default line width
+plt.rcParams['font.size'] = 14  # Set default font size
+plt.rcParams['legend.loc'] = 'best'
+
+
+## The functions
 
 def loss_afo_in_out(loss_mat: np.ndarray, cmap: Colormap) -> None:
     """
@@ -97,20 +105,15 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     B_1in2out: float = M[1]  # B = y_hat/p_in
     R_theor_1in2out = np.array([(1-A_1in2out)/(A_1in2out*(1+1)-B_1in2out),
                                 (1-B_1in2out)/(B_1in2out*(1+1)-A_1in2out)])
-    legend1_1in2out = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
-    legend2_1in2out = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p\,\mathrm{dual}$']
-    legend3_1in2out = [r'$R_1$', r'$R_2$', r'$R_1\,\mathrm{theoretical}$', r'$R_2\,\mathrm{theoretical}$']
+    legend2_1in2out = [r'$x^{\,!}$', r'$y_1^{\,!}$', r'$y_2^{\,!}$']
 
     # sizes for 2 input 1 output
     A_2in1out = M[0]
     B_2in1out = M[1]
     R_theor_2in1out = np.array([(1-A_2in1out-B_2in1out)/A_2in1out, (1-A_2in1out-B_2in1out)/B_2in1out])
-    legend1_2in1out = [r'$\frac{x}{x\,\mathrm{desired}}$']
-    legend2_2in1out = [r'$x\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
-    legend3_2in1out = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_1\,\mathrm{theoretical}$']
+    legend2_2in1out = [r'$x_1^{\,!}$', r'$x_2^{\,!}$', r'$y^{\,!}$']
 
     # sizes for both
-    legend4 = ['|loss|']
     pos_lattice_both = pos_lattice_2in1out
 
     # figure
@@ -122,42 +125,38 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     #          transform = ax.transAxes)
 
     # plot 1 input 2 output
-    # ax1.plot(np.linspace(0, t, np.shape(output_1in2out)[0]).T, np.asarray(output_1in2out))
-    # ax1.set_title('output in time')
-    # ax1.legend(legend1_1in2out)
     ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1))
     ax1.set_yscale('log')
     ax1.set_title(r'$\|\mathcal{L}\|$')
-    ax1.legend(legend4)
+    # ax1.legend(legend4)
     ax2.plot(input_dual_1in2out)
     ax2.plot(output_dual_1in2out)
-    ax2.set_title(r'$\mathrm{dual}$')
-    ax2.legend(legend2_1in2out)
+    ax2.set_title('Dual state pressure')
+    ax2.legend(legend2_1in2out, loc='center right')
     ax3.plot(R_1in2out)
     # ax3.plot(np.outer(R_theor_1in2out, np.ones(t)).T, '--')
     ax3.set_title(r'$R$')
-    # ax3.legend(legend3_1in2out)
     nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color=color_lst[0], node_color=color_lst[0],
-                     with_labels=True, font_color='white', font_size=14, ax=ax4)
-    ax4.set_title('Network Structure')
+                     with_labels=True, arrows=False, font_color='white', font_size=14, width=2, ax=ax4)
+    ax4.set_title('Network structure')
 
     # plot 2 input 1 output
-    # ax5.plot(np.linspace(0, t, np.shape(output_2in1out)[0]).T, np.asarray(output_2in1out))
-    # ax5.set_xlabel('t')
     ax5.plot(np.mean(np.mean(np.abs(loss_2in1out), axis=1), axis=1))
     ax5.set_xlabel('t')
     ax5.set_yscale('log')
-    # ax5.legend(legend4)
     ax6.plot(input_dual_2in1out)
     ax6.plot(output_dual_2in1out)
     ax6.set_xlabel('t')
-    ax6.legend(legend2_2in1out)
+    ax6.legend(legend2_2in1out, loc='center right', bbox_to_anchor=(1, 0.4) )
     ax7.plot(R_2in1out)
     # ax8.plot(np.outer(R_theor_2in1out, np.ones(t)).T, '--')
     ax7.set_xlabel('t')
     # ax8.legend(legend3_2in1out)
     nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color=color_lst[0], node_color=color_lst[0],
-                     with_labels=True, font_color='white', font_size=14, ax=ax8)
+                     with_labels=True, arrows=False, font_color='white', font_size=14, width=2, ax=ax8)
+
+    for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]:
+        set_thicker_spines(ax)  # Apply the spine thickness to each subplot
 
     plt.show()
 
@@ -498,3 +497,9 @@ def plot_comparison_R_type(R_propto_deltap: NDArray[np.float_], deltaR_propto_de
         # ax.set_yscale('log')  # Logarithmic scale, auto-scaled to data
 
     plt.show()
+
+
+# Define a function to apply thicker spines globally
+def set_thicker_spines(ax, linewidth=2):
+    for spine in ax.spines.values():
+        spine.set_linewidth(linewidth)

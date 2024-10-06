@@ -331,3 +331,21 @@ def edges_from_EI_EJ(nodes_array, EI, EJ) -> NDArray[np.int_]:
     edges: NDArray[np.int_] = array([np.where(np.append(EI, EJ) == nodes_array[i])[0] % len(EI)
                                      for i in range(len(nodes_array))])
     return edges
+
+
+def random_gen_M(random_state: int, size: int) -> NDArray[np.float_]:
+    """
+    random_gen_M generates a random M_values array for regression task
+    use for multiple_Nin_Nout for example, and before train_loop()
+
+    inputs:
+    random_state - int, random seed
+    size         - size of M_values, train_loop then decides how many to take
+    """
+    # generate random state
+    random_gen = np.random.RandomState(random_state)
+
+    # Generate random values with the defined random state
+    M_values = random_gen.rand(size)
+
+    return M_values

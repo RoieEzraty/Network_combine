@@ -171,6 +171,7 @@ def plotNetStructure(NET: nx.DiGraph, colors_lst: list, plot: bool = False,
     if plot=='yes' also show matplotlib plot of network structure
     """
     pos_lattice: Dict[Any, Tuple[float, float]] = nx.spring_layout(NET, k=1.0, iterations=20)
+    # pos_lattice = {(x, y): (x, y) for x, y in NET.nodes()}
     if plot:
         nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
                          with_labels=True, arrows=False, font_color='white', font_size=14, width=2)

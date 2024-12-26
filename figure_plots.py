@@ -10,6 +10,7 @@ from typing import Tuple, List, Dict, Any
 from typing import TYPE_CHECKING
 from numpy.typing import NDArray
 from brokenaxes import brokenaxes
+from matplotlib.ticker import MaxNLocator
 
 import statistics
 
@@ -128,10 +129,11 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1))
     ax1.set_yscale('log')
     ax1.set_title(r'$\|\mathcal{L}\|$')
+    # ax1.yaxis.set_major_locator(MaxNLocator(nbins=5))  # More ticks on the y-axis
     # ax1.legend(legend4)
     ax2.plot(input_dual_1in2out)
     ax2.plot(output_dual_1in2out)
-    ax2.set_title('Dual state pressure')
+    ax2.set_title('"Update" modality pressure')
     ax2.legend(legend2_1in2out, loc='center right')
     ax3.plot(R_1in2out)
     # ax3.plot(np.outer(R_theor_1in2out, np.ones(t)).T, '--')
@@ -147,7 +149,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax6.plot(input_dual_2in1out)
     ax6.plot(output_dual_2in1out)
     ax6.set_xlabel('t')
-    ax6.legend(legend2_2in1out, loc='center right', bbox_to_anchor=(1, 0.4) )
+    ax6.legend(legend2_2in1out, loc='center right', bbox_to_anchor=(1, 0.4))
     ax7.plot(R_2in1out)
     # ax8.plot(np.outer(R_theor_2in1out, np.ones(t)).T, '--')
     ax7.set_xlabel('t')

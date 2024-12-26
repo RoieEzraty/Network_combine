@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from User_Variables import User_Variables
     from Network_State import Network_State
 
+import colors
 
 # ================================
 # functions for plots
@@ -38,6 +39,11 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     outputs:
     1 matplotlib plot
     """
+
+    colors_lst, red, custom_cmap = colors.color_scheme()
+    # Set the custom color cycle globally without cycler
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_lst)
+
     if Variabs.Nin == 1 and Variabs.Nout == 1:  # 1by1, simplest
         if M is not None:
             A: float = M[0]
@@ -140,13 +146,18 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     # fig.suptitle(f'alpha={Variabs.alpha_vec}')
     if include_network:
         if NET is not None:
-            nx.draw_networkx(NET.NET, pos=NET.pos_lattice, edge_color='b', node_color='b', with_labels=True, ax=ax5)
+            R_thicknesses = 4*(NET.R_reordered-np.min(NET.R_reordered))/np.max(NET.R_reordered)
+            # Generate edge colors based on R_reordered
+            edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
+            nx.draw_networkx(NET.NET, pos=NET.pos_lattice, edge_color=edge_colors, node_color='b', with_labels=True, ax=ax5)
+            nx.draw_networkx_edges(NET.NET, NET.pos_lattice, ax=ax5, edge_color=edge_colors, width=R_thicknesses)
         else:
             print('no NET assigned in input')
     plt.show()
 
 
-def plotNetStructure(NET: nx.DiGraph, plot: bool = False, node_labels: bool = False) -> Dict[Any, Tuple[float, float]]:
+def plotNetStructure(NET: nx.DiGraph, colors_lst: list, plot: bool = False,
+                     node_labels: bool = False) -> Dict[Any, Tuple[float, float]]:
     """
     Plots the structure (nodes and edges) of networkx NET
 
@@ -161,7 +172,9 @@ def plotNetStructure(NET: nx.DiGraph, plot: bool = False, node_labels: bool = Fa
     """
     pos_lattice: Dict[Any, Tuple[float, float]] = nx.spring_layout(NET, k=1.0, iterations=20)
     if plot:
-        nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=node_labels)
+        nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
+                         with_labels=True, arrows=False, font_color='white', font_size=14, width=2)
+        # nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=node_labels)
         plt.show()
     print('NET is ready')
     return pos_lattice

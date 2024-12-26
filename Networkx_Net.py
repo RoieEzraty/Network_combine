@@ -4,6 +4,7 @@ import networkx as nx
 from typing import Tuple, List, Dict, Any
 from numpy import array, zeros
 from typing import TYPE_CHECKING
+from numpy.typing import NDArray
 
 import plot_functions
 
@@ -40,7 +41,8 @@ class Networkx_Net:
         NET.add_edges_from(BigClass.Strctr.EIEJ_plots)  # add edges
         self.NET: nx.DiGraph = NET
 
-    def build_pos_lattice(self, BigClass: "Big_Class", plot: bool = False, node_labels: bool = False) -> None:
+    def build_pos_lattice(self, BigClass: "Big_Class", colors_lst: list, plot: bool = False,
+                          node_labels: bool = False) -> None:
         """
         build_pos_lattice builds the lattice of positions of edges and nodes
 
@@ -52,6 +54,14 @@ class Networkx_Net:
         outputs:
         pos_lattice - dict, positions of nodes from NET.nodes
         """
-        pos_lattice: Dict[Any, Tuple[float, float]] = plot_functions.plotNetStructure(self.NET, plot=plot,
+        pos_lattice: Dict[Any, Tuple[float, float]] = plot_functions.plotNetStructure(self.NET, colors_lst, plot=plot,
                                                                                       node_labels=node_labels)
         self.pos_lattice = pos_lattice
+
+    def save_R_reordered(self, R_vec: NDArray[np.float_], EIEJ_plots: list[Tuple]) -> None:
+
+        # Create a mapping from edges to their index in Strctr.EIEJ_plots
+        edge_to_index = {edge: idx for idx, edge in enumerate(EIEJ_plots)}
+
+        # Reorder R_in_t according to NET.NET.edges
+        self.R_reordered = array([R_vec[edge_to_index[edge]] for edge in self.NET.edges])

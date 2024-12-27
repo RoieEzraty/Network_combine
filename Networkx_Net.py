@@ -65,8 +65,7 @@ class Networkx_Net:
             pos_lattice = nx.spring_layout(self.NET, k=1.0, iterations=20)
         self.pos_lattice = pos_lattice
         if plot:
-            plot_functions.plotNetStructure(self.plotNET, colors_lst, BigClass, pos_lattice, node_labels=node_labels,
-                                            type=BigClass.Strctr.net_type)
+            plot_functions.plotNetStructure(self.plotNET, colors_lst, BigClass, pos_lattice, node_labels=node_labels)
 
     def save_R_reordered(self, R_vec: NDArray[np.float_], EIEJ_plots: list[Tuple]) -> None:
 

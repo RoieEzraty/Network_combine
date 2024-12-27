@@ -1,13 +1,12 @@
 from __future__ import annotations
+import copy
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict, Any, Union, Optional
 from typing import TYPE_CHECKING
 from numpy.typing import NDArray
-
-from typing import Tuple, List, Union, Optional
 
 if TYPE_CHECKING:
     from User_Variables import User_Variables
@@ -149,8 +148,8 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
             R_thicknesses = 4*(NET.R_reordered-np.min(NET.R_reordered))/np.max(NET.R_reordered)
             # Generate edge colors based on R_reordered
             edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
-            nx.draw_networkx(NET.plotNET, pos=NET.pos_lattice, edge_color=edge_colors, node_color='b', with_labels=True,
-                             ax=ax5)
+            nx.draw_networkx(NET.plotNET, pos=NET.pos_lattice, edge_color=edge_colors, node_color=colors_lst[0], 
+                             with_labels=True, ax=ax5)
             nx.draw_networkx_edges(NET.plotNET, NET.pos_lattice, ax=ax5, edge_color=edge_colors, width=R_thicknesses)
         else:
             print('no NET assigned in input')
@@ -158,7 +157,8 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
 
 
 def plotNetStructure(NET: nx.DiGraph, colors_lst: list, BigClass, pos_lattice: Dict[Any, Tuple[float, float]],
-                     node_labels: bool = False, type: str = 'FC') -> Dict[Any, Tuple[float, float]]:
+                     node_labels: bool = False,
+                     R_reordered: NDArray[np.float_] = np.array([])) -> Dict[Any, Tuple[float, float]]:
     """
     Plots the structure (nodes and edges) of networkx NET
 
@@ -171,8 +171,15 @@ def plotNetStructure(NET: nx.DiGraph, colors_lst: list, BigClass, pos_lattice: D
     pos_lattice - dict of positions of nodes from NET.nodes
     if plot=='yes' also show matplotlib plot of network structure
     """
-    nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
-                     with_labels=True, arrows=False, font_color='white', font_size=14, width=2)
+    if any(R_reordered):
+        R_thicknesses = copy.copy(R_reordered)
+        edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
+        nx.draw_networkx(NET, pos=pos_lattice, edge_color=edge_colors, node_color=colors_lst[0],
+                         with_labels=True)
+        nx.draw_networkx_edges(NET, pos_lattice, edge_color=edge_colors, width=R_thicknesses)
+    else:
+        nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
+                         with_labels=True, arrows=False, font_color='white', font_size=14, width=2)
     # nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=node_labels)
     plt.show()
     print('NET is ready')

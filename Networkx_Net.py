@@ -56,15 +56,17 @@ class Networkx_Net:
         pos_lattice - dict, positions of nodes from NET.nodes
         """
         if BigClass.Strctr.net_type == 'square':
-            SQRENET = nx.grid_2d_graph(BigClass.Strctr.net_height, BigClass.Strctr.net_len, periodic=False,
+            plotNET = nx.grid_2d_graph(BigClass.Strctr.net_height, BigClass.Strctr.net_len, periodic=False,
                                        create_using=None)
-            pos_lattice: Dict[Any, Tuple[float, float]] = {(x, y): (x, y) for x, y in SQRENET.nodes()}
+            pos_lattice: Dict[Any, Tuple[float, float]] = {(x, y): (x, y) for x, y in plotNET.nodes()}
+            self.plotNET = plotNET  # network for plots, NET.edges and NET.nodes might differ from plotNET
         else:
+            self.plotNET = self.NET  # network for plots, NET.edges and NET.nodes might differ from plotNET
             pos_lattice = nx.spring_layout(self.NET, k=1.0, iterations=20)
-        if plot:
-            plot_functions.plotNetStructure(self.NET, colors_lst, BigClass, pos_lattice, node_labels=node_labels,
-                                            type=BigClass.Strctr.net_type)
         self.pos_lattice = pos_lattice
+        if plot:
+            plot_functions.plotNetStructure(self.plotNET, colors_lst, BigClass, pos_lattice, node_labels=node_labels,
+                                            type=BigClass.Strctr.net_type)
 
     def save_R_reordered(self, R_vec: NDArray[np.float_], EIEJ_plots: list[Tuple]) -> None:
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import copy
+import networkx as nx
 
 from typing import Tuple, List
 from numpy.typing import NDArray
@@ -12,6 +13,7 @@ import solve
 if TYPE_CHECKING:
     from Network_Structure import Network_Structure
     from Big_Class import Big_Class
+    from Networkx_Net import Networkx_Net
 
 
 # ===================================================
@@ -201,6 +203,48 @@ def build_incidence_partialInter(Strctr: "Network_Structure") -> Tuple[NDArray[n
     for i, outNode in enumerate(Strctr.output_nodes_arr):
         EIlst.append(outNode)
         EJlst.append(ground_node)
+
+    EI: NDArray[np.int_] = array(EIlst)
+    EJ: NDArray[np.int_] = array(EJlst)
+    NE: int = len(EI)
+
+    # for plots
+    EIEJ_plots: List = [(EI[i], EJ[i]) for i in range(len(EI))]
+
+    DM: NDArray[np.int_] = zeros([NE, NN], dtype=np.int_)  # Incidence matrix
+    for i in range(NE):
+        DM[i, int(EI[i])] = +1.
+        DM[i, int(EJ[i])] = -1.
+
+    return EI, EJ, EIEJ_plots, DM, NE, NN
+
+
+def build_incidence_square(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                                 List[NDArray[np.int_]], NDArray[np.int_], int, int]:
+    """
+    Builds incidence matrix DM as np.array [NEdges, NNodes] for a square network
+    its meaning is 1 at input node and -1 at outpus for every row which resembles one edge.
+
+    input (extracted from Variabs input):
+    Strctr: "Network_Structure" class instance with the input, intermediate and output nodes
+
+    output:
+    EI, EJ     - 1D np.arrays sized NEdges such that EI[i] is node connected to EJ[i] at certain edge
+    EIEJ_plots - EI, EJ divided to pairs for ease of use
+    DM         - Incidence matrix as np.array [NEdges, NNodes]
+    NE         - NEdges, int
+    NN         - NNodes, int
+    """
+
+    NN: int = Strctr.net_height*Strctr.net_len
+    SQRENET = nx.grid_2d_graph(Strctr.net_height, Strctr.net_len, periodic=False, create_using=None)
+    # ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
+    EIlst: List[int] = []
+    EJlst: List[int] = []
+
+    for (x1, y1), (x2, y2) in SQRENET.edges:
+        EIlst.append(y1 * Strctr.net_height + x1)
+        EJlst.append(y2 * Strctr.net_height + x2)
 
     EI: NDArray[np.int_] = array(EIlst)
     EJ: NDArray[np.int_] = array(EJlst)

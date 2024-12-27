@@ -149,9 +149,9 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
             R_thicknesses = 4*(NET.R_reordered-np.min(NET.R_reordered))/np.max(NET.R_reordered)
             # Generate edge colors based on R_reordered
             edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
-            nx.draw_networkx(NET.NET, pos=NET.pos_lattice, edge_color=edge_colors, node_color='b', with_labels=True,
+            nx.draw_networkx(NET.plotNET, pos=NET.pos_lattice, edge_color=edge_colors, node_color='b', with_labels=True,
                              ax=ax5)
-            nx.draw_networkx_edges(NET.NET, NET.pos_lattice, ax=ax5, edge_color=edge_colors, width=R_thicknesses)
+            nx.draw_networkx_edges(NET.plotNET, NET.pos_lattice, ax=ax5, edge_color=edge_colors, width=R_thicknesses)
         else:
             print('no NET assigned in input')
     plt.show()

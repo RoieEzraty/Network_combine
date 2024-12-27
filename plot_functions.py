@@ -149,15 +149,16 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
             R_thicknesses = 4*(NET.R_reordered-np.min(NET.R_reordered))/np.max(NET.R_reordered)
             # Generate edge colors based on R_reordered
             edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
-            nx.draw_networkx(NET.NET, pos=NET.pos_lattice, edge_color=edge_colors, node_color='b', with_labels=True, ax=ax5)
+            nx.draw_networkx(NET.NET, pos=NET.pos_lattice, edge_color=edge_colors, node_color='b', with_labels=True,
+                             ax=ax5)
             nx.draw_networkx_edges(NET.NET, NET.pos_lattice, ax=ax5, edge_color=edge_colors, width=R_thicknesses)
         else:
             print('no NET assigned in input')
     plt.show()
 
 
-def plotNetStructure(NET: nx.DiGraph, colors_lst: list, plot: bool = False,
-                     node_labels: bool = False) -> Dict[Any, Tuple[float, float]]:
+def plotNetStructure(NET: nx.DiGraph, colors_lst: list, BigClass, pos_lattice: Dict[Any, Tuple[float, float]],
+                     node_labels: bool = False, type: str = 'FC') -> Dict[Any, Tuple[float, float]]:
     """
     Plots the structure (nodes and edges) of networkx NET
 
@@ -170,13 +171,10 @@ def plotNetStructure(NET: nx.DiGraph, colors_lst: list, plot: bool = False,
     pos_lattice - dict of positions of nodes from NET.nodes
     if plot=='yes' also show matplotlib plot of network structure
     """
-    pos_lattice: Dict[Any, Tuple[float, float]] = nx.spring_layout(NET, k=1.0, iterations=20)
-    # pos_lattice = {(x, y): (x, y) for x, y in NET.nodes()}
-    if plot:
-        nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
-                         with_labels=True, arrows=False, font_color='white', font_size=14, width=2)
-        # nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=node_labels)
-        plt.show()
+    nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
+                     with_labels=True, arrows=False, font_color='white', font_size=14, width=2)
+    # nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=node_labels)
+    plt.show()
     print('NET is ready')
     return pos_lattice
 

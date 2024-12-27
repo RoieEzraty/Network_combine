@@ -1,5 +1,6 @@
 from __future__ import annotations
 import networkx as nx
+import numpy as np
 
 from typing import Tuple, List, Dict, Any
 from numpy import array, zeros
@@ -54,8 +55,15 @@ class Networkx_Net:
         outputs:
         pos_lattice - dict, positions of nodes from NET.nodes
         """
-        pos_lattice: Dict[Any, Tuple[float, float]] = plot_functions.plotNetStructure(self.NET, colors_lst, plot=plot,
-                                                                                      node_labels=node_labels)
+        if BigClass.Strctr.net_type == 'square':
+            SQRENET = nx.grid_2d_graph(BigClass.Strctr.net_height, BigClass.Strctr.net_len, periodic=False,
+                                       create_using=None)
+            pos_lattice: Dict[Any, Tuple[float, float]] = {(x, y): (x, y) for x, y in SQRENET.nodes()}
+        else:
+            pos_lattice = nx.spring_layout(self.NET, k=1.0, iterations=20)
+        if plot:
+            plot_functions.plotNetStructure(self.NET, colors_lst, BigClass, pos_lattice, node_labels=node_labels,
+                                            type=BigClass.Strctr.net_type)
         self.pos_lattice = pos_lattice
 
     def save_R_reordered(self, R_vec: NDArray[np.float_], EIEJ_plots: list[Tuple]) -> None:

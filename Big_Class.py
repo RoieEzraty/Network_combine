@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from User_Variables import User_Variables
     from Network_State import Network_State
     from Network_Structure import Network_Structure
+    from Color_Scheme import Color_Scheme
 
 # ===================================================
 # Class - Big class that contains all smaller classes
@@ -28,3 +29,6 @@ class Big_Class:
 
     def add_NET(self, NET):
         self.NET = NET
+
+    def add_Colors(self, Colorscheme: "Color_Scheme"):
+        self.Colorscheme = Colorscheme

@@ -2,8 +2,10 @@ from __future__ import annotations
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import copy
 
-from typing import Tuple, List, Dict, Any
+from matplotlib.colors import LinearSegmentedColormap
+from typing import Tuple, List, Dict, Any, Union, Optional
 from typing import TYPE_CHECKING
 from numpy.typing import NDArray
 
@@ -12,6 +14,8 @@ from typing import Tuple, List, Union, Optional
 if TYPE_CHECKING:
     from User_Variables import User_Variables
     from Network_State import Network_State
+    from Big_Class import Big_Class
+
 
 import colors
 
@@ -157,8 +161,10 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     plt.show()
 
 
-def plotNetStructure(NET: nx.DiGraph, colors_lst: list, BigClass, pos_lattice: Dict[Any, Tuple[float, float]],
-                     node_labels: bool = False, type: str = 'FC') -> Dict[Any, Tuple[float, float]]:
+def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
+                     pos_lattice: Dict[Any, Tuple[float, float]], node_labels: bool = False,
+                     R_reordered: NDArray[np.float_] = np.array([]),
+                     p_reordered: NDArray[np.float_] = np.array([]),) -> None:
     """
     Plots the structure (nodes and edges) of networkx NET
 
@@ -171,12 +177,54 @@ def plotNetStructure(NET: nx.DiGraph, colors_lst: list, BigClass, pos_lattice: D
     pos_lattice - dict of positions of nodes from NET.nodes
     if plot=='yes' also show matplotlib plot of network structure
     """
-    nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
-                     with_labels=True, arrows=False, font_color='white', font_size=14, width=2)
+    colors_lst = BigClass.Colorscheme.colors_lst
+    if any(R_reordered) and any(p_reordered):
+        R_thicknesses = 4*copy.copy(R_reordered)
+        p_reordered_normalized = p_reordered/np.max(p_reordered)
+        edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
+        node_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in p_reordered_normalized]
+        nx.draw_networkx(NET, pos=pos_lattice, edge_color=edge_colors, node_color=node_colors,
+                         with_labels=True)
+        nx.draw_networkx_edges(NET, pos_lattice, edge_color=edge_colors, width=R_thicknesses)
+    if any(R_reordered):
+        R_thicknesses = 4*copy.copy(R_reordered)
+        edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
+        nx.draw_networkx(NET, pos=pos_lattice, edge_color=edge_colors, node_color=colors_lst[0],
+                         with_labels=True)
+        nx.draw_networkx_edges(NET, pos_lattice, edge_color=edge_colors, width=R_thicknesses)
+    else:
+        nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
+                         with_labels=True, arrows=False, font_color='white', font_size=14, width=2)
     # nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=node_labels)
     plt.show()
     print('NET is ready')
-    return pos_lattice
+
+
+def plot_colors(custom_cmap, red):
+    # Create a gradient and plot it with log scale on the y-axis
+    plt.figure(figsize=(8, 4))
+
+    # Generate a vertical gradient and plot with log scale
+    gradient = np.linspace(0, 1, 256).reshape(256, 1)  # Vertical gradient
+
+    # Plot the custom gradient
+    plt.subplot(1, 2, 1)
+    plt.imshow(gradient, aspect='auto', cmap=custom_cmap, extent=[0, 1, 1, 256])
+    # plt.imshow(gradient, cmap=custom_cmap)
+    plt.title("Custom Color Gradient")
+    plt.xticks([])  # Remove x ticks
+    plt.yticks([])  # Remove y ticks
+
+    # Plot the solid red block using a 1x1 matrix with the red color mapped
+    plt.subplot(1, 2, 2)
+    plt.imshow([[1]], aspect='auto', cmap=LinearSegmentedColormap.from_list('red_cmap', [red, red]),
+               extent=[0, 1, 1, 256])
+    plt.title("Solid Red Color")
+    plt.xticks([])  # Remove x ticks
+    plt.yticks([])  # Remove y ticks
+
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_accuracy(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],

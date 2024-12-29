@@ -42,7 +42,7 @@ class Networkx_Net:
         NET.add_edges_from(BigClass.Strctr.EIEJ_plots)  # add edges
         self.NET: nx.DiGraph = NET
 
-    def build_pos_lattice(self, BigClass: "Big_Class", colors_lst: list, plot: bool = False,
+    def build_pos_lattice(self, BigClass: "Big_Class", plot: bool = False,
                           node_labels: bool = False) -> None:
         """
         build_pos_lattice builds the lattice of positions of edges and nodes
@@ -61,10 +61,9 @@ class Networkx_Net:
             pos_lattice: Dict[Any, Tuple[float, float]] = {(x, y): (x, y) for x, y in SQRENET.nodes()}
         else:
             pos_lattice = nx.spring_layout(self.NET, k=1.0, iterations=20)
-        if plot:
-            plot_functions.plotNetStructure(self.NET, colors_lst, BigClass, pos_lattice, node_labels=node_labels,
-                                            type=BigClass.Strctr.net_type)
         self.pos_lattice = pos_lattice
+        if plot:
+            plot_functions.plotNetStructure(self.plotNET, BigClass, pos_lattice, node_labels=node_labels)
 
     def save_R_reordered(self, R_vec: NDArray[np.float_], EIEJ_plots: list[Tuple]) -> None:
 

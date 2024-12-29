@@ -17,6 +17,7 @@ import statistics
 if TYPE_CHECKING:
     from User_Variables import User_Variables
     from Network_State import Network_State
+    from Color_Scheme import Color_Scheme
 
 
 # ================================
@@ -32,7 +33,7 @@ plt.rcParams['legend.loc'] = 'best'
 
 ## The functions
 
-def loss_afo_in_out(loss_mat: np.ndarray, cmap: Colormap) -> None:
+def loss_afo_in_out(loss_mat: np.ndarray, Colorscheme: "Color_Scheme") -> None:
     """
     Nice boxes in cool color scheme of loss a.f.o #inputs and #outputs, lin scale
     use loss_mat outputed from multiple_Nin_Nout.ipynb
@@ -53,7 +54,7 @@ def loss_afo_in_out(loss_mat: np.ndarray, cmap: Colormap) -> None:
     plt.figure()
 
     # plot loss_mat without interpolation, setting color limits [0-1]
-    plt.imshow(loss_mat_mean, cmap=cmap, origin='lower',
+    plt.imshow(loss_mat_mean, cmap=Colorscheme.cmap, origin='lower',
                extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5], vmin=0, vmax=0.3)
 
     # Labeling
@@ -80,7 +81,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
                        loss_1in2out: NDArray[np.float_], loss_2in1out: NDArray[np.float_],
                        NET_1in2out: nx.DiGraph, NET_2in1out: nx.DiGraph,
                        pos_lattice_1in2out: dict, pos_lattice_2in1out: dict,
-                       color_lst: list[str], red: str) -> None:
+                       Colorscheme: "Color_Scheme") -> None:
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
@@ -99,7 +100,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     """
 
     # Set the custom color cycle globally without cycler
-    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', color_lst)
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', Colorscheme.colors_lst)
 
     # sizes for 1 input 2 output
     A_1in2out: float = M[0]  # A = x_hat/p_in
@@ -138,8 +139,9 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax3.plot(R_1in2out)
     # ax3.plot(np.outer(R_theor_1in2out, np.ones(t)).T, '--')
     ax3.set_title(r'$R$')
-    nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color=color_lst[0], node_color=color_lst[0],
-                     with_labels=True, arrows=False, font_color='white', font_size=14, width=2, ax=ax4)
+    nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color=Colorscheme.colors_lst[0],
+                     node_color=Colorscheme.colors_lst[0], with_labels=True, arrows=False, font_color='white',
+                     font_size=14, width=2, ax=ax4)
     ax4.set_title('Network structure')
 
     # plot 2 input 1 output
@@ -154,8 +156,9 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # ax8.plot(np.outer(R_theor_2in1out, np.ones(t)).T, '--')
     ax7.set_xlabel('t')
     # ax8.legend(legend3_2in1out)
-    nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color=color_lst[0], node_color=color_lst[0],
-                     with_labels=True, arrows=False, font_color='white', font_size=14, width=2, ax=ax8)
+    nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color=Colorscheme.colors_lst[0],
+                     node_color=Colorscheme.colors_lst[0], with_labels=True, arrows=False, font_color='white',
+                     font_size=14, width=2, ax=ax8)
 
     for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]:
         set_thicker_spines(ax)  # Apply the spine thickness to each subplot
@@ -295,8 +298,7 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
                               accuracy_in_t_deltaR_propto_deltap: np.ndarray,
                               accuracy_in_t_deltaR_propto_Q: np.ndarray,
                               accuracy_in_t_deltaR_propto_Power: np.ndarray,
-                              colors: List[np.float_], red: str,
-                              smooth: bool = True, window_size: int = 5):
+                              Colorscheme: "Color_Scheme", smooth: bool = True, window_size: int = 5):
     """
     Plots the accuracy in time for the Iris problem using 4 materials.
     """
@@ -314,7 +316,7 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
     # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
     for t in range(t_final):
         if t % dataset_len == 0:
-            plt.axvline(x=t, color=red, linestyle='--', linewidth=1)
+            plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1)
 
     # Apply smoothing for the average accuracy lines
     if smooth:
@@ -352,27 +354,31 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
 
     # Plot the smoothed mean accuracy with lines connecting points
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q,
-             color=colors[2], alpha=1., marker=None, linestyle='-', linewidth=3)
+             color=Colorscheme.colors_lst[2], alpha=1., marker=None, linestyle='-', linewidth=3)
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap,
-             color=colors[1], alpha=1., marker=None, linestyle='-', linewidth=3)
+             color=Colorscheme.colors_lst[1], alpha=1., marker=None, linestyle='-', linewidth=3)
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power,
-             color=colors[3], alpha=1., marker=None, linestyle='--', linewidth=3)
+             color=Colorscheme.colors_lst[3], alpha=1., marker=None, linestyle='--', linewidth=3)
     plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
-             color=colors[0], alpha=1., marker=None, linestyle='--', linewidth=3)
+             color=Colorscheme.colors_lst[0], alpha=1., marker=None, linestyle='--', linewidth=3)
 
     # Plot confidence intervals using fill_between
     plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q - std_deltaR_propto_Q,
-                     mean_accuracy_deltaR_propto_Q + std_deltaR_propto_Q, color=colors[0], alpha=opacity)
+                     mean_accuracy_deltaR_propto_Q + std_deltaR_propto_Q, color=Colorscheme.colors_lst[0],
+                     alpha=opacity)
     plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap - std_deltaR_propto_deltap,
-                     mean_accuracy_deltaR_propto_deltap + std_deltaR_propto_deltap, color=colors[1], alpha=opacity)
+                     mean_accuracy_deltaR_propto_deltap + std_deltaR_propto_deltap, color=Colorscheme.colors_lst[1],
+                     alpha=opacity)
     plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power - std_deltaR_propto_Power,
-                     mean_accuracy_deltaR_propto_Power + std_deltaR_propto_Power, color=colors[2], alpha=opacity)
+                     mean_accuracy_deltaR_propto_Power + std_deltaR_propto_Power, color=Colorscheme.colors_lst[2],
+                     alpha=opacity)
     plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap - std_R_propto_deltap,
-                     mean_accuracy_R_propto_deltap + std_R_propto_deltap, color=colors[3], alpha=opacity)
+                     mean_accuracy_R_propto_deltap + std_R_propto_deltap, color=Colorscheme.colors_lst[3],
+                     alpha=opacity)
 
     # Adding a single line for each legend entry with the same colors
     for i in range(4):
-        plt.plot([], [], color=colors[i], label=legend[i])
+        plt.plot([], [], color=Colorscheme.colors_lst[i], label=legend[i])
 
     # axes
     plt.xlabel('t', fontsize=14)
@@ -384,7 +390,7 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
 
 
 def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],
-                             dataset_shape: NDArray[np.int_], colors: List[str], red: str,
+                             dataset_shape: NDArray[np.int_], Colorscheme: "Color_Scheme",
                              smooth: bool = True, window_size: int = 5) -> None:
     """
     Plots the accuracy in time for the Iris problem
@@ -420,14 +426,15 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
     # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
     for t in range(t_final):
         if t % dataset_shape[0] == 0:
-            plt.axvline(x=t, color=red, linestyle='--', linewidth=1)
+            plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1)
 
     # plot accuracy a.f.o time
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy, label='accuracy', color=colors[0], marker='.', linestyle='')
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy, label='accuracy', color=Colorscheme.colors_lst[0], marker='.',
+             linestyle='')
 
     # Plot confidence intervals using fill_between
     plt.fill_between(t_for_accuracy_smoothed, mean_accuracy - std,
-                     mean_accuracy + std, color=colors[0], alpha=opacity)
+                     mean_accuracy + std, color=Colorscheme.colors_lst[0], alpha=opacity)
 
     # axes
     plt.xlabel('t', fontsize=14)  # Set x-axis label with font size

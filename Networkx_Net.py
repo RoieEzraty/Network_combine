@@ -59,8 +59,8 @@ class Networkx_Net:
             # plotNET = nx.grid_2d_graph(BigClass.Strctr.net_height, BigClass.Strctr.net_len, periodic=False,
             #                            create_using=None)
             # pos_lattice: Dict[Any, Tuple[float, float]] = {(x, y): (x, y) for x, y in plotNET.nodes()}
-            width = BigClass.Strctr.net_len
-            pos_lattice: Dict[Any, Tuple[float, float]] = {index: (index % width, index // width) for index in
+            height = BigClass.Strctr.net_height
+            pos_lattice: Dict[Any, Tuple[float, float]] = {index: (index % height, index // height) for index in
                                                            range(len(self.NET.nodes))}
             # self.plotNET = plotNET  # network for plots, NET.edges and NET.nodes might differ from plotNET
         else:

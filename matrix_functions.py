@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 import copy
 import networkx as nx
+import random as rand
 
 from typing import Tuple, List
 from numpy.typing import NDArray
@@ -21,10 +22,10 @@ if TYPE_CHECKING:
 # ===================================================
 
 
-def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int,
-                                  Nout: int, extraNout: int) -> Tuple[NDArray[np.int_], NDArray[np.int_],
-                                                                      NDArray[np.int_], NDArray[np.int_],
-                                                                      NDArray[np.int_], NDArray[np.int_],]:
+def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int, net_type="FC",
+                                  seed=42, net_height=0, net_len=0) -> Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                                             NDArray[np.int_], NDArray[np.int_],
+                                                                             NDArray[np.int_], NDArray[np.int_]]:
     """
     build_input_output_and_ground builds the input and output pairs and ground node values as arrays
 
@@ -39,15 +40,37 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int,
     ground_nodes_arr - array of all output nodes in task
     output_nodes     - array of nodes with fixed values, for 'XOR' task. default=0
     """
-    input_nodes_arr: NDArray[np.int_] = array([i for i in range(Nin)])  # input nodes are first ones named
-    # extra inputs not accounted in loss
-    extraInputs_nodes_arr: NDArray[np.int_] = array([Nin + i for i in range(extraNin)], dtype=np.int_)
-    inter_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + i for i in range(Ninter)], dtype=np.int_)  # intermediate nodes
-    output_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + i for i in range(Nout)])  # output nodes
-    # extra outputs not accounted in loss
-    extraOutput_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)],
-                                                    dtype=np.int_)
-    ground_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + extraNout])  # last node is ground
+    if net_type == "square":
+        rand.seed(seed)
+        rand_nodes = rand.sample(range(0, net_height * net_len), Nin + extraNin + Ninter + Nout + extraNout + 1)
+        # input nodes
+        input_nodes_arr: NDArray[np.int_] = array([rand_nodes[i] for i in range(Nin)], dtype=np.int_)
+        # extra inputs not accounted in loss
+        extraInputs_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + i] for i in range(extraNin)], dtype=np.int_)
+        # intermediate nodes
+        inter_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + extraNin + i] for i in range(Ninter)],
+                                                  dtype=np.int_)
+        # output nodes
+        output_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin+i] for i in range(Nout)], dtype=np.int_)
+        # extra outputs
+        extraOutput_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + extraNin + Ninter + Nout + i]
+                                                        for i in range(extraNout)], dtype=np.int_)
+        # last node is ground
+        ground_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + Nout]], dtype=np.int_)
+    else:  # network is Fully Connected ("FC")
+        # input nodes
+        input_nodes_arr = array([i for i in range(Nin)])  # input nodes are first ones named
+        # extra inputs not accounted in loss
+        extraInputs_nodes_arr = array([Nin + i for i in range(extraNin)], dtype=np.int_)
+        # intermediate nodes
+        inter_nodes_arr = array([Nin + extraNin + i for i in range(Ninter)], dtype=np.int_)
+        # output nodes
+        output_nodes_arr = array([Nin + extraNin + Ninter + i for i in range(Nout)])
+        # extra outputs not accounted in loss
+        extraOutput_nodes_arr = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)], dtype=np.int_)
+        # last node is ground
+        ground_nodes_arr = array([Nin + extraNin + Ninter + Nout + extraNout])
+    # put all in tuple
     inInterOutGround_tuple = (input_nodes_arr, extraInputs_nodes_arr, inter_nodes_arr, output_nodes_arr,
                               extraOutput_nodes_arr, ground_nodes_arr)
     return inInterOutGround_tuple

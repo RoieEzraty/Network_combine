@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from numpy.typing import NDArray
 
 if TYPE_CHECKING:
-    from User_Variables import User_Variables
     from Network_State import Network_State
     from Big_Class import Big_Class
 
@@ -22,9 +21,8 @@ import colors
 # ================================
 
 
-def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: List[NDArray[np.float_]],
-                    M: Optional[NDArray[np.int_]] = None, include_network: Optional[bool] = False,
-                    NET: Optional[nx.DiGraph] = None) -> None:
+def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
+                    include_network: Optional[bool] = False, NET: Optional[nx.DiGraph] = None) -> None:
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
@@ -42,29 +40,35 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     1 matplotlib plot
     """
 
+    Nin = BigClass.Variabs.Nin
+    Nout = BigClass.Variabs.Nout
+    t = BigClass.State.t
+    output_in_t = BigClass.State.output_in_t
+    desired_in_t = BigClass.State.desired_in_t
+
     colors_lst, red, custom_cmap = colors.color_scheme()
     # Set the custom color cycle globally without cycler
     plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_lst)
 
-    if Variabs.Nin == 1 and Variabs.Nout == 1:  # 1by1, simplest
+    if Nin == 1 and Nout == 1:  # 1by1, simplest
         if M is not None:
             A: float = M[0]
             R_theor: NDArray[np.float_] = np.array([(1-A)/A])
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$p\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_1\,\mathrm{theoretical}$', r'$R_2\,\mathrm{theoretical}$']
-    elif Variabs.Nin == 1 and Variabs.Nout == 2:  # Allostery
+    elif Nin == 1 and Nout == 2:  # Allostery
         if M is not None:
             A = M[0]  # A = x_hat/p_in
             B: float = M[1]  # B = y_hat/p_in
             Rl_subs: float = 1.0
-            R_theor = State.input_drawn_in_t[0]*np.array([(1-A)/(A*(1+1/Rl_subs)-B/Rl_subs),
-                                                          (1-B)/(B*(1+1/Rl_subs)-A/Rl_subs)])
+            R_theor = BigClass.State.input_drawn_in_t[0]*np.array([(1-A)/(A*(1+1/Rl_subs)-B/Rl_subs),
+                                                                   (1-B)/(B*(1+1/Rl_subs)-A/Rl_subs)])
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p\,\mathrm{dual}$']
         # legend3 = [r'$R_1$', r'$R_2$', r'$R_1\,\mathrm{theoretical}$', r'$R_2\,\mathrm{theoretical}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$']
-    elif Variabs.Nin == 2 and Variabs.Nout == 1:  # Regression
+    elif Nin == 2 and Nout == 1:  # Regression
         if M is not None:
             A = M[0, 0]
             B = M[0, 1]
@@ -74,27 +78,27 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
         legend2 = [r'$x\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
         # legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_1\,\mathrm{theoretical}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$']
-    elif Variabs.Nin == 2 and Variabs.Nout == 3:
+    elif Nin == 2 and Nout == 3:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
                    r'$\frac{z}{z\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
                    r'$p_2\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$', r'$R_6$']
-    elif Variabs.Nin == 2 and Variabs.Nout == 2:
+    elif Nin == 2 and Nout == 2:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
-        if Variabs.access_interNodes:
+        if BigClass.Variabs.access_interNodes:
             legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
                        r'$\mathrm{inter1\,dual}$', r'$\mathrm{inter2\,dual}$']
         else:
             legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
         legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$']
-    elif Variabs.Nin == 3 and Variabs.Nout == 3:
+    elif Nin == 3 and Nout == 3:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
                    r'$\frac{z}{z\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
                    r'$p_2\,\mathrm{dual}$', r'$p_3\,\mathrm{dual}$']
         legend3 = []
-    elif Variabs.task_type == 'Iris_classification':
+    elif BigClass.Variabs.task_type == 'Iris_classification':
         legend1 = [r'$\mathrm{Setosa}$', r'$\mathrm{Verisicolor}$', r'$\mathrm{Virginica}$']
         legend2 = [r'$\mathrm{Setosa\,dual}$', r'$\mathrm{Verisicolor\,dual}$',
                    r'$\mathrm{Virginica\,dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
@@ -109,26 +113,26 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
         fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(15, 3))
     else:
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(12, 3.2))
-    if Variabs.task_type != 'Iris_classification':
-        ax1.plot(np.linspace(0, State.t, np.shape(State.output_in_t)[0]).T,
-                 np.asarray(State.output_in_t)/np.asarray(State.desired_in_t)-1)
+    if BigClass.Variabs.task_type != 'Iris_classification':
+        ax1.plot(np.linspace(0, t, np.shape(output_in_t)[0]).T,
+                 np.asarray(output_in_t)/np.asarray(desired_in_t)-1)
     else:
-        ax1.plot(np.linspace(0, State.t, np.shape(State.output_in_t)[0]).T,
-                 np.asarray(State.output_in_t))
+        ax1.plot(np.linspace(0, t, np.shape(output_in_t)[0]).T,
+                 np.asarray(output_in_t))
     ax1.set_title('output in time')
     ax1.set_xlabel('t')
     if legend1:
         ax1.legend(legend1)
-    ax2.plot(State.output_dual_in_t[1:])
-    ax2.plot(State.input_dual_in_t[1:])
-    if Variabs.access_interNodes:
-        ax2.plot(State.inter_dual_in_t[1:])
+    ax2.plot(BigClass.State.output_dual_in_t[1:])
+    ax2.plot(BigClass.State.input_dual_in_t[1:])
+    if BigClass.Variabs.access_interNodes:
+        ax2.plot(BigClass.State.inter_dual_in_t[1:])
     ax2.set_title('dual and p in time')
     ax2.set_xlabel('t')
     # ax2.set_ylim([-0.2,0.2])
     if legend2:
         ax2.legend(legend2)
-    ax3.plot(State.R_in_t[1:])
+    ax3.plot(BigClass.State.R_in_t[1:])
     # if 'R_theor' in locals():  # if theoretical values were calculated, plot them
     #     print('R theoretical', R_theor)
     #     ax3.plot(np.outer(R_theor, np.ones(State.t)).T, '--')
@@ -136,10 +140,10 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     ax3.set_xlabel('t')
     if legend3:
         ax3.legend(legend3)
-    for t in range(State.t):
-        if t % len(Variabs.dataset) == 0 and t != 0 and Variabs.task_type != 'Regression':
+    for t in range(t):
+        if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax4.axvline(x=t, color='red', linestyle='--', linewidth=1)
-    ax4.plot(np.mean(np.mean(np.abs(State.loss_norm_in_t[1:]), axis=1), axis=1))
+    ax4.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
     # ax4.plot(np.mean(np.mean(np.abs(State.loss_norm_in_t[1:]), axis=1), axis=1)/np.mean(np.abs(Variabs.targets), axis=1))
     ax4.set_xlabel('t')
     ax4.set_yscale('log')
@@ -148,24 +152,31 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     # fig.suptitle(f'alpha={Variabs.alpha_vec}')
     if include_network:
         if NET is not None:
-            R_thicknesses = 4*(NET.R_reordered-np.min(NET.R_reordered))/np.max(NET.R_reordered)
-            # Generate edge colors based on R_reordered
-            edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
-            nx.draw_networkx(NET.plotNET, pos=NET.pos_lattice, edge_color=edge_colors, node_color=colors_lst[0], 
-                             with_labels=True, ax=ax5)
-            nx.draw_networkx_edges(NET.plotNET, NET.pos_lattice, ax=ax5, edge_color=edge_colors, width=R_thicknesses)
+            # R_thicknesses = 4*(NET.R_reordered-np.min(NET.R_reordered))/np.max(NET.R_reordered)
+            # # Generate edge colors based on R_reordered
+            # edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
+            # nx.draw_networkx(NET.NET, pos=NET.pos_lattice, edge_color=edge_colors, node_color=colors_lst[0],
+            #                  with_labels=True, ax=ax5)
+            # nx.draw_networkx_edges(NET.NET, NET.pos_lattice, ax=ax5, edge_color=edge_colors, width=R_thicknesses)
+            plotNetStructure(NET=BigClass.NET.NET,
+                             BigClass=BigClass,
+                             pos_lattice=BigClass.NET.pos_lattice,
+                             node_labels=True,
+                             R_reordered=BigClass.NET.R_reordered,
+                             u_reordered=BigClass.NET.u_reordered,
+                             p_reordered=BigClass.NET.p_reordered,
+                             ax=ax5  # Pass the subplot axis
+                             )
         else:
             print('no NET assigned in input')
     plt.show()
 
 
-import matplotlib.pyplot as plt
-
 def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
                      pos_lattice: Dict[Any, Tuple[float, float]], node_labels: bool = False,
                      R_reordered: NDArray[np.float_] = np.array([]),
                      u_reordered: NDArray[np.float_] = np.array([]),
-                     p_reordered: NDArray[np.float_] = np.array([]),) -> None:
+                     p_reordered: NDArray[np.float_] = np.array([]), ax: Optional[plt.Axes] = None) -> None:
     """
     Plots the structure (nodes and edges) of networkx NET with arrows representing flow direction.
 
@@ -204,21 +215,38 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
     else:
         node_colors = [colors_lst[0] for _ in range(len(NET.nodes))]
 
+    # Create or use the specified axis
+    ax = ax or plt.gca()
+
     # Draw edges with arrows
     for (u, v), color, width, direction in zip(NET.edges, edge_colors, edge_widths, edge_directions):
         if direction > 0:  # Positive flow
-            nx.draw_networkx_edges(
-                NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
-                connectionstyle="arc3,rad=0.0", arrowstyle="-|>", arrows=True
-            )
+            nx.draw_networkx_edges(NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
+                                   connectionstyle="arc3,rad=0.0", arrowstyle="-|>", arrows=True, ax=ax)
         else:  # Negative flow (reverse direction)
-            nx.draw_networkx_edges(
-                NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
-                connectionstyle="arc3,rad=0.0", arrowstyle="<|-", arrows=True
-            )
+            nx.draw_networkx_edges(NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
+                                   connectionstyle="arc3,rad=0.0", arrowstyle="<|-", arrows=True, ax=ax)
 
     # Draw nodes
     nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors)
+
+    # Highlight input nodes
+    nx.draw_networkx_nodes(NET,
+                           pos=pos_lattice,
+                           nodelist=BigClass.Strctr.input_nodes_arr,
+                           node_color="none",  # Hollow circle
+                           edgecolors="k",  # black border
+                           node_size=300,  # Adjust size as needed
+                           linewidths=2)  # Thickness of the border
+
+    # Highlight output nodes
+    nx.draw_networkx_nodes(NET,
+                           pos=pos_lattice,
+                           nodelist=BigClass.Strctr.output_nodes_arr,
+                           node_color="none",  # Hollow circle
+                           edgecolors="grey",  # Grey border
+                           node_size=300,  # Adjust size as needed
+                           linewidths=2)  # Thickness of the border
 
     # Draw labels (if enabled)
     if node_labels:

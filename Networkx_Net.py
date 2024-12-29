@@ -56,16 +56,19 @@ class Networkx_Net:
         pos_lattice - dict, positions of nodes from NET.nodes
         """
         if BigClass.Strctr.net_type == 'square':
-            plotNET = nx.grid_2d_graph(BigClass.Strctr.net_height, BigClass.Strctr.net_len, periodic=False,
-                                       create_using=None)
-            pos_lattice: Dict[Any, Tuple[float, float]] = {(x, y): (x, y) for x, y in plotNET.nodes()}
-            self.plotNET = plotNET  # network for plots, NET.edges and NET.nodes might differ from plotNET
+            # plotNET = nx.grid_2d_graph(BigClass.Strctr.net_height, BigClass.Strctr.net_len, periodic=False,
+            #                            create_using=None)
+            # pos_lattice: Dict[Any, Tuple[float, float]] = {(x, y): (x, y) for x, y in plotNET.nodes()}
+            width = BigClass.Strctr.net_len
+            pos_lattice: Dict[Any, Tuple[float, float]] = {index: (index % width, index // width) for index in
+                                                           range(len(self.NET.nodes))}
+            # self.plotNET = plotNET  # network for plots, NET.edges and NET.nodes might differ from plotNET
         else:
-            self.plotNET = self.NET  # network for plots, NET.edges and NET.nodes might differ from plotNET
+            # self.plotNET = self.NET  # network for plots, NET.edges and NET.nodes might differ from plotNET
             pos_lattice = nx.spring_layout(self.NET, k=1.0, iterations=20)
         self.pos_lattice = pos_lattice
         if plot:
-            plot_functions.plotNetStructure(self.plotNET, BigClass, pos_lattice, node_labels=node_labels)
+            plot_functions.plotNetStructure(self.NET, BigClass, pos_lattice, node_labels=node_labels)
 
     def save_R_reordered(self, R_vec: NDArray[np.float_], EIEJ_plots: list[Tuple]) -> None:
 
@@ -74,3 +77,17 @@ class Networkx_Net:
 
         # Reorder R_in_t according to NET.NET.edges
         self.R_reordered = array([R_vec[edge_to_index[edge]] for edge in self.NET.edges])
+
+    def save_u_reordered(self, u: NDArray[np.float_], EIEJ_plots: list[Tuple]) -> None:
+
+        # Create a mapping from edges to their index in Strctr.EIEJ_plots
+        edge_to_index = {edge: idx for idx, edge in enumerate(EIEJ_plots)}
+
+        # Reorder R_in_t according to NET.NET.edges
+        self.u_reordered = array([u[edge_to_index[edge]] for edge in self.NET.edges])
+
+    def save_p_reordered(self, p: NDArray[np.float_]) -> None:
+
+        # in DM columns are nodes so node=i
+        # Reorder p according to NET.nodes
+        self.p_reordered = array([p[node] for node in self.NET.nodes])

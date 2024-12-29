@@ -159,41 +159,72 @@ def plot_importants(State: "Network_State", Variabs: "User_Variables", desired: 
     plt.show()
 
 
+import matplotlib.pyplot as plt
+
 def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
                      pos_lattice: Dict[Any, Tuple[float, float]], node_labels: bool = False,
                      R_reordered: NDArray[np.float_] = np.array([]),
+                     u_reordered: NDArray[np.float_] = np.array([]),
                      p_reordered: NDArray[np.float_] = np.array([]),) -> None:
     """
-    Plots the structure (nodes and edges) of networkx NET
+    Plots the structure (nodes and edges) of networkx NET with arrows representing flow direction.
 
     input:
     NET         - networkx net of nodes and edges
-    plot        - bool, whether to plot or not
+    pos_lattice - dict of positions of nodes from NET.nodes
     node_labels - boolean, show node number in plot or not
+    R_reordered - array of values used to determine edge colors
+    u_reordered - array of values used to determine edge widths and flow direction
+    p_reordered - array of values used to determine node colors
 
     output:
-    pos_lattice - dict of positions of nodes from NET.nodes
-    if plot=='yes' also show matplotlib plot of network structure
+    Plots the network structure with matplotlib
     """
     colors_lst = BigClass.Colorscheme.colors_lst
-    if any(R_reordered) and any(p_reordered):
-        R_thicknesses = 4*copy.copy(R_reordered)
-        p_reordered_normalized = p_reordered/np.max(p_reordered)
-        edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
-        node_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in p_reordered_normalized]
-        nx.draw_networkx(NET, pos=pos_lattice, edge_color=edge_colors, node_color=node_colors,
-                         with_labels=True)
-        nx.draw_networkx_edges(NET, pos_lattice, edge_color=edge_colors, width=R_thicknesses)
-    if any(R_reordered):
-        R_thicknesses = 4*copy.copy(R_reordered)
-        edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
-        nx.draw_networkx(NET, pos=pos_lattice, edge_color=edge_colors, node_color=colors_lst[0],
-                         with_labels=True)
-        nx.draw_networkx_edges(NET, pos_lattice, edge_color=edge_colors, width=R_thicknesses)
+
+    # Determine edge colors
+    if R_reordered.size > 0:
+        R_reordered_normalized = 4 * R_reordered / np.max(R_reordered)
+        edge_colors = [BigClass.Colorscheme.cmap(value) for value in R_reordered_normalized]
     else:
-        nx.draw_networkx(NET, pos=pos_lattice, edge_color=colors_lst[0], node_color=colors_lst[0],
-                         with_labels=True, arrows=False, font_color='white', font_size=14, width=2)
-    # nx.draw_networkx(NET, pos_lattice, edge_color='b', node_color='b', with_labels=node_labels)
+        edge_colors = [colors_lst[0] for _ in range(len(NET.edges))]
+
+    # Determine edge widths and directions
+    if u_reordered.size > 0:
+        edge_widths = 2 * np.abs(u_reordered)/np.max(np.abs(u_reordered))  # Widths based on absolute flow
+        edge_directions = [1 if flow > 0 else -1 for flow in u_reordered]  # Positive or negative flow
+    else:
+        edge_widths = [1.0 for _ in range(len(NET.edges))]
+        edge_directions = [1 for _ in range(len(NET.edges))]  # Default all positive
+
+    # Determine node colors
+    if p_reordered.size > 0:
+        p_reordered_normalized = p_reordered / np.max(p_reordered)
+        node_colors = [BigClass.Colorscheme.cmap(value) for value in p_reordered_normalized]
+    else:
+        node_colors = [colors_lst[0] for _ in range(len(NET.nodes))]
+
+    # Draw edges with arrows
+    for (u, v), color, width, direction in zip(NET.edges, edge_colors, edge_widths, edge_directions):
+        if direction > 0:  # Positive flow
+            nx.draw_networkx_edges(
+                NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
+                connectionstyle="arc3,rad=0.0", arrowstyle="-|>", arrows=True
+            )
+        else:  # Negative flow (reverse direction)
+            nx.draw_networkx_edges(
+                NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
+                connectionstyle="arc3,rad=0.0", arrowstyle="<|-", arrows=True
+            )
+
+    # Draw nodes
+    nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors)
+
+    # Draw labels (if enabled)
+    if node_labels:
+        nx.draw_networkx_labels(NET, pos_lattice)
+
+    # Show the plot
     plt.show()
     print('NET is ready')
 

@@ -428,8 +428,10 @@ class Network_State:
             self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
             # self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto flow Q
+            print('gamma is ', BigClass.Variabs.gamma)
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q
+            print('gamma is ', BigClass.Variabs.gamma)
             self.R_in_t.append(BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))

@@ -43,6 +43,7 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: in
     if net_type == "square":
         rand.seed(seed)
         rand_nodes = rand.sample(range(0, net_height * net_len), Nin + extraNin + Ninter + Nout + extraNout + 1)
+        # rand_nodes = array([0, net_height*net_len-1, net_height*(net_len-1), net_len])
         # input nodes
         input_nodes_arr: NDArray[np.int_] = array([rand_nodes[i] for i in range(Nin)], dtype=np.int_)
         # extra inputs not accounted in loss

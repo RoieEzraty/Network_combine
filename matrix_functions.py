@@ -57,7 +57,8 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: in
         extraOutput_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + extraNin + Ninter + Nout + i]
                                                         for i in range(extraNout)], dtype=np.int_)
         # last node is ground
-        ground_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + Nout]], dtype=np.int_)
+        # ground_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + Nout]], dtype=np.int_)
+        ground_nodes_arr: NDArray[np.int_] = array([], dtype=np.int_)
     else:  # network is Fully Connected ("FC")
         # input nodes
         input_nodes_arr = array([i for i in range(Nin)])  # input nodes are first ones named

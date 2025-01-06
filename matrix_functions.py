@@ -1,6 +1,8 @@
 from __future__ import annotations
 import numpy as np
 import copy
+import networkx as nx
+import random as rand
 
 from typing import Tuple, List
 from numpy.typing import NDArray
@@ -12,6 +14,7 @@ import solve
 if TYPE_CHECKING:
     from Network_Structure import Network_Structure
     from Big_Class import Big_Class
+    from Networkx_Net import Networkx_Net
 
 
 # ===================================================
@@ -19,10 +22,11 @@ if TYPE_CHECKING:
 # ===================================================
 
 
-def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int,
-                                  Nout: int, extraNout: int) -> Tuple[NDArray[np.int_], NDArray[np.int_],
-                                                                      NDArray[np.int_], NDArray[np.int_],
-                                                                      NDArray[np.int_], NDArray[np.int_],]:
+def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int, add_ground=True,
+                                  net_type="FC", seed=42,
+                                  net_height=0, net_len=0) -> Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                                    NDArray[np.int_], NDArray[np.int_],
+                                                                    NDArray[np.int_], NDArray[np.int_]]:
     """
     build_input_output_and_ground builds the input and output pairs and ground node values as arrays
 
@@ -37,15 +41,41 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int,
     ground_nodes_arr - array of all output nodes in task
     output_nodes     - array of nodes with fixed values, for 'XOR' task. default=0
     """
-    input_nodes_arr: NDArray[np.int_] = array([i for i in range(Nin)])  # input nodes are first ones named
-    # extra inputs not accounted in loss
-    extraInputs_nodes_arr: NDArray[np.int_] = array([Nin + i for i in range(extraNin)], dtype=np.int_)
-    inter_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + i for i in range(Ninter)], dtype=np.int_)  # intermediate nodes
-    output_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + i for i in range(Nout)])  # output nodes
-    # extra outputs not accounted in loss
-    extraOutput_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)],
-                                                    dtype=np.int_)
-    ground_nodes_arr: NDArray[np.int_] = array([Nin + extraNin + Ninter + Nout + extraNout])  # last node is ground
+    if net_type == "square":
+        rand.seed(seed)
+        rand_nodes = rand.sample(range(0, net_height * net_len), Nin + extraNin + Ninter + Nout + extraNout + 1)
+        # rand_nodes = array([0, net_height*net_len-1, net_height*(net_len-1), net_len])
+        # input nodes
+        input_nodes_arr: NDArray[np.int_] = array([rand_nodes[i] for i in range(Nin)], dtype=np.int_)
+        # extra inputs not accounted in loss
+        extraInputs_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + i] for i in range(extraNin)], dtype=np.int_)
+        # intermediate nodes
+        inter_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + extraNin + i] for i in range(Ninter)],
+                                                  dtype=np.int_)
+        # output nodes
+        output_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin+i] for i in range(Nout)], dtype=np.int_)
+        # extra outputs
+        extraOutput_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + extraNin + Ninter + Nout + i]
+                                                        for i in range(extraNout)], dtype=np.int_)
+        if add_ground:
+            # last node is ground
+            ground_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + Nout]], dtype=np.int_)
+        else:  # don't add a ground node where p=0
+            ground_nodes_arr = array([], dtype=np.int_)
+    else:  # network is Fully Connected ("FC")
+        # input nodes
+        input_nodes_arr = array([i for i in range(Nin)])  # input nodes are first ones named
+        # extra inputs not accounted in loss
+        extraInputs_nodes_arr = array([Nin + i for i in range(extraNin)], dtype=np.int_)
+        # intermediate nodes
+        inter_nodes_arr = array([Nin + extraNin + i for i in range(Ninter)], dtype=np.int_)
+        # output nodes
+        output_nodes_arr = array([Nin + extraNin + Ninter + i for i in range(Nout)])
+        # extra outputs not accounted in loss
+        extraOutput_nodes_arr = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)], dtype=np.int_)
+        # last node is ground
+        ground_nodes_arr = array([Nin + extraNin + Ninter + Nout + extraNout])
+    # put all in tuple
     inInterOutGround_tuple = (input_nodes_arr, extraInputs_nodes_arr, inter_nodes_arr, output_nodes_arr,
                               extraOutput_nodes_arr, ground_nodes_arr)
     return inInterOutGround_tuple
@@ -201,6 +231,47 @@ def build_incidence_partialInter(Strctr: "Network_Structure") -> Tuple[NDArray[n
     for i, outNode in enumerate(Strctr.output_nodes_arr):
         EIlst.append(outNode)
         EJlst.append(ground_node)
+
+    EI: NDArray[np.int_] = array(EIlst)
+    EJ: NDArray[np.int_] = array(EJlst)
+    NE: int = len(EI)
+
+    # for plots
+    EIEJ_plots: List = [(EI[i], EJ[i]) for i in range(len(EI))]
+
+    DM: NDArray[np.int_] = zeros([NE, NN], dtype=np.int_)  # Incidence matrix
+    for i in range(NE):
+        DM[i, int(EI[i])] = +1.
+        DM[i, int(EJ[i])] = -1.
+
+    return EI, EJ, EIEJ_plots, DM, NE, NN
+
+
+def build_incidence_square(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                                 List[NDArray[np.int_]], NDArray[np.int_], int, int]:
+    """
+    Builds incidence matrix DM as np.array [NEdges, NNodes] for a square network
+    its meaning is 1 at input node and -1 at outpus for every row which resembles one edge.
+
+    input (extracted from Variabs input):
+    Strctr: "Network_Structure" class instance with the input, intermediate and output nodes
+
+    output:
+    EI, EJ     - 1D np.arrays sized NEdges such that EI[i] is node connected to EJ[i] at certain edge
+    EIEJ_plots - EI, EJ divided to pairs for ease of use
+    DM         - Incidence matrix as np.array [NEdges, NNodes]
+    NE         - NEdges, int
+    NN         - NNodes, int
+    """
+
+    NN: int = Strctr.net_height*Strctr.net_len
+    SQRENET = nx.grid_2d_graph(Strctr.net_height, Strctr.net_len, periodic=False, create_using=None)
+    EIlst: List[int] = []
+    EJlst: List[int] = []
+
+    for (x1, y1), (x2, y2) in SQRENET.edges:
+        EIlst.append(y1 * Strctr.net_height + x1)
+        EJlst.append(y2 * Strctr.net_height + x2)
 
     EI: NDArray[np.int_] = array(EIlst)
     EJ: NDArray[np.int_] = array(EJlst)

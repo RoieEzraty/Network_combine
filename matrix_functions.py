@@ -22,10 +22,11 @@ if TYPE_CHECKING:
 # ===================================================
 
 
-def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int, net_type="FC",
-                                  seed=42, net_height=0, net_len=0) -> Tuple[NDArray[np.int_], NDArray[np.int_],
-                                                                             NDArray[np.int_], NDArray[np.int_],
-                                                                             NDArray[np.int_], NDArray[np.int_]]:
+def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int, add_ground=True,
+                                  net_type="FC", seed=42,
+                                  net_height=0, net_len=0) -> Tuple[NDArray[np.int_], NDArray[np.int_],
+                                                                    NDArray[np.int_], NDArray[np.int_],
+                                                                    NDArray[np.int_], NDArray[np.int_]]:
     """
     build_input_output_and_ground builds the input and output pairs and ground node values as arrays
 
@@ -56,9 +57,11 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: in
         # extra outputs
         extraOutput_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + extraNin + Ninter + Nout + i]
                                                         for i in range(extraNout)], dtype=np.int_)
-        # last node is ground
-        # ground_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + Nout]], dtype=np.int_)
-        ground_nodes_arr: NDArray[np.int_] = array([], dtype=np.int_)
+        if add_ground:
+            # last node is ground
+            ground_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + Nout]], dtype=np.int_)
+        else:  # don't add a ground node where p=0
+            ground_nodes_arr = array([], dtype=np.int_)
     else:  # network is Fully Connected ("FC")
         # input nodes
         input_nodes_arr = array([i for i in range(Nin)])  # input nodes are first ones named
@@ -263,7 +266,6 @@ def build_incidence_square(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_
 
     NN: int = Strctr.net_height*Strctr.net_len
     SQRENET = nx.grid_2d_graph(Strctr.net_height, Strctr.net_len, periodic=False, create_using=None)
-    # ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
     EIlst: List[int] = []
     EJlst: List[int] = []
 

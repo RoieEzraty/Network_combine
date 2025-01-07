@@ -253,7 +253,7 @@ class Network_State:
             delta = (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
             self.input_dual_nxt: NDArray[np.float_] = input_dual - delta
         # else if no memory
         elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
@@ -293,7 +293,7 @@ class Network_State:
             delta = (extraInput)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
             self.extraInput_dual_nxt: NDArray[np.float_] = extraInput_dual - delta
         # else if no memory
         elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
@@ -329,7 +329,7 @@ class Network_State:
             delta = inter*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
             # self.inter_dual_nxt = inter_dual - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = inter_dual - delta
         # else if no memory
@@ -364,7 +364,7 @@ class Network_State:
             delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
 
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
             self.output_dual_nxt = output_dual + delta
         # else if no memory
         elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
@@ -397,7 +397,7 @@ class Network_State:
         else:
             delta = self.extraOutput * np.dot(BigClass.Variabs.alpha_vec, loss[0])
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q':  # R changes with memory
+        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
             self.extraOutput_dual_nxt = extraOutput_dual + delta
         # else if no memory
         elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
@@ -427,6 +427,8 @@ class Network_State:
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
             self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
             # self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
+        elif BigClass.Variabs.R_update == "R_propto_sqrt_dp":
+            self.R_in_t.append(BigClass.Variabs.gamma * np.sqrt(np.abs(delta_p)))
         elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto flow Q
             print('gamma is ', BigClass.Variabs.gamma)
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)

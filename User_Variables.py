@@ -82,7 +82,7 @@ class User_Variables:
                 M_values = zeros([self.Nin*self.Nout], dtype=np.float_)
             elif np.size(M_values) != self.Nin*self.Nout:
                 print('input M mismatches output and input')
-            np.random.seed(42)  # Set seed
+            np.random.seed(random_state)  # Set seed
             # Generate random numbers as dataset and multiply by task matrix M
             self.dataset: NDArray[np.float_] = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
             self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)

@@ -38,12 +38,18 @@ class Network_State:
         self.extraOutput_in_t: List[NDArray[np.float_]] = []
         self.desired_in_t: List[NDArray[np.float_]] = []
         # inputs and extra inputs at dual problem in time
-        self.input_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.Nin)]
-        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.extraNin)]
+        # self.input_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.Nin)]
+        # self.extraInput_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.extraNin)]
+        # self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
+        # # outputs and extra outputs during dual problem in time
+        # self.output_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
+        # self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
+        self.input_dual_in_t: List[NDArray[np.float_]] = [10. * np.ones(Variabs.Nin)]
+        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [10. * np.ones(Variabs.extraNin)]
         self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
         # outputs and extra outputs during dual problem in time
-        self.output_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
-        self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
+        self.output_dual_in_t: List[NDArray[np.float_]] = [5. * np.ones(Variabs.Nout)]
+        self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [5. * np.ones(Variabs.extraNout)]
         self.loss_in_t: List[NDArray[np.float_]] = []
         self.loss_norm_in_t: List[NDArray[np.float_]] = []  # normalized loss
         self.Power_norm_in_t: List[NDArray[np.float_]] = []
@@ -444,6 +450,7 @@ class Network_State:
             pass
             # print('R_nxt', self.R_in_t[-1])
         # self.R_in_t[-1][BigClass.Strctr.EJ == BigClass.Strctr.ground_nodes_arr] = 1.
+        # self.R_in_t[-1][self.R_in_t[-1] < 10**-9] = 10**-9  # inhibit vanishing R
 
     def calc_loss(self, BigClass: "Big_Class") -> None:
         """

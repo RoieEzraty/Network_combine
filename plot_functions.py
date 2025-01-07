@@ -130,7 +130,6 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
         ax2.plot(BigClass.State.inter_dual_in_t[1:])
     ax2.set_title('dual and p in time')
     ax2.set_xlabel('t')
-    # ax2.set_ylim([-0.2,0.2])
     if legend2:
         ax2.legend(legend2)
     ax3.plot(BigClass.State.R_in_t[1:])
@@ -139,26 +138,18 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     #     ax3.plot(np.outer(R_theor, np.ones(State.t)).T, '--')
     ax3.set_title('R in time')
     ax3.set_xlabel('t')
-    if legend3:
-        ax3.legend(legend3)
+    # if legend3:
+    #     ax3.legend(legend3)
     for t in range(t):
         if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax4.axvline(x=t, color='red', linestyle='--', linewidth=1)
     ax4.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
-    # ax4.plot(np.mean(np.mean(np.abs(State.loss_norm_in_t[1:]), axis=1), axis=1)/np.mean(np.abs(Variabs.targets), axis=1))
     ax4.set_xlabel('t')
     ax4.set_yscale('log')
     if legend4:
         ax4.legend(legend4)
-    # fig.suptitle(f'alpha={Variabs.alpha_vec}')
     if include_network:
         if NET is not None:
-            # R_thicknesses = 4*(NET.R_reordered-np.min(NET.R_reordered))/np.max(NET.R_reordered)
-            # # Generate edge colors based on R_reordered
-            # edge_colors = [colors_lst[1] if r < 0 else colors_lst[0] for r in R_thicknesses]
-            # nx.draw_networkx(NET.NET, pos=NET.pos_lattice, edge_color=edge_colors, node_color=colors_lst[0],
-            #                  with_labels=True, ax=ax5)
-            # nx.draw_networkx_edges(NET.NET, NET.pos_lattice, ax=ax5, edge_color=edge_colors, width=R_thicknesses)
             plotNetStructure(NET=BigClass.NET.NET,
                              BigClass=BigClass,
                              pos_lattice=BigClass.NET.pos_lattice,
@@ -202,7 +193,7 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
 
     # Determine edge widths and directions
     if u_reordered.size > 0:
-        edge_widths = 2 * np.abs(u_reordered)/np.max(np.abs(u_reordered))  # Widths based on absolute flow
+        edge_widths = 8 * np.abs(u_reordered)/np.max(np.abs(u_reordered))  # Widths based on absolute flow
         edge_directions = [1 if flow > 0 else -1 for flow in u_reordered]  # Positive or negative flow
     else:
         edge_widths = [1.0 for _ in range(len(NET.edges))]
@@ -228,7 +219,7 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
                                    connectionstyle="arc3,rad=0.0", arrowstyle="<|-", arrows=True, ax=ax)
 
     # Draw nodes
-    nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors)
+    nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors, node_size=100)
 
     # Highlight input nodes
     nx.draw_networkx_nodes(NET,
@@ -236,7 +227,7 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
                            nodelist=BigClass.Strctr.input_nodes_arr,
                            node_color="none",  # Hollow circle
                            edgecolors="k",  # black border
-                           node_size=300,  # Adjust size as needed
+                           node_size=200,  # Adjust size as needed
                            linewidths=2)  # Thickness of the border
 
     # Highlight output nodes
@@ -245,7 +236,7 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
                            nodelist=BigClass.Strctr.output_nodes_arr,
                            node_color="none",  # Hollow circle
                            edgecolors="grey",  # Grey border
-                           node_size=300,  # Adjust size as needed
+                           node_size=200,  # Adjust size as needed
                            linewidths=2)  # Thickness of the border
 
     # Draw labels (if enabled)

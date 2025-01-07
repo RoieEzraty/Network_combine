@@ -186,8 +186,9 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
     colors_lst = BigClass.Colorscheme.colors_lst
     # Determine edge colors
     if R_reordered.size > 0:
-        R_reordered_normalized = 4 * R_reordered / np.max(R_reordered)
-        edge_colors = [BigClass.Colorscheme.cmap(value) for value in R_reordered_normalized]
+        R_reordered_normalized = 4 * R_reordered / np.max(R_reordered)  # resistances
+        P_reordered_normalized = 4 * u_reordered ** 2 * R_reordered  # Power
+        edge_colors = [BigClass.Colorscheme.cmap(value) for value in P_reordered_normalized]  # Power
     else:
         edge_colors = [colors_lst[0] for _ in range(len(NET.edges))]
 

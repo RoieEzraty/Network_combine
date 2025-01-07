@@ -450,7 +450,7 @@ class Network_State:
             pass
             # print('R_nxt', self.R_in_t[-1])
         # self.R_in_t[-1][BigClass.Strctr.EJ == BigClass.Strctr.ground_nodes_arr] = 1.
-        self.R_in_t[-1][self.R_in_t[-1] < 10**-12] = 10**-12  # inhibit vanishing R
+        # self.R_in_t[-1][self.R_in_t[-1] < 10**-12] = 10**-12  # inhibit vanishing R
 
     def calc_loss(self, BigClass: "Big_Class") -> None:
         """

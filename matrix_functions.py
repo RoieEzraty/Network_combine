@@ -51,6 +51,8 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: in
             rand_nodes: list[int] = [0, 1]
         elif net_height * net_len == 3:
             rand_nodes = [0, 2, 1]
+        elif net_height * net_len == 4:
+            rand_nodes = [0, 3]
         else:  # normal net
             rand_nodes = rand.sample(range(0, net_height * net_len),
                                      Nin + extraNin + Ninter + Nout + extraNout + Nground)

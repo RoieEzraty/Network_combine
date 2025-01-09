@@ -42,8 +42,18 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: in
     output_nodes     - array of nodes with fixed values, for 'XOR' task. default=0
     """
     if net_type == "square":
+        if add_ground:
+            Nground: int = 1
+        else:
+            Nground = 0
         rand.seed(seed)
-        rand_nodes = rand.sample(range(0, net_height * net_len), Nin + extraNin + Ninter + Nout + extraNout + 1)
+        if net_height * net_len == 2:  # pathologically small net
+            rand_nodes: list[int] = [0, 1]
+        elif net_height * net_len == 3:
+            rand_nodes = [0, 2, 1]
+        else:  # normal net
+            rand_nodes = rand.sample(range(0, net_height * net_len),
+                                     Nin + extraNin + Ninter + Nout + extraNout + Nground)
         # rand_nodes = array([0, net_height*net_len-1, net_height*(net_len-1), net_len])
         # input nodes
         input_nodes_arr: NDArray[np.int_] = array([rand_nodes[i] for i in range(Nin)], dtype=np.int_)

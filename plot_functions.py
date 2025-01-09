@@ -187,14 +187,16 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
     # Determine edge colors
     if R_reordered.size > 0:
         R_reordered_normalized = 4 * R_reordered / np.max(R_reordered)  # resistances
-        P_reordered_normalized = 4 * u_reordered ** 2 * R_reordered  # Power
-        edge_colors = [BigClass.Colorscheme.cmap(value) for value in P_reordered_normalized]  # Power
+        P_reordered = u_reordered ** 2 * R_reordered  # Power
+        P_reordered_normalized = P_reordered / np.max(P_reordered)
+        edge_colors = [BigClass.Colorscheme.cmap(value) for value in R_reordered_normalized]  # Power
     else:
         edge_colors = [colors_lst[0] for _ in range(len(NET.edges))]
 
     # Determine edge widths and directions
     if u_reordered.size > 0:
-        edge_widths = 8 * np.abs(u_reordered)/np.max(np.abs(u_reordered))  # Widths based on absolute flow
+        # edge_widths = 8 * np.abs(u_reordered)/np.max(np.abs(u_reordered))  # Widths based on absolute flow
+        edge_widths = 2 * P_reordered_normalized
         edge_directions = [1 if flow > 0 else -1 for flow in u_reordered]  # Positive or negative flow
     else:
         edge_widths = [1.0 for _ in range(len(NET.edges))]

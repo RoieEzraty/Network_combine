@@ -22,11 +22,11 @@ if TYPE_CHECKING:
 # ===================================================
 
 
-def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int, add_ground=True,
-                                  net_type="FC", seed=42,
-                                  net_height=0, net_len=0) -> Tuple[NDArray[np.int_], NDArray[np.int_],
-                                                                    NDArray[np.int_], NDArray[np.int_],
-                                                                    NDArray[np.int_], NDArray[np.int_]]:
+def build_input_output_and_ground(Nin: int, Nout: int, in_nodes: NDArray[np.int_] = array([]),
+                                  out_nodes: NDArray[np.int_] = array([]), add_ground=True, net_type="FC", seed=42,
+                                  net_height: int = 0, net_len: int = 0, extraNin: int = 0, Ninter: int = 0,
+                                  extraNout: int = 0) -> Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
+                                                               NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]]:
     """
     build_input_output_and_ground builds the input and output pairs and ground node values as arrays
 
@@ -58,14 +58,20 @@ def build_input_output_and_ground(Nin: int, extraNin: int, Ninter: int, Nout: in
                                      Nin + extraNin + Ninter + Nout + extraNout + Nground)
         # rand_nodes = array([0, net_height*net_len-1, net_height*(net_len-1), net_len])
         # input nodes
-        input_nodes_arr: NDArray[np.int_] = array([rand_nodes[i] for i in range(Nin)], dtype=np.int_)
+        if in_nodes.size > 0:  # input nodes assigned by user
+            input_nodes_arr: NDArray[np.int_] = in_nodes
+        else:
+            input_nodes_arr = array([rand_nodes[i] for i in range(Nin)], dtype=np.int_)
         # extra inputs not accounted in loss
         extraInputs_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + i] for i in range(extraNin)], dtype=np.int_)
         # intermediate nodes
         inter_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + extraNin + i] for i in range(Ninter)],
                                                   dtype=np.int_)
         # output nodes
-        output_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin+i] for i in range(Nout)], dtype=np.int_)
+        if out_nodes.size > 0:  # output nodes assigned by user
+            output_nodes_arr: NDArray[np.int_] = out_nodes
+        else:
+            output_nodes_arr = array([rand_nodes[Nin+i] for i in range(Nout)], dtype=np.int_)
         # extra outputs
         extraOutput_nodes_arr: NDArray[np.int_] = array([rand_nodes[Nin + extraNin + Ninter + Nout + i]
                                                         for i in range(extraNout)], dtype=np.int_)

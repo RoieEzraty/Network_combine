@@ -52,39 +52,19 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_lst)
 
     if Nin == 1 and Nout == 1:  # 1by1, simplest
-        if M is not None:
-            A: float = M[0]
-            R_theor: NDArray[np.float_] = np.array([(1-A)/A])
-        legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$']
-        legend2 = [r'$x\,\mathrm{dual}$', r'$p\,\mathrm{dual}$']
-        legend3 = [r'$R_1$', r'$R_2$', r'$R_1\,\mathrm{theoretical}$', r'$R_2\,\mathrm{theoretical}$']
+        legend1 = [r'$\frac{y}{y\,\mathrm{desired}}$']
+        legend2 = [r'$y\,\mathrm{update}$', r'$x\,\mathrm{update}$']
     elif Nin == 1 and Nout == 2:  # Allostery
-        if M is not None:
-            A = M[0]  # A = x_hat/p_in
-            B: float = M[1]  # B = y_hat/p_in
-            Rl_subs: float = 1.0
-            R_theor = BigClass.State.input_drawn_in_t[0]*np.array([(1-A)/(A*(1+1/Rl_subs)-B/Rl_subs),
-                                                                   (1-B)/(B*(1+1/Rl_subs)-A/Rl_subs)])
-        legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
-        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p\,\mathrm{dual}$']
-        # legend3 = [r'$R_1$', r'$R_2$', r'$R_1\,\mathrm{theoretical}$', r'$R_2\,\mathrm{theoretical}$']
-        legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$']
+        legend1 = [r'$\frac{y_1}{y_1\,\mathrm{desired}}$', r'$\frac{y_2}{y_2\,\mathrm{desired}}$']
+        legend2 = [r'$y_1\,\mathrm{update}$', r'$y_2\,\mathrm{update}$', r'$x\,\mathrm{update}$']
     elif Nin == 2 and Nout == 1:  # Regression
-        if M is not None:
-            A = M[0, 0]
-            B = M[0, 1]
-            Rl_subs = 1
-            R_theor = np.array([Rl_subs*(1-A-B)/A, Rl_subs*(1-A-B)/B])
-        legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$']
-        legend2 = [r'$x\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
-        # legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_1\,\mathrm{theoretical}$']
-        legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$']
+        legend1 = [r'$\frac{y}{y\,\mathrm{desired}}$']
+        legend2 = [r'$y\,\mathrm{update}$', r'$x_1\,\mathrm{update}$', r'$x_2\,\mathrm{update}$']
     elif Nin == 2 and Nout == 3:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
                    r'$\frac{z}{z\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
                    r'$p_2\,\mathrm{dual}$']
-        legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$', r'$R_6$']
     elif Nin == 2 and Nout == 2:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
         if BigClass.Variabs.access_interNodes:
@@ -92,23 +72,20 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
                        r'$\mathrm{inter1\,dual}$', r'$\mathrm{inter2\,dual}$']
         else:
             legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
-        legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$']
     elif Nin == 3 and Nout == 3:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
                    r'$\frac{z}{z\,\mathrm{desired}}$']
         legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
                    r'$p_2\,\mathrm{dual}$', r'$p_3\,\mathrm{dual}$']
-        legend3 = []
     elif BigClass.Variabs.task_type == 'Iris_classification':
         legend1 = [r'$\mathrm{Setosa}$', r'$\mathrm{Verisicolor}$', r'$\mathrm{Virginica}$']
         legend2 = [r'$\mathrm{Setosa\,dual}$', r'$\mathrm{Verisicolor\,dual}$',
                    r'$\mathrm{Virginica\,dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
                    r'$p_3\,\mathrm{dual}$', r'$p_4\,\mathrm{dual}$']
-        legend3 = []
     else:
         legend1 = []
         legend2 = []
-        legend3 = []
+    legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$', r'$R_6$']
     legend4 = ['|loss|']
     if include_network:
         fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(15, 3))
@@ -133,13 +110,9 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     if legend2:
         ax2.legend(legend2)
     ax3.plot(BigClass.State.R_in_t[1:])
-    # if 'R_theor' in locals():  # if theoretical values were calculated, plot them
-    #     print('R theoretical', R_theor)
-    #     ax3.plot(np.outer(R_theor, np.ones(State.t)).T, '--')
     ax3.set_title('R in time')
     ax3.set_xlabel('t')
-    # if legend3:
-    #     ax3.legend(legend3)
+    # ax3.legend(legend3)
     for t in range(t):
         if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax4.axvline(x=t, color='red', linestyle='--', linewidth=1)

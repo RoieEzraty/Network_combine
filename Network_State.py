@@ -44,8 +44,8 @@ class Network_State:
         # # outputs and extra outputs during dual problem in time
         # self.output_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
         # self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
-        self.input_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nin)]
-        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNin)]
+        self.input_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.Nin)]
+        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.extraNin)]
         self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
         # outputs and extra outputs during dual problem in time
         self.output_dual_in_t: List[NDArray[np.float_]] = [0. * np.ones(Variabs.Nout)]

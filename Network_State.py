@@ -259,10 +259,12 @@ class Network_State:
             delta = (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
+
+        # w/ memory
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
             self.input_dual_nxt: NDArray[np.float_] = input_dual - delta
         # else if no memory
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             self.input_dual_nxt = - delta
         self.input_dual_in_t.append(self.input_dual_nxt)  # append into list in time
         # if user ask to not print
@@ -299,10 +301,12 @@ class Network_State:
             delta = (extraInput)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
+
+        # w/ memory
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
             self.extraInput_dual_nxt: NDArray[np.float_] = extraInput_dual - delta
         # else if no memory
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:  # w/out memory
             self.extraInput_dual_nxt = - delta
         self.extraInput_dual_in_t.append(self.extraInput_dual_nxt)  # append into list in time
         # if user ask to not print
@@ -335,11 +339,13 @@ class Network_State:
             delta = inter*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
+
+        # w/ memory
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
             # self.inter_dual_nxt = inter_dual - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = inter_dual - delta
         # else if no memory
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             # self.inter_dual_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = - delta
         self.inter_dual_in_t.append(self.inter_dual_nxt)  # append into list in time
@@ -370,10 +376,12 @@ class Network_State:
             delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
 
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
+
+        # w/ memory
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
             self.output_dual_nxt = output_dual + delta
         # else if no memory
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             self.output_dual_nxt = delta
         self.output_dual_in_t.append(self.output_dual_nxt)
         # if user ask to not print
@@ -403,10 +411,12 @@ class Network_State:
         else:
             delta = self.extraOutput * np.dot(BigClass.Variabs.alpha_vec, loss[0])
         # dual problem is different under schemes of change of R
-        if R_update == 'R_propto_dp' or R_update == 'R_propto_Q' or 'R_propto_sqrt_dp':  # R changes with memory
+
+        # w/ memory
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
             self.extraOutput_dual_nxt = extraOutput_dual + delta
         # else if no memory
-        elif R_update == 'deltaR_propto_dp' or R_update == 'deltaR_propto_Q' or R_update == 'deltaR_propto_Power':
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             self.extraOutput_dual_nxt = delta
         self.extraOutput_dual_in_t.append(self.extraOutput_dual_nxt)
         # if user ask to not print
@@ -441,8 +451,18 @@ class Network_State:
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q
             print('gamma is ', BigClass.Variabs.gamma)
             self.R_in_t.append(BigClass.Variabs.gamma * self.u)
+        elif BigClass.Variabs.R_update == 'R_propto_Q_exp':  # R propto flow Q
+            R_b: float = 5.0
+            R_s: float = 0.001
+            R_bar: float = (R_b + R_s)/2.0
+            u_0: float = 1 / (np.sqrt(BigClass.Strctr.NE) * R_bar)
+            R_nxt: float = R_b + (R_s - R_b) * np.exp(- self.u / u_0)
+            print('np.exp(- self.u / u_0)', np.exp(- self.u / u_0))
+            self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))
+        elif BigClass.Variabs.R_update == 'R_propto_Power':  # delta_R propto Power dissipation dp*Q
+            self.R_in_t.append(BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))
         # if user asks to not print
         if BigClass.Variabs.supress_prints:
             pass

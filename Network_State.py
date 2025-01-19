@@ -55,6 +55,7 @@ class Network_State:
         self.Power_norm_in_t: List[NDArray[np.float_]] = []
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
+        self.reset_thresh: int = 20
 
     def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
         """
@@ -266,6 +267,16 @@ class Network_State:
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             self.input_dual_nxt = - delta
+
+        # reset "update" modality values if diverging
+        # find indices in input_dual_nxt where values diverge
+        reset_inds_big = np.abs(self.input_dual_nxt) > self.reset_thresh
+        reset_inds_small = self.input_dual_nxt < 0
+        # reset them to initial value
+        # self.input_dual_nxt[reset_inds] = self.input_dual_in_t[0][reset_inds]
+        if np.any(np.array([reset_inds_big, reset_inds_small])):
+            self.input_dual_nxt = self.input_dual_in_t[0]
+
         self.input_dual_in_t.append(self.input_dual_nxt)  # append into list in time
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
@@ -300,6 +311,8 @@ class Network_State:
         else:  # if one sample of p in for every loss calcaultion are to be taken
             delta = (extraInput)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
+        print('delta for input ', delta)
+
         # dual problem is different under schemes of change of R
 
         # w/ memory
@@ -308,6 +321,16 @@ class Network_State:
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:  # w/out memory
             self.extraInput_dual_nxt = - delta
+
+        # reset "update" modality values if diverging
+        # find indices in input_dual_nxt where values diverge
+        reset_inds_big = np.abs(self.extraInput_dual_nxt) > self.reset_thresh
+        reset_inds_small = self.extraInput_dual_nxt < 0
+        # reset them to initial value
+        # self.extraInput_dual_nxt[reset_inds] = self.extraInput_dual_in_t[0][reset_inds]
+        if np.any(np.array([reset_inds_big, reset_inds_small])):
+            self.extraInput_dual_nxt = self.extraInput_dual_in_t[0]
+
         self.extraInput_dual_in_t.append(self.extraInput_dual_nxt)  # append into list in time
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
@@ -348,6 +371,16 @@ class Network_State:
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             # self.inter_dual_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = - delta
+
+        # reset "update" modality values if diverging
+        # find indices in input_dual_nxt where values diverge
+        reset_inds_big = np.abs(self.inter_dual_nxt) > self.reset_thresh
+        reset_inds_small = self.inter_dual_nxt < 0
+        # reset them to initial value
+        # self.inter_dual_nxt[reset_inds] = self.inter_dual_in_t[0][reset_inds]
+        if np.any(np.array([reset_inds_big, reset_inds_small])):
+            self.inter_dual_nxt = self.inter_dual_in_t[0]
+
         self.inter_dual_in_t.append(self.inter_dual_nxt)  # append into list in time
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
@@ -375,6 +408,8 @@ class Network_State:
         else:
             delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
 
+        print('delta for output ', delta)
+
         # dual problem is different under schemes of change of R
 
         # w/ memory
@@ -383,6 +418,16 @@ class Network_State:
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             self.output_dual_nxt = delta
+
+        # reset "update" modality values if diverging
+        # find indices in input_dual_nxt where values diverge
+        reset_inds_big = np.abs(self.output_dual_nxt) > self.reset_thresh
+        reset_inds_small = self.output_dual_nxt < 0
+        # reset them to initial value
+        # self.output_dual_nxt[reset_inds] = self.output_dual_in_t[0][reset_inds]
+        if np.any(np.array([reset_inds_big, reset_inds_small])):
+            self.output_dual_nxt = self.output_dual_in_t[0]
+
         self.output_dual_in_t.append(self.output_dual_nxt)
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
@@ -418,6 +463,16 @@ class Network_State:
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             self.extraOutput_dual_nxt = delta
+
+        # reset "update" modality values if diverging
+        # find indices in input_dual_nxt where values diverge
+        reset_inds_big = np.abs(self.extraOutput_dual_nxt) > self.reset_thresh
+        reset_inds_small = self.extraOutput_dual_nxt < 0
+        # reset them to initial value
+        # self.extraOutput_dual_nxt[reset_inds] = self.extraOutput_dual_in_t[0][reset_inds]
+        if np.any(np.array([reset_inds_big, reset_inds_small])):
+            self.extraOutput_dual_nxt = self.extraOutput_dual_in_t[0]
+
         self.extraOutput_dual_in_t.append(self.extraOutput_dual_nxt)
         # if user ask to not print
         if BigClass.Variabs.supress_prints:

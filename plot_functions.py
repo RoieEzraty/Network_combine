@@ -97,7 +97,7 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     else:
         ax1.plot(np.linspace(0, t, np.shape(output_in_t)[0]).T,
                  np.asarray(output_in_t))
-    ax1.set_title('output in time')
+    ax1.set_title('"measured" output')
     ax1.set_xlabel('t')
     if legend1:
         ax1.legend(legend1)
@@ -105,12 +105,12 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     ax2.plot(BigClass.State.input_dual_in_t[1:])
     if BigClass.Variabs.access_interNodes:
         ax2.plot(BigClass.State.inter_dual_in_t[1:])
-    ax2.set_title('dual and p in time')
+    ax2.set_title('"update" values')
     ax2.set_xlabel('t')
     if legend2:
         ax2.legend(legend2)
     ax3.plot(BigClass.State.R_in_t[1:])
-    ax3.set_title('R in time')
+    ax3.set_title('Resistances')
     ax3.set_xlabel('t')
     # ax3.legend(legend3)
     for t in range(t):

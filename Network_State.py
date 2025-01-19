@@ -44,12 +44,12 @@ class Network_State:
         # # outputs and extra outputs during dual problem in time
         # self.output_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
         # self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
-        self.input_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nin)]
-        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNin)]
+        self.input_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.Nin)]
+        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.extraNin)]
         self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
         # outputs and extra outputs during dual problem in time
-        self.output_dual_in_t: List[NDArray[np.float_]] = [0. * np.ones(Variabs.Nout)]
-        self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [0. * np.ones(Variabs.extraNout)]
+        self.output_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
+        self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
         self.loss_in_t: List[NDArray[np.float_]] = []
         self.loss_norm_in_t: List[NDArray[np.float_]] = []  # normalized loss
         self.Power_norm_in_t: List[NDArray[np.float_]] = []
@@ -457,7 +457,6 @@ class Network_State:
             R_bar: float = (R_b + R_s)/2.0
             u_0: float = 1 / (np.sqrt(BigClass.Strctr.NE) * R_bar)
             R_nxt: float = R_b + (R_s - R_b) * np.exp(- self.u / u_0)
-            print('np.exp(- self.u / u_0)', np.exp(- self.u / u_0))
             self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))

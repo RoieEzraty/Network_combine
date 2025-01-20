@@ -85,8 +85,6 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     else:
         legend1 = []
         legend2 = []
-    legend3 = [r'$R_1$', r'$R_2$', r'$R_3$', r'$R_4$', r'$R_5$', r'$R_6$']
-    legend4 = ['|loss|']
     if include_network:
         fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(1, 5, figsize=(15, 3))
     else:
@@ -117,10 +115,9 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
         if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax4.axvline(x=t, color='red', linestyle='--', linewidth=1)
     ax4.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
+    ax4.set_title('Loss')
     ax4.set_xlabel('t')
     ax4.set_yscale('log')
-    if legend4:
-        ax4.legend(legend4)
     if include_network:
         if NET is not None:
             plotNetStructure(NET=BigClass.NET.NET,

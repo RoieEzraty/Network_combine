@@ -23,7 +23,8 @@ import colors
 
 
 def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
-                    include_network: Optional[bool] = False, NET: Optional[nx.DiGraph] = None) -> None:
+                    include_network: Optional[bool] = False, NET: Optional[nx.DiGraph] = None,
+                    node_labels: bool = False) -> None:
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
@@ -123,7 +124,7 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
             plotNetStructure(NET=BigClass.NET.NET,
                              BigClass=BigClass,
                              pos_lattice=BigClass.NET.pos_lattice,
-                             node_labels=True,
+                             node_labels=node_labels,
                              R_reordered=BigClass.NET.R_reordered,
                              u_reordered=BigClass.NET.u_reordered,
                              p_reordered=BigClass.NET.p_reordered,

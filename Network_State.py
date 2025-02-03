@@ -25,7 +25,8 @@ class Network_State:
     what ends with _in_t holds all time instances of the variable, each list index is different t
     what ends w/out _in_t is at current time instance self.t
     """
-    def __init__(self, Variabs: "User_Variables") -> None:
+    def __init__(self, Variabs: "User_Variables", input_dual_initial: NDArray[np.float_] = array([]),
+                 output_dual_initial: NDArray[np.float_] = array([])) -> None:
         super().__init__()
         self.t: int = 0  # time, defined as number of R updates, i.e. times the learning rate alpha is used.
         self.p: NDArray[np.float_] = array([])  # pressure
@@ -44,13 +45,17 @@ class Network_State:
         # # outputs and extra outputs during dual problem in time
         # self.output_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
         # self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
-        self.input_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nin)]
-        # self.input_dual_in_t: List[NDArray[np.float_]] = [np.array([2, 1])]
+        if input_dual_initial.size:
+            self.input_dual_in_t: List[NDArray[np.float_]] = [input_dual_initial]
+        else:
+            self.input_dual_in_t = [1. * np.ones(Variabs.Nin)]
         self.extraInput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNin)]
         self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
         # outputs and extra outputs during dual problem in time
-        self.output_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.Nout)]
-        # self.output_dual_in_t: List[NDArray[np.float_]] = [np.array([1, 0])]
+        if output_dual_initial.size:
+            self.output_dual_in_t: List[NDArray[np.float_]] = [output_dual_initial]
+        else:
+            self.output_dual_in_t = [0.5 * np.ones(Variabs.Nout)]
         self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
         self.loss_in_t: List[NDArray[np.float_]] = []
         self.loss_norm_in_t: List[NDArray[np.float_]] = []  # normalized loss
@@ -289,7 +294,7 @@ class Network_State:
         reset_inds_small = self.input_dual_nxt < self.reset_thresh_s
         # reset them to initial value
         # self.input_dual_nxt[reset_inds] = self.input_dual_in_t[0][reset_inds]
-        if np.any(np.array([reset_inds_big, reset_inds_small])):
+        if np.any(array([reset_inds_big, reset_inds_small])):
             self.input_dual_nxt = self.input_dual_in_t[0]
 
         self.input_dual_in_t.append(self.input_dual_nxt)  # append into list in time
@@ -343,7 +348,7 @@ class Network_State:
         reset_inds_small = self.extraInput_dual_nxt < self.reset_thresh_s
         # reset them to initial value
         # self.extraInput_dual_nxt[reset_inds] = self.extraInput_dual_in_t[0][reset_inds]
-        if np.any(np.array([reset_inds_big, reset_inds_small])):
+        if np.any(array([reset_inds_big, reset_inds_small])):
             self.extraInput_dual_nxt = self.extraInput_dual_in_t[0]
 
         self.extraInput_dual_in_t.append(self.extraInput_dual_nxt)  # append into list in time
@@ -393,7 +398,7 @@ class Network_State:
         reset_inds_small = self.inter_dual_nxt < self.reset_thresh_s
         # reset them to initial value
         # self.inter_dual_nxt[reset_inds] = self.inter_dual_in_t[0][reset_inds]
-        if np.any(np.array([reset_inds_big, reset_inds_small])):
+        if np.any(array([reset_inds_big, reset_inds_small])):
             self.inter_dual_nxt = self.inter_dual_in_t[0]
 
         self.inter_dual_in_t.append(self.inter_dual_nxt)  # append into list in time
@@ -440,7 +445,7 @@ class Network_State:
         reset_inds_small = self.output_dual_nxt < self.reset_thresh_s
         # reset them to initial value
         # self.output_dual_nxt[reset_inds] = self.output_dual_in_t[0][reset_inds]
-        if np.any(np.array([reset_inds_big, reset_inds_small])):
+        if np.any(array([reset_inds_big, reset_inds_small])):
             self.output_dual_nxt = self.output_dual_in_t[0]
 
         self.output_dual_in_t.append(self.output_dual_nxt)
@@ -485,7 +490,7 @@ class Network_State:
         reset_inds_small = self.extraOutput_dual_nxt < self.reset_thresh_s
         # reset them to initial value
         # self.extraOutput_dual_nxt[reset_inds] = self.extraOutput_dual_in_t[0][reset_inds]
-        if np.any(np.array([reset_inds_big, reset_inds_small])):
+        if np.any(array([reset_inds_big, reset_inds_small])):
             self.extraOutput_dual_nxt = self.extraOutput_dual_in_t[0]
 
         self.extraOutput_dual_in_t.append(self.extraOutput_dual_nxt)
@@ -503,7 +508,7 @@ class Network_State:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
 
         outputs:
-        R_vec  - [NE] np.array of resistivities
+        R_vec  - [NE] array of resistivities
         """
         R_vec: NDArray[np.float_] = self.R_in_t[-1]
         delta_p: NDArray[np.float_] = self.u * R_vec

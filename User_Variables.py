@@ -23,6 +23,16 @@ class User_Variables:
     """
     Class with variables given by user.
     These remain the same along the simulation
+
+    inputs:
+    R_update - local rule for resistances - # 'R_propto_dp' if R=gamma*delta_p
+                                            # 'deltaR_propto_dp' if deltaR=gamma*delta_p, gamma should be small
+                                            # 'R_propto_Q' if deltaR=gamma*Q where Q is flow velocity
+                                            # 'deltaR_propto_Q' if R=gamma*Q where Q is flow velocity
+                                            # 'deltaR_propto_Power' if R=gamma*P where P is power dissipation
+
+    outputs:
+    Class instance User_Variables
     """
     def __init__(self, iterations: int, Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int,
                  gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, include_Power: bool, lam: np.float_,
@@ -47,11 +57,7 @@ class User_Variables:
                                          np.ndarray]] = functions.loss_fn_2samples
         else:
             self.loss_fn = functions.loss_fn_1sample
-        self.R_update: str = R_update  # 'R_propto_dp' if R=gamma*delta_p
-                                       # 'deltaR_propto_dp' if deltaR=gamma*delta_p, gamma should be small
-                                       # 'R_propto_Q' if deltaR=gamma*Q where Q is flow velocity
-                                       # 'deltaR_propto_Q' if R=gamma*Q where Q is flow velocity
-                                       # 'deltaR_propto_Power' if R=gamma*P where P is power dissipation
+        self.R_update: str = R_update
         self.supress_prints: bool = supress_prints
         self.bc_noise: float = bc_noise
         self.access_interNodes: bool = access_interNodes

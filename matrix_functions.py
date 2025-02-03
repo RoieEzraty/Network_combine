@@ -415,11 +415,24 @@ def ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarr
 
 def edges_from_EI_EJ(nodes_array, EI, EJ) -> NDArray[np.int_]:
     """
-    add descrpt
+    get all network edges connected to nodes in the nodes_array
     """
     edges: NDArray[np.int_] = array([np.where(np.append(EI, EJ) == nodes_array[i])[0] % len(EI)
                                      for i in range(len(nodes_array))])
     return edges
+
+
+def edge_directions_from_EI(nodes_array, EI, edges) -> NDArray[np.int_]:
+    """
+    get all directions of edges connected to nodes in nodes_array
+    1 = input to node
+    -1 = output from node
+    """
+    input_edges = np.array([np.where(EI == nodes_array[i])[0] for i in range(len(nodes_array))])
+
+    # Check if elements of array1 are in array2
+    edge_directions = np.where(np.isin(edges, input_edges), -1, 1)
+    return edge_directions
 
 
 def random_gen_M(random_state: int, size: int) -> NDArray[np.float_]:

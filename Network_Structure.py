@@ -1,9 +1,8 @@
 from __future__ import annotations
 import numpy as np
 
-from typing import Tuple, List
+from typing import Tuple
 from numpy.typing import NDArray
-from numpy import array, zeros
 
 import matrix_functions
 
@@ -52,7 +51,8 @@ class Network_Structure:
             self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence(self)
         elif type == 'partialInter':
             print('partialInter is true')
-            self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence_partialInter(self)
+            self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN =\
+                matrix_functions.build_incidence_partialInter(self)
         elif type == 'square':
             print('building square network')
             self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence_square(self)
@@ -67,13 +67,27 @@ class Network_Structure:
         self.output_edges: NDArray[np.int_]  # type hint
         self.extraOutput_edges: NDArray[np.int_]  # type hint
         self.ground_edges: NDArray[np.int_]  # type hint
-        # print('EI', self.EI)
-        # print('EJ', self.EJ)
-        # print('inputs nodes', self.input_nodes_arr)
+        self.input_edge_directions: NDArray[np.int_]  # type hint
+        self.extraInput_edge_directions: NDArray[np.int_]  # type hint
+        self.inter_edge_directions: NDArray[np.int_]  # type hint
+        self.output_edge_directions: NDArray[np.int_]  # type hint
+        self.extraOutput_edge_directions: NDArray[np.int_]  # type hint
+        self.ground_edge_directions: NDArray[np.int_]  # type hint
         self.input_edges = matrix_functions.edges_from_EI_EJ(self.input_nodes_arr, self.EI, self.EJ)
-        # print('input edges', self.input_edges)
         self.extraInput_edges = matrix_functions.edges_from_EI_EJ(self.extraInput_nodes_arr, self.EI, self.EJ)
         self.inter_edges = matrix_functions.edges_from_EI_EJ(self.inter_nodes_arr, self.EI, self.EJ)
         self.output_edges = matrix_functions.edges_from_EI_EJ(self.output_nodes_arr, self.EI, self.EJ)
         self.extraOutput_edges = matrix_functions.edges_from_EI_EJ(self.extraOutput_nodes_arr, self.EI, self.EJ)
         self.ground_edges = matrix_functions.edges_from_EI_EJ(self.ground_nodes_arr, self.EI, self.EJ)
+        self.input_edge_directions = \
+            matrix_functions.edge_directions_from_EI(self.input_nodes_arr, self.EI, self.input_edges)
+        self.extraInput_edge_directions = \
+            matrix_functions.edge_directions_from_EI(self.extraInput_nodes_arr, self.EI, self.extraInput_edges)
+        self.inter_edge_directions = \
+            matrix_functions.edge_directions_from_EI(self.inter_nodes_arr, self.EI, self.inter_edges)
+        self.output_edge_directions = \
+            matrix_functions.edge_directions_from_EI(self.output_nodes_arr, self.EI, self.output_edges)
+        self.extraOutput_edge_directions =\
+            matrix_functions.edge_directions_from_EI(self.extraOutput_nodes_arr, self.EI, self.extraOutput_edges)
+        self.ground_edge_directions = \
+            matrix_functions.edge_directions_from_EI(self.ground_nodes_arr, self.EI, self.ground_edges)

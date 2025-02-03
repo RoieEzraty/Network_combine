@@ -106,10 +106,9 @@ class User_Variables:
 
             # Split the dataset: 30 for training, the rest for testing, Ensure balanced class representation
             if train_size:
-                self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.dataset, self.targets,
-                                                                                        train_size=train_size,
-                                                                                        random_state=random_state,
-                                                                                        stratify=iris['target'])
+                self.X_train, self.X_test, self.y_train, self.y_test = \
+                    train_test_split(self.dataset, self.targets, train_size=train_size, random_state=random_state,
+                                     stratify=iris['target'])
             else:  # or use all dataset as train and test if not specified
                 self.X_train = shuffle(copy.copy(self.dataset), random_state=random_state)
                 self.X_test = shuffle(copy.copy(self.dataset), random_state=random_state)

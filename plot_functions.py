@@ -22,6 +22,106 @@ import colors
 # ================================
 
 
+def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
+                               include_network: Optional[bool] = False, NET: Optional[nx.DiGraph] = None,
+                               node_labels: bool = False) -> None:
+    """
+    one plot with 4 subfigures of
+    1) absolute mean value of loss in time
+    2) inputs and outputs in the update modality, in time
+    3) resistances in time
+    4) Network structure
+
+    inputs:
+    State   - class instance of the state variables of network
+    Variabs - class instance of the variables by the user
+    desired - List of arrays of desired outputs given the drawn inputs and task matrix M
+    M       - task matrix M under which desired output = M*input
+
+    outputs:
+    1 matplotlib plot
+    """
+
+    Nin = BigClass.Variabs.Nin
+    Nout = BigClass.Variabs.Nout
+    t = BigClass.State.t
+
+    colors_lst, red, custom_cmap = colors.color_scheme()
+    # Set the custom color cycle globally without cycler
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_lst)
+
+    if Nin == 1 and Nout == 1:  # 1by1, simplest
+        legend2 = [r'$y\,\mathrm{update}$', r'$x\,\mathrm{update}$']
+    elif Nin == 1 and Nout == 2:  # Allostery
+        legend2 = [r'$y_1\,\mathrm{update}$', r'$y_2\,\mathrm{update}$', r'$x\,\mathrm{update}$']
+    elif Nin == 2 and Nout == 1:  # Regression
+        legend2 = [r'$y\,\mathrm{update}$', r'$x_1\,\mathrm{update}$', r'$x_2\,\mathrm{update}$']
+    elif Nin == 2 and Nout == 3:
+        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
+                   r'$p_2\,\mathrm{dual}$']
+    elif Nin == 2 and Nout == 2:
+        if BigClass.Variabs.access_interNodes:
+            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
+                       r'$\mathrm{inter1\,dual}$', r'$\mathrm{inter2\,dual}$']
+        else:
+            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
+    elif Nin == 3 and Nout == 3:
+        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
+                   r'$p_2\,\mathrm{dual}$', r'$p_3\,\mathrm{dual}$']
+    elif BigClass.Variabs.task_type == 'Iris_classification':
+        # legend1 = [r'$\mathrm{Setosa}$', r'$\mathrm{Verisicolor}$', r'$\mathrm{Virginica}$']
+        legend2 = [r'$\mathrm{Setosa\,dual}$', r'$\mathrm{Verisicolor\,dual}$',
+                   r'$\mathrm{Virginica\,dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
+                   r'$p_3\,\mathrm{dual}$', r'$p_4\,\mathrm{dual}$']
+    else:
+        # legend1 = []
+        legend2 = []
+    if include_network:
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(17, 3))
+    else:
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12.75, 3))
+
+    # Loss
+    for t in range(t):
+        if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
+            ax1.axvline(x=t, color='red', linestyle='--', linewidth=1)
+    ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
+    ax1.set_yscale('log')
+    ax1.set_title(r'$\|\mathcal{L}\|$')
+    ax1.set_xlabel('t')
+
+    # Update modality
+    ax2.plot(BigClass.State.output_dual_in_t[1:])
+    ax2.plot(BigClass.State.input_dual_in_t[1:])
+    if BigClass.Variabs.access_interNodes:
+        ax2.plot(BigClass.State.inter_dual_in_t[1:])
+    ax2.set_title('"Update" modality pressure')
+    ax2.set_xlabel('t')
+    if legend2:
+        ax2.legend(legend2)
+
+    # Resistances
+    ax3.plot(BigClass.State.R_in_t[1:])
+    ax3.set_title(r'$R$')
+    ax3.set_xlabel('t')
+
+    # Network structure
+    if include_network:
+        if NET is not None:
+            plotNetStructure(NET=BigClass.NET.NET,
+                             BigClass=BigClass,
+                             pos_lattice=BigClass.NET.pos_lattice,
+                             node_labels=node_labels,
+                             R_reordered=BigClass.NET.R_reordered,
+                             u_reordered=BigClass.NET.u_reordered,
+                             p_reordered=BigClass.NET.p_reordered,
+                             ax=ax4  # Pass the subplot axis
+                             )
+        else:
+            print('no NET assigned in input')
+    plt.show()
+
+
 def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
                     include_network: Optional[bool] = False, NET: Optional[nx.DiGraph] = None,
                     node_labels: bool = False) -> None:
@@ -283,3 +383,26 @@ def plot_Power(State: "Network_State") -> None:
     plt.xlabel(r'$t$')
     plt.ylabel(r'$\mathcal{P}$')
     plt.yscale('log')
+
+
+def plot_hist(vec: NDArray[np.float_], xLabel: str):
+    """
+    Plots the histogram of the vector "vec"
+
+    input:
+    vec    - 1D NDArray
+    xLabel - str, naming the vec
+
+    output:
+    plot of histogram of vec
+    """
+    plt.figure(figsize=(4, 3))  # Set figure size
+    colors_lst, red, custom_cmap = colors.color_scheme()
+
+    plt.hist(vec, bins=16, color=colors_lst[0], alpha=0.7, edgecolor='black')  # Customize bins and style
+    plt.xlabel(xLabel, fontsize=12)  # Label for x-axis
+    plt.ylabel('Count', fontsize=12)  # Label for y-axis
+    plt.xlim([0, 1.1])
+    plt.ylim([0, np.size(vec)])
+    plt.tight_layout()  # Adjust layout to avoid clipping
+    plt.show()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import copy
+import itertools
 import networkx as nx
 import random as rand
 
@@ -14,7 +15,6 @@ import solve
 if TYPE_CHECKING:
     from Network_Structure import Network_Structure
     from Big_Class import Big_Class
-    from Networkx_Net import Networkx_Net
 
 
 # ===================================================
@@ -189,6 +189,12 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     for i, outNode in enumerate(Strctr.extraOutput_nodes_arr):
         EIlst.append(outNode)
         EJlst.append(ground_node)
+
+    if Strctr.net_type == 'FC_connected_outputs':  # connect all outputs between themselves
+        # Generate unique pairs and store them in separate lists
+        for i, j in itertools.combinations(Strctr.output_nodes_arr, 2):
+            EIlst.append(i)
+            EJlst.append(j)
 
     EI: NDArray[np.int_] = array(EIlst)
     EJ: NDArray[np.int_] = array(EJlst)

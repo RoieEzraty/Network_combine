@@ -20,6 +20,13 @@ class Network_Structure:
     def __init__(self, inOutInterGround_tuple: Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
                                                      NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],],
                  net_type: str = 'FC', height: int = 0, length: int = 0) -> None:
+        """
+        net_types:
+        FC                   - each input connected to each output
+        FC_connected_outputs - FC and all outputs connected
+        partialInter         - each input connected to an inter node, that inter node to an output node
+        square               - N*N array of nodes, each node has 4 neighbors, some are inputs and some outputs
+        """
         self.input_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[0]
         self.extraInput_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[1]
         self.inter_nodes_arr: NDArray[np.int_] = inOutInterGround_tuple[2]
@@ -47,7 +54,7 @@ class Network_Structure:
         NE         - int, # edges in network
         NN         - int, # nodes in network
         """
-        if type == 'FC':
+        if type == 'FC' or type == 'FC_connected_outputs':
             self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence(self)
         elif type == 'partialInter':
             print('partialInter is true')

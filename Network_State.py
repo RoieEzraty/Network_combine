@@ -229,8 +229,6 @@ class Network_State:
                                                           self.extraOutput_dual_in_t[-1], self.inter_dual_in_t[-1]),
                                                           BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
             else:  # if dual problem does not access interNodes separately
-                print('self.input_dual_in_t[-1]', self.input_dual_in_t[-1])
-                print('self.output_dual_in_t[-1]', self.output_dual_in_t[-1])
                 CstrTuple = functions.setup_constraints_given_pin(
                             (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
                              BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.output_nodes_arr,
@@ -332,8 +330,6 @@ class Network_State:
         else:  # if one sample of p in for every loss calcaultion are to be taken
             delta = (extraInput)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
-        print('delta for input ', delta)
-
         # dual problem is different under schemes of change of R
 
         # w/ memory
@@ -429,8 +425,6 @@ class Network_State:
         else:
             delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
 
-        print('delta for output ', delta)
-
         # dual problem is different under schemes of change of R
 
         # w/ memory
@@ -522,10 +516,8 @@ class Network_State:
         elif BigClass.Variabs.R_update == "R_propto_sqrt_dp":
             self.R_in_t.append(BigClass.Variabs.gamma * np.sqrt(np.abs(delta_p)))
         elif BigClass.Variabs.R_update == 'deltaR_propto_Q':  # delta_R propto flow Q
-            print('gamma is ', BigClass.Variabs.gamma)
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q
-            print('gamma is ', BigClass.Variabs.gamma)
             self.R_in_t.append(BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q_exp':  # R propto flow Q
             R_b: float = 5.0

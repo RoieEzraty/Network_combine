@@ -309,9 +309,9 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
 
     # legend - 4 materials
     legend = [r'$R \propto \Delta p$',
-              r'$\Delta R \propto \Delta p$',
-              r'$\Delta R \propto Q$',
-              r'$\Delta R \propto \mathrm{Power}$']
+              r'$\dot{R} \propto \Delta p$',
+              r'$\dot{R} \propto Q$',
+              r'$\dot{R} \propto \mathrm{Power}$']
 
     # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
     for t in range(t_final):

@@ -402,7 +402,7 @@ def plot_hist(vec: NDArray[np.float_], xLabel: str):
     plt.hist(vec, bins=16, color=colors_lst[0], alpha=0.7, edgecolor='black')  # Customize bins and style
     plt.xlabel(xLabel, fontsize=12)  # Label for x-axis
     plt.ylabel('Count', fontsize=12)  # Label for y-axis
-    # plt.xlim([0, 1.1])
+    plt.xlim([0, 2.1])
     plt.ylim([0, np.size(vec)])
     plt.tight_layout()  # Adjust layout to avoid clipping
     plt.show()

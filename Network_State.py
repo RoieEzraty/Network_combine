@@ -63,7 +63,8 @@ class Network_State:
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
         self.reset_thresh_b: float = 1e4
-        self.reset_thresh_s: float = -1e4
+        # self.reset_thresh_s: float = -1e4
+        self.reset_thresh_s: float = 0
 
     def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
         """

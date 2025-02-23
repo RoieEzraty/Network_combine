@@ -520,7 +520,7 @@ class Network_State:
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q
             self.R_in_t.append(BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q_exp':  # R propto flow Q
-            R_b: float = 5.0
+            R_b: float = 8.0
             R_s: float = 0.001
             R_bar: float = (R_b + R_s)/2.0
             u_0: float = 1 / (np.sqrt(BigClass.Strctr.NE) * R_bar)

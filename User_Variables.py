@@ -37,7 +37,8 @@ class User_Variables:
     def __init__(self, iterations: int, Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int,
                  gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, include_Power: bool, lam: np.float_,
                  supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
-                 measure_accuracy_every: Optional[int] = None) -> None:
+                 measure_accuracy_every: Optional[int] = None, p_thresh: Optional[float] = 0.25,
+                 R_max: float = 46.0, R_min: float = 1.0) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
@@ -68,6 +69,9 @@ class User_Variables:
             self.Nout = 3
         if measure_accuracy_every is not None:
             self.measure_accuracy_every = measure_accuracy_every
+        self.p_thresh = p_thresh  # threshold of pressure to move bead in net_type 'beads'
+        self.R_max = R_max
+        self.R_min = R_min
 
     def create_dataset_and_targets(self, random_state, M_values: Optional[NDArray[np.float_]] = None,
                                    train_size: Optional[int] = None) -> None:
@@ -90,7 +94,8 @@ class User_Variables:
                 print('input M mismatches output and input')
             np.random.seed(random_state)  # Set seed
             # Generate random numbers as dataset and multiply by task matrix M
-            self.dataset: NDArray[np.float_] = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
+            # self.dataset: NDArray[np.float_] = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
+            self.dataset: NDArray[np.float_] = np.ones([self.iterations, self.Nin])
             self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
             self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M.T)
             self.X_train = copy.copy(self.dataset)  # train and test are the full dataset, no difference

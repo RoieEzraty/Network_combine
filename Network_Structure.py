@@ -63,6 +63,8 @@ class Network_Structure:
         elif type == 'square':
             print('building square network')
             self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence_square(self)
+        elif type == 'beads':
+            self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence_beads(self)
 
     def build_edges(self) -> None:
         """

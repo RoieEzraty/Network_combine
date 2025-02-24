@@ -59,6 +59,42 @@ class Networkx_Net:
             height = BigClass.Strctr.net_height
             pos_lattice: Dict[Any, Tuple[float, float]] = \
                 {index: (index % height, index // height) for index in range(len(self.NET.nodes))}
+        elif BigClass.Strctr.net_type == 'beads':
+            pos_lattice = {}
+            num_cols = BigClass.Strctr.net_len
+            num_rows = BigClass.Strctr.net_height
+            for i in range(num_rows):
+                for j in range(num_cols):
+                    # Compute a flat index for each cross
+                    cross_index = i * num_cols + j
+                    start_index = cross_index * 5
+
+                    # Define the x and y offsets for this cross
+                    x_offset = self.scale * j
+                    y_offset = self.scale * i
+
+                    # Assign positions for the 5 nodes
+                    # (left, lower, right, upper, middle).
+                    pos_lattice[start_index + 0] = array([-(self.scale / 2 - self.squish) + x_offset, 0 + y_offset])
+                    pos_lattice[start_index + 1] = array([0 + x_offset, -(self.scale / 2 - self.squish) + y_offset])
+                    pos_lattice[start_index + 2] = array([(self.scale / 2 - self.squish) + x_offset, 0 + y_offset])
+                    pos_lattice[start_index + 3] = array([0 + x_offset, (self.scale / 2 - self.squish) + y_offset])
+                    pos_lattice[start_index + 4] = array([0 + x_offset, 0 + y_offset])
+            # pos_lattice = {}  # initiate dictionary of node positions
+            # k = 0  # dummy
+            # for i in range(BigClass.Strctr.net_height):  # network rows
+            #     for j in range(BigClass.Strctr.net_len):  # network columns
+            #         pos_lattice[self.scale*(i+j+k)] = array([-(self.scale/2-self.squish)+self.scale*j,
+            #                                                  0+self.scale*i])  # left node in cell
+            #         pos_lattice[self.scale*(i+j+k)+1] = array([0+self.scale*j,
+            #                                                    -(self.scale/2-self.squish)+self.scale*i])  # lower node
+            #         pos_lattice[self.scale*(i+j+k)+2] = array([(self.scale/2-self.squish)+self.scale*j,
+            #                                                    0+self.scale*i])  # right node
+            #         pos_lattice[self.scale*(i+j+k)+3] = array([0+self.scale*j,
+            #                                                    (self.scale/2-self.squish)+self.scale*i])  # upper node
+            #         pos_lattice[self.scale*(i+j+k)+4] = array([0+self.scale*j, 0+self.scale*i])  # middle node
+            #         # k += BigClass.Strctr.net_len # add to dummy index so skipping to next cell
+            #         k += 5 # add to dummy index so skipping to next cell
         else:
             pos_lattice = nx.spring_layout(self.NET, k=1.0, iterations=20)
         self.pos_lattice = pos_lattice

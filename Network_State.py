@@ -7,7 +7,7 @@ from numpy import array, zeros
 from numpy.typing import NDArray
 from typing import TYPE_CHECKING, Callable, Union, Optional
 
-import functions, solve, statistics
+import functions, solve, statistics, matrix_functions
 
 if TYPE_CHECKING:
     from User_Variables import User_Variables
@@ -63,8 +63,8 @@ class Network_State:
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
         self.reset_thresh_b: float = 1e4
-        # self.reset_thresh_s: float = -1e4
-        self.reset_thresh_s: float = 0
+        self.reset_thresh_s: float = -1e4
+        # self.reset_thresh_s: float = 0
 
     def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
         """
@@ -82,6 +82,8 @@ class Network_State:
                 self.R_in_t = [R_vec_i]
         else:
             self.R_in_t = [np.ones((BigClass.Strctr.NE), dtype=float)]
+        # background resistances for bead net
+        self.R_backg: NDArray[np.float_] = BigClass.Variabs.R_min * np.ones(BigClass.Strctr.NE)
 
     def initiate_accuracy_vec(self, BigClass: "Big_Class", measure_accuracy_every: int) -> None:
         """
@@ -281,7 +283,7 @@ class Network_State:
         # dual problem is different under schemes of change of R
 
         # w/ memory
-        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
             self.input_dual_nxt: NDArray[np.float_] = input_dual - delta
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
@@ -333,7 +335,7 @@ class Network_State:
         # dual problem is different under schemes of change of R
 
         # w/ memory
-        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
             self.extraInput_dual_nxt: NDArray[np.float_] = extraInput_dual - delta
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:  # w/out memory
@@ -381,7 +383,7 @@ class Network_State:
         # dual problem is different under schemes of change of R
 
         # w/ memory
-        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
             # self.inter_dual_nxt = inter_dual - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_dual_nxt = inter_dual - delta
         # else if no memory
@@ -428,7 +430,7 @@ class Network_State:
         # dual problem is different under schemes of change of R
 
         # w/ memory
-        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
             self.output_dual_nxt = output_dual + delta
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
@@ -473,7 +475,7 @@ class Network_State:
         # dual problem is different under schemes of change of R
 
         # w/ memory
-        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
             self.extraOutput_dual_nxt = extraOutput_dual + delta
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
@@ -520,16 +522,21 @@ class Network_State:
         elif BigClass.Variabs.R_update == 'R_propto_Q':  # R propto flow Q
             self.R_in_t.append(BigClass.Variabs.gamma * self.u)
         elif BigClass.Variabs.R_update == 'R_propto_Q_exp':  # R propto flow Q
-            R_b: float = 8.0
-            R_s: float = 0.001
-            R_bar: float = (R_b + R_s)/2.0
+            R_max = copy.copy(BigClass.Variabs.R_max)
+            R_min = copy.copy(BigClass.Variabs.R_min)
+            R_bar: float = (R_max + R_min)/2.0
             u_0: float = 1 / (np.sqrt(BigClass.Strctr.NE) * R_bar)
-            R_nxt: float = R_b + (R_s - R_b) * np.exp(- self.u / u_0)
+            R_nxt: float = R_max + (R_min - R_max) * np.exp(- self.u / u_0)
             self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))
         elif BigClass.Variabs.R_update == 'R_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))
+        elif BigClass.Strctr.net_type == 'beads':
+            self.R_in_t.append(matrix_functions.ChangeRFromFlow(BigClass, BigClass.Variabs.R_max,
+                                                                BigClass.Variabs.R_min,
+                                                                R_change_scheme='marbles_pressure', allowed_cells=[],
+                                                                beta=0.0))
         # if user asks to not print
         if BigClass.Variabs.supress_prints:
             pass

@@ -283,8 +283,10 @@ class Network_State:
         # dual problem is different under schemes of change of R
 
         # w/ memory
-        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
             self.input_dual_nxt: NDArray[np.float_] = input_dual - delta
+        elif R_update == 'beads':
+            self.input_dual_nxt = input_dual + np.dot(BigClass.Variabs.alpha_vec, np.abs(loss[0]))
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             self.input_dual_nxt = - delta
@@ -430,8 +432,10 @@ class Network_State:
         # dual problem is different under schemes of change of R
 
         # w/ memory
-        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
+        if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
             self.output_dual_nxt = output_dual + delta
+        elif R_update == 'beads':
+            self.output_dual_nxt = output_dual + BigClass.Variabs.alpha_vec * loss[0]
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
             self.output_dual_nxt = delta

@@ -81,13 +81,17 @@ def build_input_output_and_ground(Nin: int, Nout: int, in_nodes: NDArray[np.int_
         else:  # don't add a ground node where p=0
             ground_nodes_arr = array([], dtype=np.int_)
     elif net_type == "beads":
-        row = 0
+        row = 1
         input_nodes_arr = array([(row*net_height+(row+1))*5-1])
         extraInputs_nodes_arr = array([], dtype=np.int_)
         inter_nodes_arr = array([], dtype=np.int_)
-        ground_nodes_arr = array([(net_height*(net_len-row)-row)*5-1])
+        if add_ground:
+            ground_nodes_arr = array([(net_height*(net_len-row)-row)*5-1])
+        else:
+            ground_nodes_arr = array([], dtype=np.int_)
         extraOutput_nodes_arr = array([], dtype=np.int_)
-        output_nodes_arr = array([((row+1)*net_height-row)*5-1, (net_height*(net_len-(row+1))+(row+1))*5-1])
+        # output_nodes_arr = array([((row+1)*net_height-row)*5-1, (net_height*(net_len-(row+1))+(row+1))*5-1])
+        output_nodes_arr = array([((row+1)*net_height-row)*5-1])
     else:  # network is Fully Connected ("FC")
         # input nodes
         input_nodes_arr = array([i for i in range(Nin)])  # input nodes are first ones named

@@ -259,7 +259,8 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
     if R_reordered.size > 0:
         R_reordered_normalized = 4 * R_reordered / np.max(R_reordered)  # resistances
         P_reordered = u_reordered ** 2 * R_reordered  # Power
-        P_reordered_normalized = P_reordered / np.max(P_reordered)
+        epsilon = 10**(-7)  # to prohibit division by 0
+        P_reordered_normalized = P_reordered / (np.max(P_reordered) + epsilon)
         edge_colors = [BigClass.Colorscheme.cmap(value) for value in R_reordered_normalized]  # Power
     else:
         edge_colors = [colors_lst[0] for _ in range(len(NET.edges))]
@@ -293,7 +294,8 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
                                    connectionstyle="arc3,rad=0.0", arrowstyle="<|-", arrows=True, ax=ax)
 
     # Draw nodes
-    nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors, node_size=100)
+    # nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors, node_size=100)
+    nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors, node_size=20)
 
     # Highlight input nodes
     nx.draw_networkx_nodes(NET,

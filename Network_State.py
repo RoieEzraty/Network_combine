@@ -530,7 +530,8 @@ class Network_State:
             R_min = copy.copy(BigClass.Variabs.R_min)
             R_bar: float = (R_max + R_min)/2.0
             u_0: float = 1 / (np.sqrt(BigClass.Strctr.NE) * R_bar)
-            R_nxt: float = R_max + (R_min - R_max) * np.exp(- self.u / u_0)
+            # R_nxt: float = R_max + (R_min - R_max) * np.exp(- self.u / u_0)
+            R_nxt: float = R_max + (R_min - R_max) * np.exp(- np.abs(self.u) / u_0)
             self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))

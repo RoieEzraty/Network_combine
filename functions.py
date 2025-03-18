@@ -29,6 +29,8 @@ def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_],
     outputs:
     loss: np.ndarray sized [Nout, 2] loss as linear difference output - desired, each line for different sample
     """
+    # L1: NDArray[np.float_] = np.abs(desired1-output1)
+    # L2: NDArray[np.float_] = np.abs(desired2-output2)
     L1: NDArray[np.float_] = desired1-output1
     L2: NDArray[np.float_] = desired2-output2
     loss: NDArray[np.float_] = np.array([L1, L2])

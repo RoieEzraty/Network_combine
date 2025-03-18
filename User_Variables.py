@@ -94,8 +94,10 @@ class User_Variables:
                 print('input M mismatches output and input')
             np.random.seed(random_state)  # Set seed
             # Generate random numbers as dataset and multiply by task matrix M
-            # self.dataset: NDArray[np.float_] = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
-            self.dataset: NDArray[np.float_] = np.ones([self.iterations, self.Nin])
+            if self.R_update == 'beads':
+                self.dataset: NDArray[np.float_] = np.ones([self.iterations, self.Nin])
+            else:
+                self.dataset = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
             self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
             self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M.T)
             self.X_train = copy.copy(self.dataset)  # train and test are the full dataset, no difference

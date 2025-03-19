@@ -57,22 +57,23 @@ def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int
     elif Nin == 2 and Nout == 1:  # Regression
         legend2 = [r'$y\,\mathrm{update}$', r'$x_1\,\mathrm{update}$', r'$x_2\,\mathrm{update}$']
     elif Nin == 2 and Nout == 3:
-        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
-                   r'$p_2\,\mathrm{dual}$']
+        legend2 = [r'$x\,\mathrm{update}$', r'$y\,\mathrm{update}$', r'$z\,\mathrm{update}$', r'$p_1\,\mathrm{update}$',
+                   r'$p_2\,\mathrm{update}$']
     elif Nin == 2 and Nout == 2:
         if BigClass.Variabs.access_interNodes:
-            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
-                       r'$\mathrm{inter1\,dual}$', r'$\mathrm{inter2\,dual}$']
+            legend2 = [r'$x\,\mathrm{update}$', r'$y\,\mathrm{update}$', r'$p_1\,\mathrm{update}$',
+                       r'$p_2\,\mathrm{update}$', r'$\mathrm{inter1\,update}$', r'$\mathrm{inter2\,update}$']
         else:
-            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
+            legend2 = [r'$x\,\mathrm{update}$', r'$y\,\mathrm{update}$', r'$p_1\,\mathrm{update}$',
+                       r'$p_2\,\mathrm{update}$']
     elif Nin == 3 and Nout == 3:
-        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
-                   r'$p_2\,\mathrm{dual}$', r'$p_3\,\mathrm{dual}$']
+        legend2 = [r'$x\,\mathrm{update}$', r'$y\,\mathrm{update}$', r'$z\,\mathrm{update}$', r'$p_1\,\mathrm{update}$',
+                   r'$p_2\,\mathrm{update}$', r'$p_3\,\mathrm{update}$']
     elif BigClass.Variabs.task_type == 'Iris_classification':
         # legend1 = [r'$\mathrm{Setosa}$', r'$\mathrm{Verisicolor}$', r'$\mathrm{Virginica}$']
-        legend2 = [r'$\mathrm{Setosa\,dual}$', r'$\mathrm{Verisicolor\,dual}$',
-                   r'$\mathrm{Virginica\,dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
-                   r'$p_3\,\mathrm{dual}$', r'$p_4\,\mathrm{dual}$']
+        legend2 = [r'$\mathrm{Setosa\,update}$', r'$\mathrm{Verisicolor\,update}$',
+                   r'$\mathrm{Virginica\,update}$', r'$p_1\,\mathrm{update}$', r'$p_2\,\mathrm{update}$',
+                   r'$p_3\,\mathrm{update}$', r'$p_4\,\mathrm{update}$']
     else:
         # legend1 = []
         legend2 = []
@@ -91,10 +92,10 @@ def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int
     ax1.set_xlabel('t')
 
     # Update modality
-    ax2.plot(BigClass.State.output_dual_in_t[1:])
-    ax2.plot(BigClass.State.input_dual_in_t[1:])
+    ax2.plot(BigClass.State.output_update_in_t[1:])
+    ax2.plot(BigClass.State.input_update_in_t[1:])
     if BigClass.Variabs.access_interNodes:
-        ax2.plot(BigClass.State.inter_dual_in_t[1:])
+        ax2.plot(BigClass.State.inter_update_in_t[1:])
     ax2.set_title('"Update" modality pressure')
     ax2.set_xlabel('t')
     if legend2:
@@ -128,7 +129,7 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
-    2) inputs and outputs of the dual problem
+    2) inputs and outputs of the update problem
     3) resistances in time
     4) absolute mean value of loss in time
 
@@ -164,25 +165,26 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     elif Nin == 2 and Nout == 3:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
                    r'$\frac{z}{z\,\mathrm{desired}}$']
-        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
-                   r'$p_2\,\mathrm{dual}$']
+        legend2 = [r'$x\,\mathrm{update}$', r'$y\,\mathrm{update}$', r'$z\,\mathrm{update}$', r'$p_1\,\mathrm{update}$',
+                   r'$p_2\,\mathrm{update}$']
     elif Nin == 2 and Nout == 2:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$']
         if BigClass.Variabs.access_interNodes:
-            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
-                       r'$\mathrm{inter1\,dual}$', r'$\mathrm{inter2\,dual}$']
+            legend2 = [r'$x\,\mathrm{update}$', r'$y\,\mathrm{update}$', r'$p_1\,\mathrm{update}$',
+                       r'$p_2\,\mathrm{update}$', r'$\mathrm{inter1\,update}$', r'$\mathrm{inter2\,update}$']
         else:
-            legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$']
+            legend2 = [r'$x\,\mathrm{update}$', r'$y\,\mathrm{update}$', r'$p_1\,\mathrm{update}$',
+                       r'$p_2\,\mathrm{update}$']
     elif Nin == 3 and Nout == 3:
         legend1 = [r'$\frac{x}{x\,\mathrm{desired}}$', r'$\frac{y}{y\,\mathrm{desired}}$',
                    r'$\frac{z}{z\,\mathrm{desired}}$']
-        legend2 = [r'$x\,\mathrm{dual}$', r'$y\,\mathrm{dual}$', r'$z\,\mathrm{dual}$', r'$p_1\,\mathrm{dual}$',
-                   r'$p_2\,\mathrm{dual}$', r'$p_3\,\mathrm{dual}$']
+        legend2 = [r'$x\,\mathrm{update}$', r'$y\,\mathrm{update}$', r'$z\,\mathrm{update}$', r'$p_1\,\mathrm{update}$',
+                   r'$p_2\,\mathrm{update}$', r'$p_3\,\mathrm{update}$']
     elif BigClass.Variabs.task_type == 'Iris_classification':
         legend1 = [r'$\mathrm{Setosa}$', r'$\mathrm{Verisicolor}$', r'$\mathrm{Virginica}$']
-        legend2 = [r'$\mathrm{Setosa\,dual}$', r'$\mathrm{Verisicolor\,dual}$',
-                   r'$\mathrm{Virginica\,dual}$', r'$p_1\,\mathrm{dual}$', r'$p_2\,\mathrm{dual}$',
-                   r'$p_3\,\mathrm{dual}$', r'$p_4\,\mathrm{dual}$']
+        legend2 = [r'$\mathrm{Setosa\,update}$', r'$\mathrm{Verisicolor\,update}$',
+                   r'$\mathrm{Virginica\,update}$', r'$p_1\,\mathrm{update}$', r'$p_2\,\mathrm{update}$',
+                   r'$p_3\,\mathrm{update}$', r'$p_4\,\mathrm{update}$']
     else:
         legend1 = []
         legend2 = []
@@ -200,10 +202,10 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
     ax1.set_xlabel('t')
     if legend1:
         ax1.legend(legend1)
-    ax2.plot(BigClass.State.output_dual_in_t[1:])
-    ax2.plot(BigClass.State.input_dual_in_t[1:])
+    ax2.plot(BigClass.State.output_update_in_t[1:])
+    ax2.plot(BigClass.State.input_update_in_t[1:])
     if BigClass.Variabs.access_interNodes:
-        ax2.plot(BigClass.State.inter_dual_in_t[1:])
+        ax2.plot(BigClass.State.inter_update_in_t[1:])
     ax2.set_title('"update" values')
     ax2.set_xlabel('t')
     if legend2:

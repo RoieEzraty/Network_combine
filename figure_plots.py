@@ -75,8 +75,8 @@ def loss_afo_in_out(loss_mat: np.ndarray, Colorscheme: "Color_Scheme") -> None:
 
 def plot_performance_2(M: NDArray[np.float_], t: np.int_,
                        output_1in2out: NDArray[np.float_], output_2in1out: NDArray[np.float_],
-                       input_dual_1in2out: NDArray[np.float_], input_dual_2in1out: NDArray[np.float_],
-                       output_dual_1in2out: NDArray[np.float_], output_dual_2in1out: NDArray[np.float_],
+                       input_update_1in2out: NDArray[np.float_], input_update_2in1out: NDArray[np.float_],
+                       output_update_1in2out: NDArray[np.float_], output_update_2in1out: NDArray[np.float_],
                        R_1in2out: NDArray[np.float_], R_2in1out: NDArray[np.float_],
                        loss_1in2out: NDArray[np.float_], loss_2in1out: NDArray[np.float_],
                        NET_1in2out: nx.DiGraph, NET_2in1out: nx.DiGraph,
@@ -85,7 +85,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
-    2) inputs and outputs of the dual problem
+    2) inputs and outputs of the update modality
     3) resistances in time
     4) absolute mean value of loss in time
 
@@ -132,8 +132,8 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax1.set_title(r'$\|\mathcal{L}\|$')
     # ax1.yaxis.set_major_locator(MaxNLocator(nbins=5))  # More ticks on the y-axis
     # ax1.legend(legend4)
-    ax2.plot(input_dual_1in2out)
-    ax2.plot(output_dual_1in2out)
+    ax2.plot(input_update_1in2out)
+    ax2.plot(output_update_1in2out)
     ax2.set_title('"Update" modality pressure')
     ax2.legend(legend2_1in2out, loc='center right')
     ax3.plot(R_1in2out)
@@ -148,8 +148,8 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax5.plot(np.mean(np.mean(np.abs(loss_2in1out), axis=1), axis=1))
     ax5.set_xlabel('t')
     ax5.set_yscale('log')
-    ax6.plot(input_dual_2in1out)
-    ax6.plot(output_dual_2in1out)
+    ax6.plot(input_update_2in1out)
+    ax6.plot(output_update_2in1out)
     ax6.set_xlabel('t')
     ax6.legend(legend2_2in1out, loc='center right', bbox_to_anchor=(1, 0.4))
     ax7.plot(R_2in1out)

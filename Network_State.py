@@ -25,8 +25,8 @@ class Network_State:
     what ends with _in_t holds all time instances of the variable, each list index is different t
     what ends w/out _in_t is at current time instance self.t
     """
-    def __init__(self, Variabs: "User_Variables", input_dual_initial: NDArray[np.float_] = array([]),
-                 output_dual_initial: NDArray[np.float_] = array([])) -> None:
+    def __init__(self, Variabs: "User_Variables", input_update_initial: NDArray[np.float_] = array([]),
+                 output_update_initial: NDArray[np.float_] = array([])) -> None:
         super().__init__()
         self.t: int = 0  # time, defined as number of R updates, i.e. times the learning rate alpha is used.
         self.p: NDArray[np.float_] = array([])  # pressure
@@ -38,30 +38,30 @@ class Network_State:
         self.output_in_t: List[NDArray[np.float_]] = []
         self.extraOutput_in_t: List[NDArray[np.float_]] = []
         self.desired_in_t: List[NDArray[np.float_]] = []
-        # inputs and extra inputs at dual problem in time
-        # self.input_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.Nin)]
-        # self.extraInput_dual_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.extraNin)]
-        # self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
-        # # outputs and extra outputs during dual problem in time
-        # self.output_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
-        # self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
-        if input_dual_initial.size:
-            self.input_dual_in_t: List[NDArray[np.float_]] = [input_dual_initial]
+        # inputs and extra inputs at update modality in time
+        # self.input_update_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.Nin)]
+        # self.extraInput_update_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.extraNin)]
+        # self.inter_update_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
+        # # outputs and extra outputs during update modality in time
+        # self.output_update_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
+        # self.extraOutput_update_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
+        if input_update_initial.size:
+            self.input_update_in_t: List[NDArray[np.float_]] = [input_update_initial]
         else:
-            self.input_dual_in_t = [1. * np.ones(Variabs.Nin)]
-        self.extraInput_dual_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNin)]
-        self.inter_dual_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
-        # outputs and extra outputs during dual problem in time
-        if output_dual_initial.size:
-            self.output_dual_in_t: List[NDArray[np.float_]] = [output_dual_initial]
+            self.input_update_in_t = [1. * np.ones(Variabs.Nin)]
+        self.extraInput_update_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNin)]
+        self.inter_update_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
+        # outputs and extra outputs during update modality in time
+        if output_update_initial.size:
+            self.output_update_in_t: List[NDArray[np.float_]] = [output_update_initial]
         else:
-            self.output_dual_in_t = [0.5 * np.ones(Variabs.Nout)]
-        self.extraOutput_dual_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
+            self.output_update_in_t = [0.5 * np.ones(Variabs.Nout)]
+        self.extraOutput_update_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
         self.loss_in_t: List[NDArray[np.float_]] = []
         self.loss_norm_in_t: List[NDArray[np.float_]] = []  # normalized loss
         self.Power_norm_in_t: List[NDArray[np.float_]] = []
         # Other sizes that make problems sometimes
-        self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_dual_in_t[-1])
+        self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_update_in_t[-1])
         self.reset_thresh_b: float = 1e4
         self.reset_thresh_s: float = -1e4
         # self.reset_thresh_s: float = 0
@@ -191,7 +191,7 @@ class Network_State:
         BigClass  - class instance including User_Variables, Network_Structure instances, etc.
         problem   - string stating the problem type: "measure" for no constraint on outputs
                                                      "measure_for_mean" for outputs of mean of Iris class
-                                                     "dual" for constrained outputs as well
+                                                     "update" for constrained outputs as well
 
         outputs:
         p - pressure at every node under the specific BC, after convergence while allowing conductivities to change
@@ -217,8 +217,8 @@ class Network_State:
                                                           (self.input_drawn, self.extraInput),
                                                           BigClass.Strctr.NN, BigClass.Strctr.EI,
                                                           BigClass.Strctr.EJ)
-        elif problem == 'dual':
-            if BigClass.Variabs.access_interNodes or access_inters:  # if dual problem accesses interNodes separately
+        elif problem == 'update':
+            if BigClass.Variabs.access_interNodes or access_inters:  # if update modality accesses interNodes separately
                 CstrTuple = \
                     functions.setup_constraints_given_pin((BigClass.Strctr.input_nodes_arr,
                                                            BigClass.Strctr.extraInput_nodes_arr,
@@ -226,17 +226,17 @@ class Network_State:
                                                            BigClass.Strctr.output_nodes_arr,
                                                            BigClass.Strctr.extraOutput_nodes_arr,
                                                            BigClass.Strctr.inter_nodes_arr),
-                                                          (self.input_dual_in_t[-1], self.extraInput_dual_in_t[-1],
-                                                          self.output_dual_in_t[-1],
-                                                          self.extraOutput_dual_in_t[-1], self.inter_dual_in_t[-1]),
+                                                          (self.input_update_in_t[-1], self.extraInput_update_in_t[-1],
+                                                          self.output_update_in_t[-1],
+                                                          self.extraOutput_update_in_t[-1], self.inter_update_in_t[-1]),
                                                           BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
-            else:  # if dual problem does not access interNodes separately
+            else:  # if update modality does not access interNodes separately
                 CstrTuple = functions.setup_constraints_given_pin(
                             (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
                              BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.output_nodes_arr,
                              BigClass.Strctr.extraOutput_nodes_arr),
-                            (self.input_dual_in_t[-1], self.extraInput_dual_in_t[-1], self.output_dual_in_t[-1],
-                             self.extraOutput_dual_in_t[-1]),
+                            (self.input_update_in_t[-1], self.extraInput_update_in_t[-1], self.output_update_in_t[-1],
+                             self.extraOutput_update_in_t[-1]),
                             BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
         # print('CStr Tuple', CstrTuple)
         self.p, self.u = solve.solve_flow(BigClass, CstrTuple, self.R_in_t[-1])
@@ -258,19 +258,19 @@ class Network_State:
                 self.extraOutput_in_t.append(self.extraOutput)
                 self.inter_in_t.append(self.inter)
 
-    def update_input_dual(self, BigClass: "Big_Class") -> None:
+    def update_input(self, BigClass: "Big_Class") -> None:
         """
-        Calculates next input pressure values in dual problem given the measurement, either for 1 or 2 sampled pressures
+        Calculates next input pressure values in update modality given measurement, either for 1 or 2 sampled pressures
 
         inputs:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
 
         outputs:
-        input_dual_nxt: np.ndarray sized [Nin,] denoting input pressure of dual problem at time t
+        input_update_nxt: np.ndarray sized [Nin,] denoting input pressure of update modality at time t
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
-        input_dual: NDArray[np.float_] = self.input_dual_in_t[-1]
+        input_update: NDArray[np.float_] = self.input_update_in_t[-1]
         input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]
         # dot product for alpha in pressure update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
@@ -279,49 +279,55 @@ class Network_State:
                 (input_drawn-input_drawn_prev)*np.dot(BigClass.Variabs.alpha_vec, loss[0]-loss[1])
         else:  # if one sample of p in for every loss calcaultion are to be taken
             delta = (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
+            # delta = (input_drawn)*BigClass.Variabs.alpha_vec[0]*np.abs(loss[0])*np.sign(np.mean(loss[0]))
+            # delta = (input_drawn)*BigClass.Variabs.alpha_vec[0]*np.mean(loss[0])
+            # delta = (input_drawn)
+            # delta = BigClass.Variabs.alpha_vec[0]*np.mean(loss[0])/input_drawn
+            # delta = np.ones(BigClass.Variabs.Nin)*BigClass.Variabs.alpha_vec[0]*np.mean(loss[0])
+            # print('input delta', delta)
 
-        # dual problem is different under schemes of change of R
+        # update modality is different under schemes of change of R
 
         # w/ memory
         if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
-            self.input_dual_nxt: NDArray[np.float_] = input_dual - delta
+            self.input_update_nxt: NDArray[np.float_] = input_update - delta
         elif R_update == 'beads':
-            self.input_dual_nxt = input_dual + np.dot(BigClass.Variabs.alpha_vec, np.abs(loss[0]))
+            self.input_update_nxt = input_update + np.dot(BigClass.Variabs.alpha_vec, np.abs(loss[0]))
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
-            self.input_dual_nxt = - delta
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+            self.input_update_nxt = - delta
 
         # reset "update" modality values if diverging
-        # find indices in input_dual_nxt where values diverge
-        reset_inds_big = np.abs(self.input_dual_nxt) > self.reset_thresh_b
-        reset_inds_small = self.input_dual_nxt < self.reset_thresh_s
+        # find indices in input_update_nxt where values diverge
+        reset_inds_big = np.abs(self.input_update_nxt) > self.reset_thresh_b
+        reset_inds_small = self.input_update_nxt < self.reset_thresh_s
         # reset them to initial value
-        # self.input_dual_nxt[reset_inds] = self.input_dual_in_t[0][reset_inds]
+        # self.input_update_nxt[reset_inds] = self.input_update_in_t[0][reset_inds]
         if np.any(array([reset_inds_big, reset_inds_small])):
-            self.input_dual_nxt = self.input_dual_in_t[0]
+            self.input_update_nxt = self.input_update_in_t[0]
 
-        self.input_dual_in_t.append(self.input_dual_nxt)  # append into list in time
+        self.input_update_in_t.append(self.input_update_nxt)  # append into list in time
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('input_dual_nxt=', self.input_dual_nxt)
+            print('input_update_nxt=', self.input_update_nxt)
 
-    def update_extraInput_dual(self, BigClass: "Big_Class"):
+    def update_extraInput(self, BigClass: "Big_Class"):
         """
-        Calculates next pressure values for extra input nodes in dual problem given measurement,
+        Calculates next pressure values for extra input nodes in update modality given measurement,
         either for 1 or 2 sampled pressures
 
         inputs:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
 
         outputs:
-        extraInput_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
+        extraInput_update_nxt: np.ndarray sized [Nout,] denoting output pressure of update modality at time t
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
-        extraInput_dual: NDArray[np.float_] = self.extraInput_dual_in_t[-1]
-        # print('extraInput_dual', extraInput_dual)
+        extraInput_update: NDArray[np.float_] = self.extraInput_update_in_t[-1]
+        # print('extraInput_update', extraInput_update)
         extraInput: NDArray[np.float_] = self.extraInput_in_t[-1]
         # print('extraInput', extraInput)
         # dot product for alpha in pressure update
@@ -334,45 +340,45 @@ class Network_State:
         else:  # if one sample of p in for every loss calcaultion are to be taken
             delta = (extraInput)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
-        # dual problem is different under schemes of change of R
+        # update modality is different under schemes of change of R
 
         # w/ memory
         if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
-            self.extraInput_dual_nxt: NDArray[np.float_] = extraInput_dual - delta
+            self.extraInput_update_nxt: NDArray[np.float_] = extraInput_update - delta
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:  # w/out memory
-            self.extraInput_dual_nxt = - delta
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+            self.extraInput_update_nxt = - delta
 
         # reset "update" modality values if diverging
-        # find indices in input_dual_nxt where values diverge
-        reset_inds_big = np.abs(self.extraInput_dual_nxt) > self.reset_thresh_b
-        reset_inds_small = self.extraInput_dual_nxt < self.reset_thresh_s
+        # find indices in input_update_nxt where values diverge
+        reset_inds_big = np.abs(self.extraInput_update_nxt) > self.reset_thresh_b
+        reset_inds_small = self.extraInput_update_nxt < self.reset_thresh_s
         # reset them to initial value
-        # self.extraInput_dual_nxt[reset_inds] = self.extraInput_dual_in_t[0][reset_inds]
+        # self.extraInput_update_nxt[reset_inds] = self.extraInput_update_in_t[0][reset_inds]
         if np.any(array([reset_inds_big, reset_inds_small])):
-            self.extraInput_dual_nxt = self.extraInput_dual_in_t[0]
+            self.extraInput_update_nxt = self.extraInput_update_in_t[0]
 
-        self.extraInput_dual_in_t.append(self.extraInput_dual_nxt)  # append into list in time
+        self.extraInput_update_in_t.append(self.extraInput_update_nxt)  # append into list in time
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('extraInput_dual_nxt=', self.extraInput_dual_nxt)
+            print('extraInput_update_nxt=', self.extraInput_update_nxt)
 
-    def update_inter_dual(self, BigClass: "Big_Class") -> None:
+    def update_inter(self, BigClass: "Big_Class") -> None:
         """
-        Calculates next inter nodes pressure values in dual problem given measurement, for 1 or 2 sampled pressures
+        Calculates next inter nodes pressure values in update modality given measurement, for 1 or 2 sampled pressures
         only for when Variabs.access_interNodes==True
 
         inputs:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
 
         outputs:
-        interNodes_dual_nxt: np.ndarray sized [Ninter,] denoting inter nodes pressure of dual problem at time t
+        interNodes_update_nxt: np.ndarray sized [Ninter,] denoting inter nodes pressure of update modality at time t
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
-        inter_dual: NDArray[np.float_] = self.inter_dual_in_t[-1]
+        inter_update: NDArray[np.float_] = self.inter_update_in_t[-1]
         inter: NDArray[np.float_] = self.inter_in_t[-1]
         # dot product for alpha in inter nodes pressure update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
@@ -382,93 +388,95 @@ class Network_State:
         else:  # if one sample of p in for every loss calcaultion are to be taken
             delta = inter*np.dot(BigClass.Variabs.alpha_vec, loss[0])
 
-        # dual problem is different under schemes of change of R
+        # update modality is different under schemes of change of R
 
         # w/ memory
         if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
-            # self.inter_dual_nxt = inter_dual - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
-            self.inter_dual_nxt = inter_dual - delta
+            # self.inter_update_nxt = inter_update - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
+            self.inter_update_nxt = inter_update - delta
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
-            # self.inter_dual_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
-            self.inter_dual_nxt = - delta
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+            # self.inter_update_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
+            self.inter_update_nxt = - delta
 
         # reset "update" modality values if diverging
-        # find indices in input_dual_nxt where values diverge
-        reset_inds_big = np.abs(self.inter_dual_nxt) > self.reset_thresh_b
-        reset_inds_small = self.inter_dual_nxt < self.reset_thresh_s
+        # find indices in input_update_nxt where values diverge
+        reset_inds_big = np.abs(self.inter_update_nxt) > self.reset_thresh_b
+        reset_inds_small = self.inter_update_nxt < self.reset_thresh_s
         # reset them to initial value
-        # self.inter_dual_nxt[reset_inds] = self.inter_dual_in_t[0][reset_inds]
+        # self.inter_update_nxt[reset_inds] = self.inter_update_in_t[0][reset_inds]
         if np.any(array([reset_inds_big, reset_inds_small])):
-            self.inter_dual_nxt = self.inter_dual_in_t[0]
+            self.inter_update_nxt = self.inter_update_in_t[0]
 
-        self.inter_dual_in_t.append(self.inter_dual_nxt)  # append into list in time
+        self.inter_update_in_t.append(self.inter_update_nxt)  # append into list in time
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('inter_dual_nxt=', self.inter_dual_nxt)
+            print('inter_update_nxt=', self.inter_update_nxt)
 
-    def update_output_dual(self, BigClass: "Big_Class"):
+    def update_output(self, BigClass: "Big_Class"):
         """
-        Calculates next output pressure values in dual problem given measurement, either for 1 or 2 sampled pressures
+        Calculates next output pressure values in update modality given measurement, either for 1 or 2 sampled pressures
 
         inputs:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
 
         outputs:
-        output_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
+        output_update_nxt: np.ndarray sized [Nout,] denoting output pressure of update modality at time t
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]
-        output_dual: NDArray[np.float_] = copy.copy(self.output_dual_in_t[-1])
+        output_update: NDArray[np.float_] = copy.copy(self.output_update_in_t[-1])
         # element-wise multiplication for alpha in output update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
             output_prev: NDArray[np.float_] = self.output_in_t[-2]
             delta: NDArray[np.float_] = BigClass.Variabs.alpha_vec * (self.output-output_prev) * (loss[0]-loss[1])
         else:
             delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
+            # delta = BigClass.Variabs.alpha_vec * loss[0] / self.output
+            # delta = BigClass.Variabs.alpha_vec * loss[0]
 
-        # dual problem is different under schemes of change of R
+        # update modality is different under schemes of change of R
 
         # w/ memory
         if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp']:
-            self.output_dual_nxt = output_dual + delta
+            self.output_update_nxt = output_update + delta
         elif R_update == 'beads':
-            self.output_dual_nxt = output_dual + BigClass.Variabs.alpha_vec * loss[0]
+            self.output_update_nxt = output_update + BigClass.Variabs.alpha_vec * loss[0]
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
-            self.output_dual_nxt = delta
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+            self.output_update_nxt = delta
 
         # reset "update" modality values if diverging
-        # find indices in input_dual_nxt where values diverge
-        reset_inds_big = np.abs(self.output_dual_nxt) > self.reset_thresh_b
-        reset_inds_small = self.output_dual_nxt < self.reset_thresh_s
+        # find indices in input_update_nxt where values diverge
+        reset_inds_big = np.abs(self.output_update_nxt) > self.reset_thresh_b
+        reset_inds_small = self.output_update_nxt < self.reset_thresh_s
         # reset them to initial value
-        # self.output_dual_nxt[reset_inds] = self.output_dual_in_t[0][reset_inds]
+        # self.output_update_nxt[reset_inds] = self.output_update_in_t[0][reset_inds]
         if np.any(array([reset_inds_big, reset_inds_small])):
-            self.output_dual_nxt = self.output_dual_in_t[0]
+            self.output_update_nxt = self.output_update_in_t[0]
 
-        self.output_dual_in_t.append(self.output_dual_nxt)
+        self.output_update_in_t.append(self.output_update_nxt)
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('output_dual_nxt', self.output_dual_nxt)
+            print('output_update_nxt', self.output_update_nxt)
 
-    def update_extraOutput_dual(self, BigClass: "Big_Class"):
+    def update_extraOutput(self, BigClass: "Big_Class"):
         """
-        Calculates next output pressure values in dual problem given measurement, either for 1 or 2 sampled pressures
+        Calculates next output pressure values in update modality given measurement, either for 1 or 2 sampled pressures
 
         inputs:
         BigClass: Class instance containing User_Variables, Network_Structure, etc.
 
         outputs:
-        extraOutput_dual_nxt: np.ndarray sized [Nout,] denoting output pressure of dual problem at time t
+        extraOutput_update_nxt: np.ndarray sized [Nout,] denoting output pressure of update modality at time t
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         loss: NDArray[np.float_] = self.loss_in_t[-1]
-        extraOutput_dual: NDArray[np.float_] = copy.copy(self.extraOutput_dual_in_t[-1])
+        extraOutput_update: NDArray[np.float_] = copy.copy(self.extraOutput_update_in_t[-1])
         # element-wise multiplication for alpha in output update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
             extraOutput_prev: NDArray[np.float_] = self.extraOutput_in_t[-2]
@@ -476,30 +484,30 @@ class Network_State:
                                                                                      loss[0]-loss[1])
         else:
             delta = self.extraOutput * np.dot(BigClass.Variabs.alpha_vec, loss[0])
-        # dual problem is different under schemes of change of R
+        # update modality is different under schemes of change of R
 
         # w/ memory
         if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
-            self.extraOutput_dual_nxt = extraOutput_dual + delta
+            self.extraOutput_update_nxt = extraOutput_update + delta
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power']:
-            self.extraOutput_dual_nxt = delta
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+            self.extraOutput_update_nxt = delta
 
         # reset "update" modality values if diverging
-        # find indices in input_dual_nxt where values diverge
-        reset_inds_big = np.abs(self.extraOutput_dual_nxt) > self.reset_thresh_b
-        reset_inds_small = self.extraOutput_dual_nxt < self.reset_thresh_s
+        # find indices in input_update_nxt where values diverge
+        reset_inds_big = np.abs(self.extraOutput_update_nxt) > self.reset_thresh_b
+        reset_inds_small = self.extraOutput_update_nxt < self.reset_thresh_s
         # reset them to initial value
-        # self.extraOutput_dual_nxt[reset_inds] = self.extraOutput_dual_in_t[0][reset_inds]
+        # self.extraOutput_update_nxt[reset_inds] = self.extraOutput_update_in_t[0][reset_inds]
         if np.any(array([reset_inds_big, reset_inds_small])):
-            self.extraOutput_dual_nxt = self.extraOutput_dual_in_t[0]
+            self.extraOutput_update_nxt = self.extraOutput_update_in_t[0]
 
-        self.extraOutput_dual_in_t.append(self.extraOutput_dual_nxt)
+        self.extraOutput_update_in_t.append(self.extraOutput_update_nxt)
         # if user ask to not print
         if BigClass.Variabs.supress_prints:
             pass
         else:  # print
-            print('extraOutput_dual_nxt', self.extraOutput_dual_nxt)
+            print('extraOutput_update_nxt', self.extraOutput_update_nxt)
 
     def update_Rs(self, BigClass: "Big_Class") -> None:
         """
@@ -533,6 +541,10 @@ class Network_State:
             # R_nxt: float = R_max + (R_min - R_max) * np.exp(- self.u / u_0)
             R_nxt: float = R_max + (R_min - R_max) * np.exp(- np.abs(self.u) / u_0)
             self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
+        elif BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # delta_R propto p_in-p_out
+            # self.R_in_t.append(np.abs(R_vec + np.tanh((BigClass.Variabs.gamma * delta_p)**3/0.15)))
+            # self.R_in_t.append(np.abs(R_vec + 0.5*np.tanh((BigClass.Variabs.gamma * delta_p)**3)/0.15))
+            self.R_in_t.append(np.abs(R_vec + 0.5*(BigClass.Variabs.gamma * delta_p)**3))
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))
         elif BigClass.Variabs.R_update == 'R_propto_Power':  # delta_R propto Power dissipation dp*Q

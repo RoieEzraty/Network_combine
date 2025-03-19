@@ -36,7 +36,7 @@ class User_Variables:
     """
     def __init__(self, iterations: int, Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int,
                  gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, include_Power: bool, lam: np.float_,
-                 supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str,
+                 supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str, dataset_type: str,
                  measure_accuracy_every: Optional[int] = None, p_thresh: Optional[float] = 0.25,
                  R_max: float = 46.0, R_min: float = 1.0) -> None:
 
@@ -63,6 +63,7 @@ class User_Variables:
         self.bc_noise: float = bc_noise
         self.access_interNodes: bool = access_interNodes
         self.task_type: str = task_type
+        self.dataset_type: str = dataset_type
         if task_type == 'Iris_classification' and self.Nin != 4 and self.Nout != 3:
             print('mismatched # of inputs and outputs for Iris classification. correcting accordingly to Nin=4 Nout=3')
             self.Nin = 4
@@ -96,10 +97,12 @@ class User_Variables:
             # Generate random numbers as dataset and multiply by task matrix M
             if self.R_update == 'beads':
                 self.dataset: NDArray[np.float_] = np.ones([self.iterations, self.Nin])
+            elif self.dataset_type == "alternating ones":
+                self.dataset = np.tile(np.eye(self.Nin), (int(self.iterations/self.Nin), 1))
             else:
                 self.dataset = np.random.uniform(low=0.0, high=2.0, size=[self.iterations, self.Nin])
             self.M: np.ndarray = M_values[0:self.Nout*self.Nin].reshape(self.Nout, self.Nin)
-            self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M.T)
+            self.targets: NDArray[np.float_] = np.matmul(self.dataset, self.M.T)  # targets are M*inputs in reg. task
             self.X_train = copy.copy(self.dataset)  # train and test are the full dataset, no difference
             self.y_train = copy.copy(self.targets)  # train and test are the full dataset, no difference
             self.X_test = copy.copy(self.dataset)  # train and test are the full dataset, no difference

@@ -269,22 +269,29 @@ class Network_State:
         input_update_nxt: np.ndarray sized [Nin,] denoting input pressure of update modality at time t
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
+        alpha: float = BigClass.Variabs.alpha_vec[0]
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
         input_update: NDArray[np.float_] = self.input_update_in_t[-1]
         input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]
         # dot product for alpha in pressure update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
             input_drawn_prev: NDArray[np.float_] = self.input_drawn_in_t[-2]
-            delta: NDArray[np.float_] = \
-                (input_drawn-input_drawn_prev)*np.dot(BigClass.Variabs.alpha_vec, loss[0]-loss[1])
+            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
+                delta: NDArray[np.float_] = \
+                    (input_drawn-input_drawn_prev)*alpha*(np.mean(loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))
+            else:
+                delta = (input_drawn-input_drawn_prev)*np.dot(BigClass.Variabs.alpha_vec, loss[0]-loss[1])
         else:  # if one sample of p in for every loss calcaultion are to be taken
-            delta = (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])
-            # delta = (input_drawn)*BigClass.Variabs.alpha_vec[0]*np.abs(loss[0])*np.sign(np.mean(loss[0]))
-            # delta = (input_drawn)*BigClass.Variabs.alpha_vec[0]*np.mean(loss[0])
-            # delta = (input_drawn)
-            # delta = BigClass.Variabs.alpha_vec[0]*np.mean(loss[0])/input_drawn
-            # delta = np.ones(BigClass.Variabs.Nin)*BigClass.Variabs.alpha_vec[0]*np.mean(loss[0])
-            # print('input delta', delta)
+            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
+                delta = (input_drawn)*alpha*(np.mean(loss[0])/np.linalg.norm(loss[0]))  # normalize loss
+                # delta = (input_drawn)*alpha*np.abs(loss[0])*np.sign(np.mean(loss[0]))  # use a single sign of loss
+                # delta = (input_drawn)  # just the input
+                # delta = alpha*np.mean(loss[0])/input_drawn  # divide by input
+                # delta = np.ones(BigClass.Variabs.Nin)*alpha*np.mean(loss[0])  # no input
+            else:
+                # delta = (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])  # alpha*L*x using dot product
+                delta = (input_drawn)*alpha*np.mean(loss[0])    # alpha*mean(L)*x         
+            # print('input delta ', delta)
 
         # update modality is different under schemes of change of R
 
@@ -431,11 +438,19 @@ class Network_State:
         # element-wise multiplication for alpha in output update
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
             output_prev: NDArray[np.float_] = self.output_in_t[-2]
-            delta: NDArray[np.float_] = BigClass.Variabs.alpha_vec * (self.output-output_prev) * (loss[0]-loss[1])
+            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
+                delta: NDArray[np.float_] = BigClass.Variabs.alpha_vec * (self.output-output_prev) * \
+                                            ((loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))  # normalize loss
+            else:
+                delta = BigClass.Variabs.alpha_vec * (self.output-output_prev) * (loss[0]-loss[1])
         else:
-            delta = BigClass.Variabs.alpha_vec * self.output * loss[0]
-            # delta = BigClass.Variabs.alpha_vec * loss[0] / self.output
-            # delta = BigClass.Variabs.alpha_vec * loss[0]
+            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
+                delta = BigClass.Variabs.alpha_vec * self.output * (loss[0]/np.linalg.norm(loss[0]))  # normalize loss
+            else:
+                delta = BigClass.Variabs.alpha_vec * self.output * loss[0]  # alpha*y*L
+                # delta = BigClass.Variabs.alpha_vec * loss[0] / self.output  # alpha*L/y - divide by output
+                # delta = BigClass.Variabs.alpha_vec * loss[0]  # alpha*L - no outputs
+            # print('output delta ', delta)
 
         # update modality is different under schemes of change of R
 

@@ -46,7 +46,6 @@ class User_Variables:
         self.Nout: int = Nout
         self.extraNout: int = extraNout
         self.Ninter: int = Ninter
-        self.NN: int = Nin + extraNin + Nout + extraNout + Ninter
         self.gamma: NDArray[np.float_] = gamma
         self.use_p_tag: bool = use_p_tag
         self.include_Power = include_Power

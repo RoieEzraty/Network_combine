@@ -112,12 +112,12 @@ def dw_Balasub(alpha: float, p: NDArray[np.float_], out_nodes: NDArray[np.int_],
     print('H ', H)
     invH = inv(H)
     print('invH ', invH)
-    Nin = np.shape(M)[0]
-    A = np.ones([Nin, 1]).T@M
+    Nout = np.shape(M)[0]
+    A = np.ones([Nout, 1]).T@M
     print('A ', A)
     B = np.sum(p[out_nodes])
     print('B ', B)
-    dw = -alpha*B*(DM@p)*(DM@invH)
+    dw = -alpha*B*(DM@p)*(DM@invH@A)
     print('dw ', dw)
     return dw
 

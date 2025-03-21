@@ -114,7 +114,7 @@ def build_input_output_and_ground(Nin: int, Nout: int, in_nodes: NDArray[np.int_
 def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDArray[np.int_], List[NDArray[np.int_]],
                                                           NDArray[np.int_], int, int]:
     """
-    Builds incidence matrix DM as np.array [NEdges, NNodes]
+    Builds incidence matrix DM as np.array [NEdges, NNodes] for 1 single FC network, w/out ground
     its meaning is 1 at input node and -1 at outpus for every row which resembles one edge.
 
     input (extracted from Variabs input):
@@ -129,7 +129,7 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     """
 
     NN: int = len(Strctr.input_nodes_arr) + len(Strctr.extraInput_nodes_arr) + len(Strctr.inter_nodes_arr) + \
-        len(Strctr.output_nodes_arr) + len(Strctr.extraOutput_nodes_arr) + 1
+        len(Strctr.output_nodes_arr) + len(Strctr.extraOutput_nodes_arr) + len(Strctr.ground_nodes_arr)
     ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
     EIlst: List[int] = []
     EJlst: List[int] = []

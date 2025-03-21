@@ -3,7 +3,7 @@ import numpy as np
 
 from typing import Tuple, List
 from numpy import array, zeros
-from numpy.linalg import norm
+from numpy.linalg import norm, inv
 from numpy.typing import NDArray
 from typing import TYPE_CHECKING
 from scipy.signal import savgol_filter
@@ -86,6 +86,40 @@ def power_dissip_norm(u: NDArray[np.float_], R: NDArray[np.float_], input: NDArr
     input_squared = np.mean(input**2)
     P_norm = np.sum(u**2 * R)/input_squared
     return P_norm
+
+
+def dw_Balasub(alpha: float, p: NDArray[np.float_], out_nodes: NDArray[np.int_], DM: NDArray[np.int_],
+               R: NDArray[np.float_], M: NDArray[np.float_]) -> NDArray[np.float_]:
+    """
+    dw_Balasub calculates the change in weights (conductances) by contrastive learning
+    from the analytic derivation in Stern & Balasubramanian 2024 https://doi.org/10.1103/PhysRevE.109.024311
+    (equation 17)
+
+    input:
+    alpha     - float, learning rate
+    p         - 1D np.array [NN] of pressures on all network nodes
+    out_nodes - 1D np.array [Nout] indices of output nodes from the pressure vector p
+    DM        - np.array [NEdges, NNodes], incidence matrix
+    R         - 1D np.array [NE] resistances of edges
+    M         - np.array [Nout, Nin] regression task matrix
+
+    output:
+    dw - 1D np.array [NE] change in conductivities (inverse of resistances) as in contrastive learning
+    """
+    diagw = np.diag(1/R)
+    print('diagw ', diagw)
+    H = DM.T@diagw@DM
+    print('H ', H)
+    invH = inv(H)
+    print('invH ', invH)
+    Nin = np.shape(M)[0]
+    A = np.ones([Nin, 1]).T@M
+    print('A ', A)
+    B = np.sum(p[out_nodes])
+    print('B ', B)
+    dw = -alpha*B*(DM@p)*(DM@invH)
+    print('dw ', dw)
+    return dw
 
 
 def mov_ave(data, window_size):

@@ -88,8 +88,8 @@ def power_dissip_norm(u: NDArray[np.float_], R: NDArray[np.float_], input: NDArr
     return P_norm
 
 
-def dw_Balasub(alpha: float, p: NDArray[np.float_], out_nodes: NDArray[np.int_], DM: NDArray[np.int_],
-               R: NDArray[np.float_], M: NDArray[np.float_]) -> NDArray[np.float_]:
+def dw_Balasub(alpha: float, p: NDArray[np.float_], in_nodes: NDArray[np.int_], out_nodes: NDArray[np.int_],
+               DM: NDArray[np.int_], R: NDArray[np.float_], M: NDArray[np.float_]) -> NDArray[np.float_]:
     """
     dw_Balasub calculates the change in weights (conductances) by contrastive learning
     from the analytic derivation in Stern & Balasubramanian 2024 https://doi.org/10.1103/PhysRevE.109.024311
@@ -106,25 +106,50 @@ def dw_Balasub(alpha: float, p: NDArray[np.float_], out_nodes: NDArray[np.int_],
     output:
     dw - 1D np.array [NE] change in conductivities (inverse of resistances) as in contrastive learning
     """
-    diagw = np.diag(1/R)
-    print('diagw ', diagw)
-    H = DM.T@diagw@DM
-    print('H ', H)
-    invH = inv(H)
-    print('invH ', invH)
-    Nout = np.shape(M)[0]
-    A = np.ones([Nout, 1]).T@M
-    print('A ', A)
-    B = np.sum(p[out_nodes])
-    print('B ', B)
-    dw = -alpha*B*(DM@p)*(DM@invH@A)
-    print('dw ', dw)
+    epsilon = 10**-5  # add for positive definiteness
+    Nin = np.size(in_nodes)  # number of input nodes
+    NN = np.size(p)  # number of nodes in network
+
+    diagw = np.diag(1/R)  # diagonal [NN, NN] of conductivities
+    # print('diagw ', diagw)
+    H = DM.T@diagw@DM  # Hessian
+    H += np.diag(np.ones(NN))*epsilon  # add for positive definiteness
+    # print('H ', H)
+    invH = inv(H)  # invert H
+    # print('invH ', invH)
+    A = np.zeros([NN, 1])  # desired response vector [NN]
+    A[out_nodes] = M @ np.ones([Nin, 1])  # desired response is only at outputs
+    # print('A ', A)
+    B = np.sum(p[out_nodes])  # desired response scalar
+    # print('B ', B)
+    dw = -alpha*B*(DM@p)*(DM@invH@A)  # change in conductivities
     return dw
+
+
+def dK(R_in_t: list[NDArray[np.float_]]) -> NDArray[np.float_]:
+    """
+    change in conductivity during latest time step, calculated by difference between two inverse resistance vectors
+
+    input:
+    R_in_t - List of 1D np.arrays [NE] of edge resistance values in time (list rows)
+
+    output:
+    dK - 1D np.array [NE] change in conductivity between time steps
+    """
+    return 1/R_in_t[-1]-1/R_in_t[-2]
+
+
+# def dot_dRs(dR1: NDArray[np.float_], dR2: NDArray[np.float_]) -> float:
+#     return dR1@dR2
 
 
 def mov_ave(data, window_size):
     """Apply a simple moving average filter."""
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
+
+
+def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
 # def flow_MSE(u: NDArray[np.float_], step: int, u_nxt=[]) -> NDArray[float_]:

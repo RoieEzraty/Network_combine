@@ -94,7 +94,7 @@ def MSE_cost(BigClass: "Big_Class", CstrTuple, K_vec, p_desired) -> np.float_:
     cost: np.float, MSE between maesured and desired outputs
     """
     p, u = solve.solve_flow(BigClass, CstrTuple, K_vec)
-    p_out: NDArray[np.float_] = p[BigClass.Strctr.output_nodes_arr]
+    p_out: NDArray[np.float_] = p[BigClass.Strctr.output_nodes_arr][:,0]
     if p_out.size == p_desired.size:
         cost: np.float_ = np.mean((p_out - p_desired) ** 2)
     else:

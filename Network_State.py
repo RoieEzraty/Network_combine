@@ -240,11 +240,10 @@ class Network_State:
                             BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
 
         # R to K
-        K_vec: NDArray[np.float_]  # type hint them
-        K_mat: NDArray[np.float_]  # type hint them
-        K_vec, K_mat = matrix_functions.K_from_R(self.R_in_t[-1], BigClass.Strctr.NE)  # calculate them
+        K_vec: NDArray[np.float_]  # type hint conductivities
+        K_vec = matrix_functions.K_from_R(self.R_in_t[-1], BigClass.Strctr.NE)  # calculate conductivities
 
-        self.p, self.u = solve.solve_flow(BigClass, CstrTuple, K_vec, K_mat)
+        self.p, self.u = solve.solve_flow(BigClass, CstrTuple, K_vec)
 
         # Update the State class variables
         if problem in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:

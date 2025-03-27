@@ -412,7 +412,7 @@ def buildL(BigClass: "Big_Class", DM: NDArray[np.int_], K_mat: NDArray[np.float_
     return L, L_bar
 
 
-def K_from_R(R_vec: NDArray[np.float_], NE: int) -> Tuple[np.ndarray, np.ndarray]:
+def K_from_R(R_vec: NDArray[np.float_], NE: int) -> NDArray[np.float_]:
     """
     Given resistances, calculate conductivities, output vector and matrix
 
@@ -427,8 +427,7 @@ def K_from_R(R_vec: NDArray[np.float_], NE: int) -> Tuple[np.ndarray, np.ndarray
     K_vec: NDArray[np.float_] = 1/R_vec
     # Replace -inf with a large negative value (or directly clip it)
     K_vec = np.nan_to_num(K_vec, nan=0.0, posinf=1e+06, neginf=-1e+06)
-    K_mat: NDArray[np.float_] = np.eye(NE)*K_vec
-    return K_vec, K_mat
+    return K_vec
 
 
 def ChangeRFromFlow(BigClass: "Big_Class", R_max, R_min, R_change_scheme='marbles_pressure',
@@ -530,6 +529,12 @@ def ChangeRFromFlow_singleCell(u, p_thresh, R, R_backg, R_max, R_min, R_change_s
         else:  # flow does not change conductivity
             R_nxt = copy.copy(R)
     return R_nxt
+
+
+def K_grad_desc(BigClass: "Big_Class", CstrTuple, K_vec, K_mat):
+
+    p, u = solve.solve_flow(BigClass, CstrTuple, K_vec, K_mat)
+
 
 
 def ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:

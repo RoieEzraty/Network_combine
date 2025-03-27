@@ -4,8 +4,12 @@ import numpy as np
 from typing import Tuple, List, Union, Optional
 from numpy.typing import NDArray
 from numpy import array
+from typing import TYPE_CHECKING
 
-import matrix_functions
+import matrix_functions, solve
+
+if TYPE_CHECKING:
+    from Big_Class import Big_Class
 
 
 # ===================================================
@@ -68,6 +72,35 @@ def loss_fn_1sample(output: np.ndarray, desired: np.ndarray,
             loss += lam * Power
             print('loss after power ', loss)
     return loss
+
+
+def MSE_cost(BigClass: "Big_Class", CstrTuple, K_vec, p_desired) -> np.float_:
+    """
+    MSE cost between desired and measured output of network, given pressure input, conductivities and constraint matrix
+
+    inputs:
+    BigClass  - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET)
+                and network state (State) class instances
+                I will not go into everything used from there to save space here.
+    CstrTuple - Tuple consisting - Cstr_full - 2D array without last column, which is f from Rocks & Katifori 2018
+                                               https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116
+                                   Cstr -      Cstr_full without last line
+                                   f    -      constraint vector (from Rocks and Katifori 2018)1D np.arrays sized NEdges
+                                               such that EI[i] is node connected to EJ[i] at certain edge
+    K_vec     - 1D np.array [NE] of conductivities (inverse of resistances)
+    p_desired - 1D np.array [Nout] of desired outputs given the inputs
+
+    outputs:
+    cost: np.float, MSE between maesured and desired outputs
+    """
+    p, u = solve.solve_flow(BigClass, CstrTuple, K_vec)
+    p_out: NDArray[np.float_] = p[BigClass.Strctr.output_nodes_arr]
+    if p_out.size == p_desired.size:
+        cost: np.float_ = np.mean((p_out - p_desired) ** 2)
+    else:
+        cost = float(1.0)
+        print(f"Incompatible sizes, p_out shape = {p_out.shape}, p_desired shape = {p_desired.shape}")
+    return cost
 
 
 def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]],

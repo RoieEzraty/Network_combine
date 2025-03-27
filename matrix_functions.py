@@ -531,12 +531,6 @@ def ChangeRFromFlow_singleCell(u, p_thresh, R, R_backg, R_max, R_min, R_change_s
     return R_nxt
 
 
-def K_grad_desc(BigClass: "Big_Class", CstrTuple, K_vec, K_mat):
-
-    p, u = solve.solve_flow(BigClass, CstrTuple, K_vec, K_mat)
-
-
-
 def ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Builds constraint matrix,

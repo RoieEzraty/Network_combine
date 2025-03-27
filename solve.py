@@ -27,7 +27,7 @@ def solve_flow(BigClass: "Big_Class", CstrTuple: Tuple[NDArray[np.float_], NDArr
     2nd part of State.solve_flow_given_problem, Comes after functions.setup_constraints_given_pin.
 
     input:
-    BigClass -       class instance including User_Variables, Network_Structure instances, etc.
+    BigClass -  class instance including User_Variables, Network_Structure instances, etc.
     CstrTuple - Tuple consisting - Cstr_full - 2D array without last column, which is f from Rocks & Katifori 2018
                                                https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116
                                    Cstr -      Cstr_full without last line

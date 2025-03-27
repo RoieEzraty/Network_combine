@@ -19,8 +19,9 @@ if TYPE_CHECKING:
 
 # @lru_cache(maxsize=20)
 def solve_flow(BigClass: "Big_Class", CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
-               R_vec: NDArray[np.float_], roundto: Optional[float] = 10**-10) -> Tuple[NDArray[np.float_],
-                                                                                       NDArray[np.float_]]:
+               K_vec: NDArray[np.float_], K_mat: NDArray[np.float_],
+               roundto: Optional[float] = 10**-10) -> Tuple[NDArray[np.float_],
+                                                            NDArray[np.float_]]:
     """
     Solves for the pressure at nodes and flow at edges, given Lagrangian etc.
     flow at edge defined as difference in pressure between input and output nodes time conductivity at each edge.
@@ -42,11 +43,6 @@ def solve_flow(BigClass: "Big_Class", CstrTuple: Tuple[NDArray[np.float_], NDArr
     """
     Cstr: NDArray[np.float_] = CstrTuple[1]
     f: NDArray[np.float_] = CstrTuple[2]
-
-    # R to K
-    K_vec: NDArray[np.float_]  # type hint them
-    K_mat: NDArray[np.float_]  # type hint them
-    K_vec, K_mat = matrix_functions.K_from_R(R_vec, BigClass.Strctr.NE)  # calculate them
 
     # Calculate Inverse Lagrangian
     L: NDArray[np.float_]  # type hint them

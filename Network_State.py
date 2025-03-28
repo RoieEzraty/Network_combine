@@ -12,6 +12,7 @@ import functions, solve, statistics, matrix_functions
 if TYPE_CHECKING:
     from User_Variables import User_Variables
     from Big_Class import Big_Class
+    from Network_Structure import Network_Structure
 
 
 # ===================================================
@@ -239,11 +240,15 @@ class Network_State:
                              self.extraOutput_update_in_t[-1]),
                             BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
 
-        # R to K
-        K_vec: NDArray[np.float_]  # type hint conductivities
-        K_vec = matrix_functions.K_from_R(self.R_in_t[-1], BigClass.Strctr.NE)  # calculate conductivities
+        # Constraint Tuple containing Cstr_full matrix, Cstr matrix and f vector
+        self.CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
+        self.CstrTuple = CstrTuple
 
-        self.p, self.u = solve.solve_flow(BigClass, CstrTuple, K_vec)
+        # R to K
+        self.K_vec: NDArray[np.float_]  # type hint conductivities
+        self.K_vec = matrix_functions.K_from_R(self.R_in_t[-1])  # calculate conductivities
+
+        self.p, self.u = solve.solve_flow(BigClass.Strctr, CstrTuple, self.K_vec)
 
         # Update the State class variables
         if problem in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:
@@ -294,7 +299,7 @@ class Network_State:
                 # delta = np.ones(BigClass.Variabs.Nin)*alpha*np.mean(loss[0])  # no input
             else:
                 # delta = (input_drawn)*np.dot(BigClass.Variabs.alpha_vec, loss[0])  # alpha*L*x using dot product
-                delta = (input_drawn)*alpha*np.mean(loss[0])    # alpha*mean(L)*x         
+                delta = (input_drawn)*alpha*np.mean(loss[0])    # alpha*mean(L)*x
             # print('input delta ', delta)
 
         # update modality is different under schemes of change of R
@@ -307,6 +312,8 @@ class Network_State:
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
             self.input_update_nxt = - delta
+        elif R_update == 'grad_desc':
+            self.input_update_nxt = input_update
 
         # reset "update" modality values if diverging
         # find indices in input_update_nxt where values diverge
@@ -359,6 +366,8 @@ class Network_State:
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
             self.extraInput_update_nxt = - delta
+        elif R_update == 'grad_desc':
+            self.extraInput_update_nxt = extraInput_update
 
         # reset "update" modality values if diverging
         # find indices in input_update_nxt where values diverge
@@ -409,6 +418,8 @@ class Network_State:
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
             # self.inter_update_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_update_nxt = - delta
+        elif R_update == 'grad_desc':
+            self.inter_update_nxt = inter_update
 
         # reset "update" modality values if diverging
         # find indices in input_update_nxt where values diverge
@@ -466,6 +477,8 @@ class Network_State:
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
             self.output_update_nxt = delta
+        elif R_update == 'grad_desc':
+            self.output_update_nxt = output_update
 
         # reset "update" modality values if diverging
         # find indices in input_update_nxt where values diverge
@@ -511,6 +524,8 @@ class Network_State:
         # else if no memory
         elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
             self.extraOutput_update_nxt = delta
+        elif R_update == 'grad_desc':
+            self.extraOutput_update_nxt = extraOutput_update
 
         # reset "update" modality values if diverging
         # find indices in input_update_nxt where values diverge
@@ -528,7 +543,7 @@ class Network_State:
         else:  # print
             print('extraOutput_update_nxt', self.extraOutput_update_nxt)
 
-    def update_Rs(self, BigClass: "Big_Class") -> None:
+    def update_Rs(self, BigClass: "Big_Class", delta_K=[]) -> None:
         """
         update resistances of NE edges
 
@@ -564,6 +579,13 @@ class Network_State:
             # self.R_in_t.append(np.abs(R_vec + np.tanh((BigClass.Variabs.gamma * delta_p)**3/0.15)))
             # self.R_in_t.append(np.abs(R_vec + 0.5*np.tanh((BigClass.Variabs.gamma * delta_p)**3)/0.15))
             self.R_in_t.append(np.abs(R_vec + 0.5*(BigClass.Variabs.gamma * delta_p)**3))
+        elif BigClass.Variabs.R_update == 'grad_desc':
+            if delta_K == []:
+                print('error, no delta_K vector supplied')
+            else:
+                K_vec = matrix_functions.K_from_R(self.R_in_t[-1])
+                K_vec_nxt = K_vec + BigClass.Variabs.alpha_vec[0] * delta_K
+            self.R_in_t.append(1/K_vec_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))
         elif BigClass.Variabs.R_update == 'R_propto_Power':  # delta_R propto Power dissipation dp*Q
@@ -581,6 +603,70 @@ class Network_State:
             # print('R_nxt', self.R_in_t[-1])
         # self.R_in_t[-1][BigClass.Strctr.EJ == BigClass.Strctr.ground_nodes_arr] = 1.
         self.R_in_t[-1][self.R_in_t[-1] < 10**-12] = 10**-12  # inhibit vanishing R
+
+    def dK_grad_desc(self, Strctr: "Network_Structure", dK_step, p_desired):
+        """
+        MSE cost between desired and measured output of network, given pressure input, conductivities and constraint matrix
+
+        inputs:
+        BigClass  - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET)
+                    and network state (State) class instances
+                    I will not go into everything used from there to save space here.
+        CstrTuple - Tuple consisting - Cstr_full - 2D array without last column, which is f from Rocks & Katifori 2018
+                                                   https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116
+                                       Cstr -      Cstr_full without last line
+                                       f    -      constraint vector (from Rocks and Katifori 2018)1D np.arrays sized NEdges
+                                                   such that EI[i] is node connected to EJ[i] at certain edge
+        K_vec     - 1D np.array [NE] of conductivities (inverse of resistances)
+        p_desired - 1D np.array [Nout] of desired outputs given the inputs
+
+        outputs:
+        cost: np.float, MSE between maesured and desired outputs
+        """
+        MSE_dcost_vec = np.zeros([np.size(self.K_vec)])
+        for m in range(np.size(self.K_vec)):
+            dK_vec = np.zeros([np.size(self.K_vec)])
+            dK_vec[m] = dK_step
+            MSE_dcost_vec[m] = self.calc_MSE_cost(Strctr, p_desired, K_vec_for_MSE=self.K_vec+dK_vec,
+                                                  mod='for_grad_desc')
+            dcost_dK = (MSE_dcost_vec - self.MSE_cost) / dK_step
+            delta_K = -dcost_dK
+        return delta_K
+
+    def calc_MSE_cost(self, Strctr: "Network_Structure", p_desired, K_vec_for_MSE=[], mod='measure') -> np.float_:
+        """
+        MSE cost between desired and measured network output given pressure input, conductivities and constraint matrix
+
+        inputs:
+        BigClass  - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET)
+                    and network state (State) class instances
+                    I will not go into everything used from there to save space here.
+        CstrTuple - Tuple consisting - Cstr_full - 2D array without last column, which is f from Rocks & Katifori 2018
+                                                   https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116
+                                       Cstr -      Cstr_full without last line
+                                       f    -      constraint vector (Rocks and Katifori 2018) 1D np.arrays sized NEdges
+                                                   such that EI[i] is node connected to EJ[i] at certain edge
+        K_vec     - 1D np.array [NE] of conductivities (inverse of resistances)
+        p_desired - 1D np.array [Nout] of desired outputs given the inputs
+
+        outputs:
+        cost: np.float, MSE between maesured and desired outputs
+        """
+        if K_vec_for_MSE == []:
+            K_vec = self.K_vec
+        else:
+            K_vec = K_vec_for_MSE
+        p, u = solve.solve_flow(Strctr, self.CstrTuple, K_vec)
+        p_out: NDArray[np.float_] = p[Strctr.output_nodes_arr][:, 0]  # p at output nodes, indexed as 1D array
+
+        if p_out.size == p_desired.size:
+            cost: np.float_ = np.mean((p_out - p_desired) ** 2)
+        else:
+            cost = np.nan
+            print(f"Incompatible sizes, p_out shape = {p_out.shape}, p_desired shape = {p_desired.shape}")
+        if mod == 'measure':  # save in State class only if not part of dK_grad_desc
+            self.MSE_cost: np.float_ = cost
+        return cost
 
     def calc_loss(self, BigClass: "Big_Class") -> None:
         """

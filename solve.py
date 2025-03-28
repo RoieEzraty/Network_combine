@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import matrix_functions
 
 if TYPE_CHECKING:
-    from Big_Class import Big_Class
+    from Network_Structure import Network_Structure
 
 
 # ==================================
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 # @lru_cache(maxsize=20)
-def solve_flow(BigClass: "Big_Class", CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
+def solve_flow(Strctr: "Network_Structure", CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
                K_vec: NDArray[np.float_], roundto: Optional[float] = 10**-10) -> Tuple[NDArray[np.float_],
                                                                                        NDArray[np.float_]]:
     """
@@ -47,13 +47,13 @@ def solve_flow(BigClass: "Big_Class", CstrTuple: Tuple[NDArray[np.float_], NDArr
     L: NDArray[np.float_]  # type hint them
     L_bar: NDArray[np.float_]  # type hint them
     K_mat: NDArray[np.float_] = np.diag(K_vec)
-    L, L_bar = matrix_functions.buildL(BigClass, BigClass.Strctr.DM, K_mat, Cstr, BigClass.Strctr.NN)  # Lagrangian
+    L, L_bar = matrix_functions.buildL(Strctr.DM, K_mat, Cstr, Strctr.NN)  # Lagrangian
 
     IL_bar: NDArray[np.float_] = inv(L_bar)
 
     # pressure p and velocity u
     p: NDArray[np.float_] = np.dot(IL_bar, f)
-    u: NDArray[np.float_] = ((p[BigClass.Strctr.EI] - p[BigClass.Strctr.EJ]).T*K_vec)[0]
+    u: NDArray[np.float_] = ((p[Strctr.EI] - p[Strctr.EJ]).T*K_vec)[0]
     p, u = round_small(p, u)
     return p, u
 

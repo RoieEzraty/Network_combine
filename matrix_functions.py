@@ -384,7 +384,7 @@ def build_incidence_beads(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_]
     return EI, EJ, EIEJ_plots, DM, NE, NN
 
 
-def buildL(BigClass: "Big_Class", DM: NDArray[np.int_], K_mat: NDArray[np.float_], Cstr: NDArray[np.float_],
+def buildL(DM: NDArray[np.int_], K_mat: NDArray[np.float_], Cstr: NDArray[np.float_],
            NN: int) -> Tuple[NDArray[np.float_], NDArray[np.float_]]:
     """
     Builds expanded Lagrangian with constraints
@@ -412,7 +412,7 @@ def buildL(BigClass: "Big_Class", DM: NDArray[np.int_], K_mat: NDArray[np.float_
     return L, L_bar
 
 
-def K_from_R(R_vec: NDArray[np.float_], NE: int) -> NDArray[np.float_]:
+def K_from_R(R_vec: NDArray[np.float_]) -> NDArray[np.float_]:
     """
     Given resistances, calculate conductivities, output vector and matrix
 

@@ -88,6 +88,7 @@ def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int
             ax1.axvline(x=t, color='red', linestyle='--', linewidth=1)
     ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
     ax1.set_yscale('log')
+    ax1.set_ylim(None, 1)
     ax1.set_title(r'$\|\mathcal{L}\|$')
     ax1.set_xlabel('t')
 

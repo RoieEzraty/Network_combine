@@ -213,3 +213,21 @@ def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_
     Nodes: NDArray[np.int_] = np.append(np.append(np.append(np.append(InNodes, extraInNodes), InterNodes),
                                                   OutputNodes), extraOutputNodes)
     return NodeData, Nodes, GroundNodes
+
+
+def random_gen_M(random_state: int, size: NDArray[np.int_]) -> NDArray[np.float_]:
+    """
+    random_gen_M generates a random M_values array for regression task
+    use for multiple_Nin_Nout for example, and before train_loop()
+
+    inputs:
+    random_state - int, random seed
+    size         - int, size of M_values, train_loop then decides how many to take
+    """
+    # generate random state
+    random_gen = np.random.RandomState(random_state)
+
+    # Generate random values with the defined random state
+    M_values = random_gen.rand(size)
+
+    return M_values

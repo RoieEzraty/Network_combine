@@ -129,6 +129,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # plot 1 input 2 output
     ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1))
     ax1.set_yscale('log')
+    ax1.set_ylim(None, 1)
     ax1.set_title(r'$\|\mathcal{L}\|$')
     # ax1.yaxis.set_major_locator(MaxNLocator(nbins=5))  # More ticks on the y-axis
     # ax1.legend(legend4)
@@ -148,6 +149,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax5.plot(np.mean(np.mean(np.abs(loss_2in1out), axis=1), axis=1))
     ax5.set_xlabel('t')
     ax5.set_yscale('log')
+    ax5.set_ylim(None, 1)
     ax6.plot(input_update_2in1out)
     ax6.plot(output_update_2in1out)
     ax6.set_xlabel('t')

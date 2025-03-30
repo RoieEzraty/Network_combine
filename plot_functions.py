@@ -87,6 +87,7 @@ def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int
         if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax1.axvline(x=t, color='red', linestyle='--', linewidth=1)
     ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
+    # ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_in_t[1:]), axis=1), axis=1))
     ax1.set_yscale('log')
     ax1.set_ylim(None, 1)
     ax1.set_title(r'$\|\mathcal{L}\|$')

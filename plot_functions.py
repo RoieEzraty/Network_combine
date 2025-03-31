@@ -14,17 +14,15 @@ if TYPE_CHECKING:
     from Network_State import Network_State
     from Big_Class import Big_Class
 
-
-import colors
+import colors, functions
 
 # ================================
 # functions for plots
 # ================================
 
 
-def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
-                               include_network: Optional[bool] = False, NET: Optional[nx.DiGraph] = None,
-                               node_labels: bool = False) -> None:
+def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None, movmean_loss: bool = False,
+                               include_network: Optional[bool] = False, node_labels: bool = False) -> None:
     """
     one plot with 4 subfigures of
     1) absolute mean value of loss in time
@@ -86,7 +84,12 @@ def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int
     for t in range(t):
         if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax1.axvline(x=t, color='red', linestyle='--', linewidth=1)
-    ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
+    if movmean_loss:
+        movmean_loss_t = functions.moving_average(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t), axis=1),
+                                                          axis=1), 60)
+        ax1.plot(np.abs(movmean_loss_t[1:]))
+    else:
+        ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
     # ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_in_t[1:]), axis=1), axis=1))
     ax1.set_yscale('log')
     ax1.set_ylim(None, 1)
@@ -110,7 +113,7 @@ def plot_importants_noMeasured(BigClass: "Big_Class", M: Optional[NDArray[np.int
 
     # Network structure
     if include_network:
-        if NET is not None:
+        if BigClass.NET.NET is not None:
             plotNetStructure(NET=BigClass.NET.NET,
                              BigClass=BigClass,
                              pos_lattice=BigClass.NET.pos_lattice,

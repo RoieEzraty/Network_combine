@@ -231,3 +231,9 @@ def random_gen_M(random_state: int, size: NDArray[np.int_]) -> NDArray[np.float_
     M_values = random_gen.rand(size)
 
     return M_values
+
+
+def moving_average(a, n=3):
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n

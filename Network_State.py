@@ -279,8 +279,9 @@ class Network_State:
         """
         R_update: str = BigClass.Variabs.R_update  # dummy variable
         if BigClass.Variabs.T_annealing:
+            T = BigClass.Variabs.T_annealing
             alpha: float = BigClass.Variabs.alpha_vec[0] *\
-                           np.exp(-BigClass.State.t / (1/12*BigClass.Variabs.iterations))
+                           np.exp(-BigClass.State.t / (T * BigClass.Variabs.iterations))
                            # np.cos(np.pi * BigClass.State.t / BigClass.Variabs.T_annealing)**2
         else:
             alpha = BigClass.Variabs.alpha_vec[0]
@@ -453,8 +454,9 @@ class Network_State:
         output_update_nxt: np.ndarray sized [Nout,] denoting output pressure of update modality at time t
         """
         if BigClass.Variabs.T_annealing:
+            T = BigClass.Variabs.T_annealing
             alpha: NDArray[np.float_] = BigClass.Variabs.alpha_vec *\
-                                        np.exp(-BigClass.State.t / (1/12*BigClass.Variabs.iterations))
+                                        np.exp(-BigClass.State.t / (T * BigClass.Variabs.iterations))
                                         # np.cos(np.pi * BigClass.State.t / BigClass.Variabs.T_annealing)**2 *\
         else:
             alpha = BigClass.Variabs.alpha_vec

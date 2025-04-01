@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 import copy
 
@@ -90,10 +91,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     4) absolute mean value of loss in time
 
     inputs:
-    State   - class instance of the state variables of network
-    Variabs - class instance of the variables by the user
-    desired - List of arrays of desired outputs given the drawn inputs and task matrix M
-    M       - task matrix M under which desired output = M*input
+    too many
 
     outputs:
     1 matplotlib plot
@@ -166,6 +164,260 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
         set_thicker_spines(ax)  # Apply the spine thickness to each subplot
 
     plt.show()
+
+
+def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray[np.float_],
+                       R_mine_2in1out: NDArray[np.float_], R_GD_2in1out: NDArray[np.float_],
+                       loss_mine_1in2out: NDArray[np.float_], loss_GD_1in2out: NDArray[np.float_],
+                       loss_mine_2in1out: NDArray[np.float_], loss_GD_2in1out: NDArray[np.float_],
+                       cosine_sim_1in2out: NDArray[np.float_], cosine_sim_2in1out: NDArray[np.float_],
+                       Colorscheme: "Color_Scheme") -> None:
+
+    """
+    two rows plot with 3 subfigures each
+    1) bar plot of resistances using gradient descent and my scheme
+    2) loss in time t using gradient descent and my scheme
+    3) cosine similarity between change in conductivities using gradient descent and my scheme
+
+    inputs:
+    too many
+
+    outputs:
+    1 matplotlib plot
+    """
+
+    # Set color cycle globally
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', Colorscheme.colors_lst)
+
+    # Normalize R values
+    R_mine_1in2out_norm = R_mine_1in2out[-1] / np.max(R_mine_1in2out[-1])
+    R_GD_1in2out_norm = R_GD_1in2out[-1] / np.max(R_GD_1in2out[-1])
+    R_mine_2in1out_norm = R_mine_2in1out[-1] / np.max(R_mine_2in1out[-1])
+    R_GD_2in1out_norm = R_GD_2in1out[-1] / np.max(R_GD_2in1out[-1])
+
+    T = 250
+
+    # Average losses
+    loss_mine_1in2out_mean = np.mean(np.mean(np.abs(loss_mine_1in2out), axis=1), axis=1)[:T]
+    loss_GD_1in2out_mean = np.mean(np.mean(np.abs(loss_GD_1in2out), axis=1), axis=1)[:T]
+    loss_mine_2in1out_mean = np.mean(np.mean(np.abs(loss_mine_2in1out), axis=1), axis=1)[:T]
+    loss_GD_2in1out_mean = np.mean(np.mean(np.abs(loss_GD_2in1out), axis=1), axis=1)[:T]
+
+    x = np.arange(len(R_GD_1in2out_norm))
+    bar_width = 0.35
+
+    # Grid: 2 rows, 3 columns
+    fig = plt.figure(figsize=(15, 6))
+    gs = gridspec.GridSpec(2, 3, width_ratios=[1, 1.2, 1.2], height_ratios=[1, 1])
+
+    # --- Row 1 ---
+    # R bar plot: 1in2out
+    ax0 = fig.add_subplot(gs[0, 0])
+    ax0.bar(x - bar_width / 2, R_GD_1in2out_norm, width=bar_width, label='GD', alpha=0.8)
+    ax0.bar(x + bar_width / 2, R_mine_1in2out_norm, width=bar_width, label='this work', alpha=0.8)
+    ax0.set_ylabel('$R$')
+    ax0.legend()
+
+    # Loss plot: 1in2out
+    ax1 = fig.add_subplot(gs[0, 1])
+    ax1.plot(loss_GD_1in2out_mean, label='GD')
+    ax1.plot(loss_mine_1in2out_mean, label='this work')
+    ax1.set_yscale('log')
+    ax1.set_ylim(6e-8, 1)
+    ax1.set_ylabel(r'$\|\mathcal{L}\|$')
+    ax1.legend()
+
+    # Cosine similarity: 1in2out
+    ax2 = fig.add_subplot(gs[0, 2])
+    ax2.plot(cosine_sim_1in2out[:T])
+    ax2.plot(np.zeros([T]), '--k')
+    # ax2.set_ylabel('cosine similarity')
+    ax2.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
+    ax2.set_ylim(-1, 1)
+
+    # --- Row 2 ---
+    # R bar plot: 2in1out
+    ax3 = fig.add_subplot(gs[1, 0])
+    ax3.bar(x - bar_width / 2, R_GD_2in1out_norm, width=bar_width, label='GD', alpha=0.8)
+    ax3.bar(x + bar_width / 2, R_mine_2in1out_norm, width=bar_width, label='this work', alpha=0.8)
+    ax3.set_ylabel('$R$')
+    ax3.set_xlabel('edge #')
+    ax3.legend()
+
+    # Loss plot: 2in1out
+    ax4 = fig.add_subplot(gs[1, 1])
+    ax4.plot(loss_GD_2in1out_mean, label='GD')
+    ax4.plot(loss_mine_2in1out_mean, label='this work')
+    ax4.set_yscale('log')
+    ax4.set_ylim(6e-8, 1)
+    ax4.set_ylabel(r'$\|\mathcal{L}\|$')
+    ax4.set_xlabel('$t$')
+    ax4.legend()
+
+    # Cosine similarity: 2in1out
+    ax5 = fig.add_subplot(gs[1, 2])
+    ax5.plot(cosine_sim_2in1out[:T])
+    ax5.plot(np.zeros([T]), '--k')
+    # ax5.set_ylabel('cosine similarity')
+    ax5.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
+    ax5.set_xlabel('$t$')
+    ax5.set_ylim(-1, 1)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],
+                             dataset_shape: NDArray[np.int_], Colorscheme: "Color_Scheme",
+                             smooth: bool = True, window_size: int = 5) -> None:
+    """
+    Plots the accuracy in time for the Iris problem
+
+    input:
+    t_final        - int, final time step
+    t_for_accuracy - array of ints, times during simulation when accuracy was calculated
+    accuracy_in_t  - array of floats, accuracy at simulation times "t_for_accuracy"
+    dataset_len    - length of dataset used, for Iris it is 150
+
+    output:
+    plot of accuracy a.f.o time
+    """
+    opacity = 0.25
+
+    # Apply smoothing for the average accuracy lines
+    if smooth:
+        mean_accuracy = statistics.mov_ave(np.mean(accuracy_in_t, axis=0), window_size)
+
+        # Standard deviations for confidence bounds
+        std = statistics.mov_ave(np.std(accuracy_in_t, axis=0), window_size)
+
+        t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracy)]  # t_for_accuracy after smoothing
+    else:
+        mean_accuracy = np.mean(accuracy_in_t, axis=0)
+
+        std = np.std(accuracy_in_t, axis=0)
+
+        t_for_accuracy_smoothed = t_for_accuracy
+
+    mean_accuracy[0] = 1/3
+
+    # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
+    for t in range(t_final):
+        if t % dataset_shape[0] == 0:
+            plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1)
+
+    # plot accuracy a.f.o time
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy, label='accuracy', color=Colorscheme.colors_lst[0], marker='.',
+             linestyle='')
+
+    # Plot confidence intervals using fill_between
+    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy - std,
+                     mean_accuracy + std, color=Colorscheme.colors_lst[0], alpha=opacity)
+
+    # axes
+    plt.xlabel('t', fontsize=14)  # Set x-axis label with font size
+    plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
+    # plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
+    plt.ylim([0, 1])
+
+
+def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_accuracy: np.ndarray,
+                              accuracy_in_t_R_propto_deltap: np.ndarray,
+                              accuracy_in_t_deltaR_propto_deltap: np.ndarray,
+                              accuracy_in_t_deltaR_propto_Q: np.ndarray,
+                              accuracy_in_t_deltaR_propto_Power: np.ndarray,
+                              Colorscheme: "Color_Scheme", smooth: bool = True, window_size: int = 5):
+    """
+    Plots the accuracy in time for the Iris problem using 4 materials.
+    """
+    # length of classification dataset
+    dataset_len = dataset_shape[0]
+
+    opacity = 0.25
+
+    # legend - 4 materials
+    legend = [r'$R \propto \Delta p$',
+              r'$\dot{R} \propto \Delta p$',
+              r'$\dot{R} \propto Q$',
+              r'$\dot{R} \propto \mathrm{Power}$']
+
+    # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
+    for t in range(t_final):
+        if t % dataset_len == 0:
+            plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1)
+
+    # Apply smoothing for the average accuracy lines
+    if smooth:
+        mean_accuracy_R_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_R_propto_deltap, axis=0), window_size)
+        mean_accuracy_deltaR_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_deltap, axis=0),
+                                                                window_size)
+        mean_accuracy_deltaR_propto_Q = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_Q, axis=0), window_size)
+        mean_accuracy_deltaR_propto_Power = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_Power, axis=0),
+                                                               window_size)
+
+        # Standard deviations for confidence bounds
+        std_R_propto_deltap = statistics.mov_ave(np.std(accuracy_in_t_R_propto_deltap, axis=0), window_size)
+        std_deltaR_propto_deltap = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_deltap, axis=0), window_size)
+        std_deltaR_propto_Q = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_Q, axis=0), window_size)
+        std_deltaR_propto_Power = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_Power, axis=0), window_size)
+
+        t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracy_R_propto_deltap)]  # t_for_accuracy after smoothing
+    else:
+        mean_accuracy_R_propto_deltap = np.mean(accuracy_in_t_R_propto_deltap, axis=0)
+        mean_accuracy_deltaR_propto_deltap = np.mean(accuracy_in_t_deltaR_propto_deltap, axis=0)
+        mean_accuracy_deltaR_propto_Q = np.mean(accuracy_in_t_deltaR_propto_Q, axis=0)
+        mean_accuracy_deltaR_propto_Power = np.mean(accuracy_in_t_deltaR_propto_Power, axis=0)
+
+        std_R_propto_deltap = np.std(accuracy_in_t_R_propto_deltap, axis=0)
+        std_deltaR_propto_deltap = np.std(accuracy_in_t_deltaR_propto_deltap, axis=0)
+        std_deltaR_propto_Q = np.std(accuracy_in_t_deltaR_propto_Q, axis=0)
+        std_deltaR_propto_Power = np.std(accuracy_in_t_deltaR_propto_Power, axis=0)
+
+        t_for_accuracy_smoothed = t_for_accuracy
+
+    mean_accuracy_R_propto_deltap[0] = 1/3
+    mean_accuracy_deltaR_propto_deltap[0] = 1/3
+    mean_accuracy_deltaR_propto_Q[0] = 1/3
+    mean_accuracy_deltaR_propto_Power[0] = 1/3
+
+    # Plot the smoothed mean accuracy with lines connecting points
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q,
+             color=Colorscheme.colors_lst[2], alpha=1., marker=None, linestyle='-', linewidth=3)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap,
+             color=Colorscheme.colors_lst[1], alpha=1., marker=None, linestyle='-', linewidth=3)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power,
+             color=Colorscheme.colors_lst[3], alpha=1., marker=None, linestyle='--', linewidth=3)
+    plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
+             color=Colorscheme.colors_lst[0], alpha=1., marker=None, linestyle='--', linewidth=3)
+
+    # Plot confidence intervals using fill_between
+    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q - std_deltaR_propto_Q,
+                     mean_accuracy_deltaR_propto_Q + std_deltaR_propto_Q, color=Colorscheme.colors_lst[0],
+                     alpha=opacity)
+    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap - std_deltaR_propto_deltap,
+                     mean_accuracy_deltaR_propto_deltap + std_deltaR_propto_deltap, color=Colorscheme.colors_lst[1],
+                     alpha=opacity)
+    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power - std_deltaR_propto_Power,
+                     mean_accuracy_deltaR_propto_Power + std_deltaR_propto_Power, color=Colorscheme.colors_lst[2],
+                     alpha=opacity)
+    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap - std_R_propto_deltap,
+                     mean_accuracy_R_propto_deltap + std_R_propto_deltap, color=Colorscheme.colors_lst[3],
+                     alpha=opacity)
+
+    # Adding a single line for each legend entry with the same colors
+    for i in range(4):
+        plt.plot([], [], color=Colorscheme.colors_lst[i], label=legend[i])
+
+    # axes
+    plt.xlabel('t', fontsize=14)
+    plt.ylabel('Accuracy', fontsize=14)
+    plt.ylim([0, 1])
+    plt.legend(loc='best')
+    # plt.xscale('log')
+    plt.show()
+
+
+# # NOT IN USE
 
 
 def plot_comparison_pseudo(R_pseudo: NDArray[np.float_], R_network: NDArray[np.float_],
@@ -294,155 +546,6 @@ def plot_compare_R_type_loss(Network_1in2out: nx.DiGraph, Network_2in1out: nx.Di
 
     plt.show()
 
-
-def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_accuracy: np.ndarray,
-                              accuracy_in_t_R_propto_deltap: np.ndarray,
-                              accuracy_in_t_deltaR_propto_deltap: np.ndarray,
-                              accuracy_in_t_deltaR_propto_Q: np.ndarray,
-                              accuracy_in_t_deltaR_propto_Power: np.ndarray,
-                              Colorscheme: "Color_Scheme", smooth: bool = True, window_size: int = 5):
-    """
-    Plots the accuracy in time for the Iris problem using 4 materials.
-    """
-    # length of classification dataset
-    dataset_len = dataset_shape[0]
-
-    opacity = 0.25
-
-    # legend - 4 materials
-    legend = [r'$R \propto \Delta p$',
-              r'$\dot{R} \propto \Delta p$',
-              r'$\dot{R} \propto Q$',
-              r'$\dot{R} \propto \mathrm{Power}$']
-
-    # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
-    for t in range(t_final):
-        if t % dataset_len == 0:
-            plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1)
-
-    # Apply smoothing for the average accuracy lines
-    if smooth:
-        mean_accuracy_R_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_R_propto_deltap, axis=0), window_size)
-        mean_accuracy_deltaR_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_deltap, axis=0),
-                                                                window_size)
-        mean_accuracy_deltaR_propto_Q = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_Q, axis=0), window_size)
-        mean_accuracy_deltaR_propto_Power = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_Power, axis=0),
-                                                               window_size)
-
-        # Standard deviations for confidence bounds
-        std_R_propto_deltap = statistics.mov_ave(np.std(accuracy_in_t_R_propto_deltap, axis=0), window_size)
-        std_deltaR_propto_deltap = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_deltap, axis=0), window_size)
-        std_deltaR_propto_Q = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_Q, axis=0), window_size)
-        std_deltaR_propto_Power = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_Power, axis=0), window_size)
-
-        t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracy_R_propto_deltap)]  # t_for_accuracy after smoothing
-    else:
-        mean_accuracy_R_propto_deltap = np.mean(accuracy_in_t_R_propto_deltap, axis=0)
-        mean_accuracy_deltaR_propto_deltap = np.mean(accuracy_in_t_deltaR_propto_deltap, axis=0)
-        mean_accuracy_deltaR_propto_Q = np.mean(accuracy_in_t_deltaR_propto_Q, axis=0)
-        mean_accuracy_deltaR_propto_Power = np.mean(accuracy_in_t_deltaR_propto_Power, axis=0)
-
-        std_R_propto_deltap = np.std(accuracy_in_t_R_propto_deltap, axis=0)
-        std_deltaR_propto_deltap = np.std(accuracy_in_t_deltaR_propto_deltap, axis=0)
-        std_deltaR_propto_Q = np.std(accuracy_in_t_deltaR_propto_Q, axis=0)
-        std_deltaR_propto_Power = np.std(accuracy_in_t_deltaR_propto_Power, axis=0)
-
-        t_for_accuracy_smoothed = t_for_accuracy
-
-    mean_accuracy_R_propto_deltap[0] = 1/3
-    mean_accuracy_deltaR_propto_deltap[0] = 1/3
-    mean_accuracy_deltaR_propto_Q[0] = 1/3
-    mean_accuracy_deltaR_propto_Power[0] = 1/3
-
-    # Plot the smoothed mean accuracy with lines connecting points
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q,
-             color=Colorscheme.colors_lst[2], alpha=1., marker=None, linestyle='-', linewidth=3)
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap,
-             color=Colorscheme.colors_lst[1], alpha=1., marker=None, linestyle='-', linewidth=3)
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power,
-             color=Colorscheme.colors_lst[3], alpha=1., marker=None, linestyle='--', linewidth=3)
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
-             color=Colorscheme.colors_lst[0], alpha=1., marker=None, linestyle='--', linewidth=3)
-
-    # Plot confidence intervals using fill_between
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q - std_deltaR_propto_Q,
-                     mean_accuracy_deltaR_propto_Q + std_deltaR_propto_Q, color=Colorscheme.colors_lst[0],
-                     alpha=opacity)
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap - std_deltaR_propto_deltap,
-                     mean_accuracy_deltaR_propto_deltap + std_deltaR_propto_deltap, color=Colorscheme.colors_lst[1],
-                     alpha=opacity)
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power - std_deltaR_propto_Power,
-                     mean_accuracy_deltaR_propto_Power + std_deltaR_propto_Power, color=Colorscheme.colors_lst[2],
-                     alpha=opacity)
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap - std_R_propto_deltap,
-                     mean_accuracy_R_propto_deltap + std_R_propto_deltap, color=Colorscheme.colors_lst[3],
-                     alpha=opacity)
-
-    # Adding a single line for each legend entry with the same colors
-    for i in range(4):
-        plt.plot([], [], color=Colorscheme.colors_lst[i], label=legend[i])
-
-    # axes
-    plt.xlabel('t', fontsize=14)
-    plt.ylabel('Accuracy', fontsize=14)
-    plt.ylim([0, 1])
-    plt.legend(loc='best')
-    # plt.xscale('log')
-    plt.show()
-
-
-def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],
-                             dataset_shape: NDArray[np.int_], Colorscheme: "Color_Scheme",
-                             smooth: bool = True, window_size: int = 5) -> None:
-    """
-    Plots the accuracy in time for the Iris problem
-
-    input:
-    t_final        - int, final time step
-    t_for_accuracy - array of ints, times during simulation when accuracy was calculated
-    accuracy_in_t  - array of floats, accuracy at simulation times "t_for_accuracy"
-    dataset_len    - length of dataset used, for Iris it is 150
-
-    output:
-    plot of accuracy a.f.o time
-    """
-    opacity = 0.25
-
-    # Apply smoothing for the average accuracy lines
-    if smooth:
-        mean_accuracy = statistics.mov_ave(np.mean(accuracy_in_t, axis=0), window_size)
-
-        # Standard deviations for confidence bounds
-        std = statistics.mov_ave(np.std(accuracy_in_t, axis=0), window_size)
-
-        t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracy)]  # t_for_accuracy after smoothing
-    else:
-        mean_accuracy = np.mean(accuracy_in_t, axis=0)
-
-        std = np.std(accuracy_in_t, axis=0)
-
-        t_for_accuracy_smoothed = t_for_accuracy
-
-    mean_accuracy[0] = 1/3
-
-    # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
-    for t in range(t_final):
-        if t % dataset_shape[0] == 0:
-            plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1)
-
-    # plot accuracy a.f.o time
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy, label='accuracy', color=Colorscheme.colors_lst[0], marker='.',
-             linestyle='')
-
-    # Plot confidence intervals using fill_between
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy - std,
-                     mean_accuracy + std, color=Colorscheme.colors_lst[0], alpha=opacity)
-
-    # axes
-    plt.xlabel('t', fontsize=14)  # Set x-axis label with font size
-    plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
-    # plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
-    plt.ylim([0, 1])
 
 
 def plot_comparison_R_type(R_propto_deltap: NDArray[np.float_], deltaR_propto_deltap: NDArray[np.float_],

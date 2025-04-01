@@ -34,45 +34,6 @@ plt.rcParams['legend.loc'] = 'best'
 
 ## The functions
 
-def loss_afo_in_out(loss_mat: np.ndarray, Colorscheme: "Color_Scheme") -> None:
-    """
-    Nice boxes in cool color scheme of loss a.f.o #inputs and #outputs, lin scale
-    use loss_mat outputed from multiple_Nin_Nout.ipynb
-
-    inputs:
-    loss_mat: NDArray [Nin, Nout]
-
-    outputs:
-    matplotlib figure
-    """
-    # calculate ensemble mean of loss_mat
-    loss_mat_mean = np.mean(loss_mat, axis=2)
-
-    Nin = np.arange(1, np.shape(loss_mat)[0]+1)  # Equivalent to 1:Nin in MATLAB
-    Nout = np.arange(1, np.shape(loss_mat)[1]+1)
-
-    # Create the figure and plot
-    plt.figure()
-
-    # plot loss_mat without interpolation, setting color limits [0-1]
-    plt.imshow(loss_mat_mean, cmap=Colorscheme.cmap, origin='lower',
-               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5], vmin=0, vmax=0.3)
-
-    # Labeling
-    plt.xlabel('# Outputs')
-    plt.ylabel('# Inputs')
-
-    # Set ticks
-    plt.xticks(Nin)
-    plt.yticks(Nout)
-
-    # Add a colorbar
-    cbar = plt.colorbar()
-    cbar.set_label('Loss')  # Customize the colorbar label
-
-    # Show the plot
-    plt.show()
-
 
 def plot_performance_2(M: NDArray[np.float_], t: np.int_,
                        output_1in2out: NDArray[np.float_], output_2in1out: NDArray[np.float_],
@@ -166,6 +127,48 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     plt.show()
 
 
+def loss_afo_in_out(loss_mat: np.ndarray, Colorscheme: "Color_Scheme") -> None:
+    """
+    Nice boxes in cool color scheme of loss a.f.o #inputs and #outputs, lin scale
+    use loss_mat outputed from multiple_Nin_Nout.ipynb
+
+    inputs:
+    loss_mat: NDArray [Nin, Nout]
+
+    outputs:
+    matplotlib figure
+    """
+    # calculate ensemble mean of loss_mat
+    loss_mat_mean = np.mean(loss_mat, axis=2)
+
+    Nin = np.arange(1, np.shape(loss_mat)[0]+1)  # Equivalent to 1:Nin in MATLAB
+    Nout = np.arange(1, np.shape(loss_mat)[1]+1)
+
+    # Create the figure and plot
+    plt.figure()
+
+    # plot loss_mat without interpolation, setting color limits [0-1]
+    plt.imshow(loss_mat_mean, cmap=Colorscheme.cmap, origin='lower',
+               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5], vmin=0, vmax=0.3)
+
+    # Labeling
+    plt.xlabel('# Outputs')
+    plt.ylabel('# Inputs')
+
+    # Set ticks
+    plt.xticks(Nin)
+    plt.yticks(Nout)
+
+    # Add a colorbar
+    cbar = plt.colorbar()
+    cbar.set_label('Loss')  # Customize the colorbar label
+
+    set_thicker_spines(plt.gca(), linewidth=1.5)  # apply to the current Axes
+
+    # Show the plot
+    plt.show()
+
+
 def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray[np.float_],
                        R_mine_2in1out: NDArray[np.float_], R_GD_2in1out: NDArray[np.float_],
                        loss_mine_1in2out: NDArray[np.float_], loss_GD_1in2out: NDArray[np.float_],
@@ -213,8 +216,8 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     # --- Row 1 ---
     # R bar plot: 1in2out
     ax0 = fig.add_subplot(gs[0, 0])
-    ax0.bar(x - bar_width / 2, R_GD_1in2out_norm, width=bar_width, label='GD', alpha=0.8)
-    ax0.bar(x + bar_width / 2, R_mine_1in2out_norm, width=bar_width, label='this work', alpha=0.8)
+    ax0.bar(x - bar_width / 2, R_GD_1in2out_norm, width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax0.bar(x + bar_width / 2, R_mine_1in2out_norm, width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
     ax0.set_ylabel('$R$')
     ax0.legend()
 
@@ -238,8 +241,8 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     # --- Row 2 ---
     # R bar plot: 2in1out
     ax3 = fig.add_subplot(gs[1, 0])
-    ax3.bar(x - bar_width / 2, R_GD_2in1out_norm, width=bar_width, label='GD', alpha=0.8)
-    ax3.bar(x + bar_width / 2, R_mine_2in1out_norm, width=bar_width, label='this work', alpha=0.8)
+    ax3.bar(x - bar_width / 2, R_GD_2in1out_norm, width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax3.bar(x + bar_width / 2, R_mine_2in1out_norm, width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
     ax3.set_ylabel('$R$')
     ax3.set_xlabel('edge #')
     ax3.legend()
@@ -262,6 +265,9 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     ax5.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
     ax5.set_xlabel('$t$')
     ax5.set_ylim(-1, 1)
+
+    for ax in [ax0, ax1, ax2, ax3, ax4, ax5]:
+        set_thicker_spines(ax)  # Apply the spine thickness to each subplot
 
     plt.tight_layout()
     plt.show()
@@ -315,10 +321,12 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
                      mean_accuracy + std, color=Colorscheme.colors_lst[0], alpha=opacity)
 
     # axes
-    plt.xlabel('t', fontsize=14)  # Set x-axis label with font size
+    plt.xlabel('$t$', fontsize=14)  # Set x-axis label with font size
     plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
     # plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
     plt.ylim([0, 1])
+
+    set_thicker_spines(plt.gca(), linewidth=1.5)  # apply to the current Axes
 
 
 def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_accuracy: np.ndarray,
@@ -409,12 +417,21 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
         plt.plot([], [], color=Colorscheme.colors_lst[i], label=legend[i])
 
     # axes
-    plt.xlabel('t', fontsize=14)
+    plt.xlabel('$t$', fontsize=14)
     plt.ylabel('Accuracy', fontsize=14)
     plt.ylim([0, 1])
     plt.legend(loc='best')
     # plt.xscale('log')
+
+    set_thicker_spines(plt.gca(), linewidth=1.5)  # apply to the current Axes
+
     plt.show()
+
+
+# Define a function to apply thicker spines globally
+def set_thicker_spines(ax, linewidth=2):
+    for spine in ax.spines.values():
+        spine.set_linewidth(linewidth)
 
 
 # # NOT IN USE
@@ -547,7 +564,6 @@ def plot_compare_R_type_loss(Network_1in2out: nx.DiGraph, Network_2in1out: nx.Di
     plt.show()
 
 
-
 def plot_comparison_R_type(R_propto_deltap: NDArray[np.float_], deltaR_propto_deltap: NDArray[np.float_],
                            deltaR_propto_Q: NDArray[np.float_], deltaR_propto_Power: NDArray[np.float_],
                            loss_R_propto_deltap: NDArray[np.float_],
@@ -611,9 +627,3 @@ def plot_comparison_R_type(R_propto_deltap: NDArray[np.float_], deltaR_propto_de
         # ax.set_yscale('log')  # Logarithmic scale, auto-scaled to data
 
     plt.show()
-
-
-# Define a function to apply thicker spines globally
-def set_thicker_spines(ax, linewidth=2):
-    for spine in ax.spines.values():
-        spine.set_linewidth(linewidth)

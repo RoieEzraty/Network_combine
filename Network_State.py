@@ -299,6 +299,8 @@ class Network_State:
         else:  # if one sample of p in for every loss calcaultion are to be taken
             if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
                 delta = (input_drawn)*alpha*(np.mean(loss[0])/np.linalg.norm(loss[0]))  # normalize loss
+                # delta = (input_drawn)*alpha*np.mean(loss[0])*BigClass.Variabs.Nin  # don't normalize loss
+                # delta = (input_drawn)*alpha*np.mean(loss[0])*BigClass.Variabs.Nin  # don't normalize loss
                 # delta = (input_drawn)*alpha*np.abs(loss[0])*np.sign(np.mean(loss[0]))  # use a single sign of loss
                 # delta = (input_drawn)  # just the input
                 # delta = alpha*np.mean(loss[0])/input_drawn  # divide by input
@@ -474,6 +476,7 @@ class Network_State:
         else:
             if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
                 delta = alpha * self.output * (loss[0]/np.linalg.norm(loss[0]))  # normalize loss
+                # delta = alpha * self.output * loss[0]  # don't normalize loss
             else:
                 delta = alpha * self.output * loss[0]  # alpha*y*L
                 # delta = BigClass.Variabs.alpha_vec * loss[0] / self.output  # alpha*L/y - divide by output

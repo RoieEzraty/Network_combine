@@ -4,7 +4,8 @@ import numpy as np
 from typing import Tuple, List, Union, Optional
 from numpy.typing import NDArray
 from numpy import array
-from typing import TYPE_CHECKING, Literal, Annotated
+from typing import TYPE_CHECKING, Literal
+from typing_extensions import Annotated
 
 import matrix_functions
 

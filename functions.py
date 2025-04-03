@@ -4,7 +4,7 @@ import numpy as np
 from typing import Tuple, List, Union, Optional
 from numpy.typing import NDArray
 from numpy import array
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, Annotated
 
 import matrix_functions
 
@@ -231,6 +231,31 @@ def random_gen_M(random_state: int, size: NDArray[np.int_]) -> NDArray[np.float_
     M_values = random_gen.rand(size)
 
     return M_values
+
+
+def normalize_M(M_values: NDArray[np.float_],
+                normalization: float,
+                Nin: int,
+                Nout: int
+                ) -> Annotated[NDArray[np.float_], "shape: (Nin*Nout,)"]:
+    """
+    normalize_M creates normalized task matrix M given un-normalized values of M
+
+    inputs:
+    M_values      - 1D NDarray of un-normalized values of task matrix
+    normalization - the all values in every line M sum up to normalization
+    Nin           - int, # inputs
+    Nout          - int, # outputs
+
+    output:
+    M_values_norm - 1D NDArray [Nin*Nout] of values for task matrix,
+                    normalized so each line in M matrix sums up to normalization
+    """
+    # generate random state
+    M_mat: Annotated[NDArray[np.float_], "shape: (Nin, Nout)"] = M_values[0:Nout*Nin].reshape(Nout, Nin)
+    M_line: NDArray[np.float_] = np.sum(M_mat, axis=1)
+    M_values_norm = M_values[:Nin*Nout]/np.max(M_line)*normalization  # max sum over line = "normalization"
+    return M_values_norm
 
 
 def moving_average(a, n=3):

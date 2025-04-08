@@ -594,7 +594,8 @@ class Network_State:
         elif BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # delta_R propto p_in-p_out
             # self.R_in_t.append(np.abs(R_vec + np.tanh((BigClass.Variabs.gamma * delta_p)**3/0.15)))
             # self.R_in_t.append(np.abs(R_vec + 0.5*np.tanh((BigClass.Variabs.gamma * delta_p)**3)/0.15))
-            self.R_in_t.append(np.abs(R_vec + 0.5*(BigClass.Variabs.gamma * delta_p)**3))
+            # self.R_in_t.append(np.abs(R_vec + 0.5*(BigClass.Variabs.gamma * delta_p)**3))
+            self.R_in_t.append(np.abs(R_vec + 1*(BigClass.Variabs.gamma * delta_p)**3))
             # print('update R propto cubed')
         elif BigClass.Variabs.R_update == 'grad_desc':
             if delta_K == []:

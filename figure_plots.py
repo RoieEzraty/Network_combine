@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from numpy.typing import NDArray
 from brokenaxes import brokenaxes
 from matplotlib.ticker import MaxNLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import statistics
 
@@ -127,46 +128,115 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     plt.show()
 
 
-def loss_afo_in_out(loss_mat: np.ndarray, Colorscheme: "Color_Scheme") -> None:
+def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
     """
-    Nice boxes in cool color scheme of loss a.f.o #inputs and #outputs, lin scale
-    use loss_mat outputed from multiple_Nin_Nout.ipynb
+    Two-panel plot comparing linear and nonlinear average loss matrices with an external colorbar.
 
-    inputs:
-    loss_mat: NDArray [Nin, Nout]
-
-    outputs:
-    matplotlib figure
+    Parameters:
+    -----------
+    loss_mat_lin : np.ndarray
+        3D array [Nin, Nout, ...] for the linear system
+    loss_mat_nonlin : np.ndarray
+        3D array [Nin, Nout, ...] for the nonlinear system
+    Colorscheme : Color_Scheme
+        Object with a `.cmap` attribute defining the colormap
     """
-    # calculate ensemble mean of loss_mat
-    loss_mat_mean = np.mean(loss_mat, axis=2)
+    loss_mean_lin = np.mean(loss_mat_lin, axis=2)
+    loss_mean_nonlin = np.mean(loss_mat_nonlin, axis=2)
 
-    Nin = np.arange(1, np.shape(loss_mat)[0]+1)  # Equivalent to 1:Nin in MATLAB
-    Nout = np.arange(1, np.shape(loss_mat)[1]+1)
+    Nin = np.arange(1, loss_mat_lin.shape[0]+1)
+    Nout = np.arange(1, loss_mat_lin.shape[1]+1)
 
-    # Create the figure and plot
-    plt.figure()
+    fig = plt.figure(figsize=(6, 3))
+    gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.3)
 
-    # plot loss_mat without interpolation, setting color limits [0-1]
-    plt.imshow(loss_mat_mean, cmap=Colorscheme.cmap, origin='lower',
-               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5], vmin=0, vmax=0.3)
+    ax1 = fig.add_subplot(gs[0])
+    ax2 = fig.add_subplot(gs[1])
+    # cax = fig.add_subplot(gs[2])
 
-    # Labeling
-    plt.xlabel('# Outputs')
-    plt.ylabel('# Inputs')
+    im1 = ax1.imshow(loss_mean_lin, cmap=Colorscheme.cmap, origin='lower',
+                     extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
+                     vmin=0, vmax=0.3)
+    ax1.set_title(r'$\dot{R} \propto \Delta p$')
+    ax1.set_xlabel('# Outputs')
+    ax1.set_ylabel('# Inputs')
+    ax1.set_xticks(Nin)
+    ax1.set_yticks(Nout)
+    set_thicker_spines(ax1, linewidth=1.5)
 
-    # Set ticks
-    plt.xticks(Nin)
-    plt.yticks(Nout)
+    im2 = ax2.imshow(loss_mean_nonlin, cmap=Colorscheme.cmap, origin='lower',
+                     extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
+                     vmin=0, vmax=0.3)
+    ax2.set_title(r'$\dot{R} \propto \left(\Delta p\right)^3$')
+    ax2.set_xlabel('# Outputs')
+    ax2.set_xticks(Nin)
+    ax2.set_yticks(Nout)
+    set_thicker_spines(ax2, linewidth=1.5)
 
-    # Add a colorbar
-    cbar = plt.colorbar()
-    cbar.set_label('Loss')  # Customize the colorbar label
+    # create an axes on the right side of ax. The width of cax will be 5%
+    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+    # divider = make_axes_locatable(ax2)
+    # # cax = divider.append_axes("right", size="5%", pad=0.05)
+    # cax = divider.append_axes("right", size="5%", pad=0.9)
 
-    set_thicker_spines(plt.gca(), linewidth=1.5)  # apply to the current Axes
+    cax = ax2.inset_axes((1.05, 0, 0.08, 1.0))
+    # Now thicken the colorbar's surrounding box (spines)
+    fig.colorbar(im2, cax=cax)
 
-    # Show the plot
+    # Add colorbar to the dedicated axis
+    cbar = fig.colorbar(im2, cax=cax)
+    cbar.set_label(r'$\|\mathcal{L}\|$')
+
+    # plt.tight_layout()
     plt.show()
+
+
+# def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
+#     """
+#     Two-panel plot comparing linear and nonlinear average loss matrices as a function of
+#     #inputs and #outputs as nice boxes in cool color scheme.
+#     lin scale use loss_mat outputed from multiple_Nin_Nout.ipynb
+
+#     Parameters:
+#     -----------
+#     loss_mat_lin : np.ndarray
+#         3D array [Nin, Nout, ...] for the linear system
+#     loss_mat_nonlin : np.ndarray
+#         3D array [Nin, Nout, ...] for the nonlinear system
+#     Colorscheme : Color_Scheme
+#         Object with a `.cmap` attribute defining the colormap
+#     """
+#     loss_mean_lin = np.mean(loss_mat_lin, axis=2)
+#     loss_mean_nonlin = np.mean(loss_mat_nonlin, axis=2)
+
+#     Nin = np.arange(1, loss_mat_lin.shape[0]+1)
+#     Nout = np.arange(1, loss_mat_lin.shape[1]+1)
+
+#     fig, axs = plt.subplots(1, 2, figsize=(8, 6), sharey=True)
+
+#     for ax, loss_mean, title in zip(
+#         axs,
+#         [loss_mean_lin, loss_mean_nonlin],
+#         ['Linear', 'Nonlinear']
+#     ):
+#         im = ax.imshow(loss_mean, cmap=Colorscheme.cmap, origin='lower',
+#                        extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
+#                        vmin=0, vmax=0.3)
+
+#         ax.set_xlabel('# Outputs')
+#         ax.set_title(title)
+#         ax.set_xticks(Nin)
+#         ax.set_yticks(Nout)
+#         set_thicker_spines(ax, linewidth=1.5)
+
+#     axs[0].set_ylabel('# Inputs')
+
+#     # Add a shared colorbar
+#     cbar = fig.colorbar(im, ax=axs.ravel().tolist(), shrink=0.85)
+#     cbar.set_label('Loss')
+
+#     plt.tight_layout()
+#     plt.show()
 
 
 def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray[np.float_],

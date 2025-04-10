@@ -296,7 +296,7 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     ax1.plot(loss_GD_1in2out_mean, label='GD')
     ax1.plot(loss_mine_1in2out_mean, label='this work')
     ax1.set_yscale('log')
-    ax1.set_ylim(6e-8, 1)
+    ax1.set_ylim(5e-9, 1)
     ax1.set_ylabel(r'$\|\mathcal{L}\|$')
     ax1.legend()
 
@@ -322,7 +322,7 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     ax4.plot(loss_GD_2in1out_mean, label='GD')
     ax4.plot(loss_mine_2in1out_mean, label='this work')
     ax4.set_yscale('log')
-    ax4.set_ylim(6e-8, 1)
+    ax4.set_ylim(5e-9, 1)
     ax4.set_ylabel(r'$\|\mathcal{L}\|$')
     ax4.set_xlabel('$t$')
     ax4.legend()

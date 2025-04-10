@@ -622,9 +622,9 @@ class Network_State:
         # self.R_in_t[-1][BigClass.Strctr.EJ == BigClass.Strctr.ground_nodes_arr] = 1.
         self.R_in_t[-1][self.R_in_t[-1] < 10**-12] = 10**-12  # inhibit vanishing R
 
-    def dK_grad_desc(self, Strctr: "Network_Structure", dK_step, p_desired):
+    def dK_grad_desc(self, Strctr: "Network_Structure", dK_step, p_desired, func):
         """
-        MSE cost between desired and measured output of network, given pressure input, conductivities and constraint matrix
+        Add desc
 
         inputs:
         BigClass  - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET)
@@ -633,27 +633,30 @@ class Network_State:
         CstrTuple - Tuple consisting - Cstr_full - 2D array without last column, which is f from Rocks & Katifori 2018
                                                    https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116
                                        Cstr -      Cstr_full without last line
-                                       f    -      constraint vector (from Rocks and Katifori 2018)1D np.arrays sized NEdges
+                                       f    -      constraint vector (Rocks and Katifori 2018) 1D np.arrays [NEdges]
                                                    such that EI[i] is node connected to EJ[i] at certain edge
         K_vec     - 1D np.array [NE] of conductivities (inverse of resistances)
         p_desired - 1D np.array [Nout] of desired outputs given the inputs
+        func      - str
 
         outputs:
-        cost: np.float, MSE between maesured and desired outputs
+        cost: np.float, MSE or mean abs between maesured and desired outputs
         """
-        MSE_dcost_vec = np.zeros([np.size(self.K_vec)])
+        GD_dcost_vec = np.zeros([np.size(self.K_vec)])
         for m in range(np.size(self.K_vec)):
             dK_vec = np.zeros([np.size(self.K_vec)])
             dK_vec[m] = dK_step
-            MSE_dcost_vec[m] = self.calc_MSE_cost(Strctr, p_desired, K_vec_for_MSE=self.K_vec+dK_vec,
-                                                  mod='for_grad_desc')
-            dcost_dK = (MSE_dcost_vec - self.MSE_cost) / dK_step
+            GD_dcost_vec[m] = self.calc_GD_cost(Strctr, p_desired, K_vec_for_GD=self.K_vec+dK_vec,
+                                                mod='for_grad_desc', func=func)
+            dcost_dK = (GD_dcost_vec - self.GD_cost) / dK_step
             delta_K = -dcost_dK
         return delta_K
 
-    def calc_MSE_cost(self, Strctr: "Network_Structure", p_desired, K_vec_for_MSE=[], mod='measure') -> np.float_:
+    def calc_GD_cost(self, Strctr: "Network_Structure", p_desired: NDArray[np.float_], K_vec_for_GD=[],
+                     mod: str = 'measure', func: str = 'MSE') -> np.float_:
         """
-        MSE cost between desired and measured network output given pressure input, conductivities and constraint matrix
+        MSE or mean abs cost between desired and measured network output
+        given pressure input, conductivities and constraint matrix
 
         inputs:
         BigClass  - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET)
@@ -668,22 +671,27 @@ class Network_State:
         p_desired - 1D np.array [Nout] of desired outputs given the inputs
 
         outputs:
-        cost: np.float, MSE between maesured and desired outputs
+        cost: np.float, MSE  or mean abs between maesured and desired outputs
         """
-        if K_vec_for_MSE == []:
+        if K_vec_for_GD == []:
             K_vec = self.K_vec
         else:
-            K_vec = K_vec_for_MSE
+            K_vec = K_vec_for_GD
         p, u = solve.solve_flow(Strctr, self.CstrTuple, K_vec)
         p_out: NDArray[np.float_] = p[Strctr.output_nodes_arr][:, 0]  # p at output nodes, indexed as 1D array
 
         if p_out.size == p_desired.size:
-            cost: np.float_ = np.mean((p_out - p_desired) ** 2)
+            if func == 'MSE':
+                cost: np.float_ = np.mean((p_out - p_desired) ** 2)
+                print('MSE cost', cost)
+            elif func == 'mean_abs':
+                cost = np.mean(np.abs(p_out - p_desired))
+                print('mean_abs cost', cost)
         else:
             cost = np.nan
             print(f"Incompatible sizes, p_out shape = {p_out.shape}, p_desired shape = {p_desired.shape}")
         if mod == 'measure':  # save in State class only if not part of dK_grad_desc
-            self.MSE_cost: np.float_ = cost
+            self.GD_cost: np.float_ = cost
         return cost
 
     def calc_loss(self, BigClass: "Big_Class") -> None:

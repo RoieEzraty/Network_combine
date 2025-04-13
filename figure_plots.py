@@ -6,13 +6,10 @@ import matplotlib.gridspec as gridspec
 
 import copy
 
-from matplotlib.colors import Colormap
 from typing import Tuple, List, Dict, Any
 from typing import TYPE_CHECKING
 from numpy.typing import NDArray
 from brokenaxes import brokenaxes
-from matplotlib.ticker import MaxNLocator
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import statistics
 
@@ -26,18 +23,19 @@ if TYPE_CHECKING:
 # functions for paper figure plots
 # ================================
 
-## setup params
+
+# # setup params
+
 
 plt.rcParams['lines.linewidth'] = 2  # Set default line width
 plt.rcParams['font.size'] = 14  # Set default font size
 plt.rcParams['legend.loc'] = 'best'
 
 
-## The functions
+# # The functions
 
 
 def plot_performance_2(M: NDArray[np.float_], t: np.int_,
-                       output_1in2out: NDArray[np.float_], output_2in1out: NDArray[np.float_],
                        input_update_1in2out: NDArray[np.float_], input_update_2in1out: NDArray[np.float_],
                        output_update_1in2out: NDArray[np.float_], output_update_2in1out: NDArray[np.float_],
                        R_1in2out: NDArray[np.float_], R_2in1out: NDArray[np.float_],
@@ -46,17 +44,18 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
                        pos_lattice_1in2out: dict, pos_lattice_2in1out: dict,
                        Colorscheme: "Color_Scheme") -> None:
     """
-    one plot with 4 subfigures of
-    1) output / desired - 1.
+    2 rows of 4 subfigures:
+    1) Mean Absolute Error a.f.o training time t
     2) inputs and outputs of the update modality
-    3) resistances in time
-    4) absolute mean value of loss in time
+    3) resistances R in time
+    4) network structure, using position lattice dictionary pos_lattice
+    for the task of 1 input and 2 outputs and 2 inputs 1 output.
 
     inputs:
     too many
 
     outputs:
-    1 matplotlib plot
+    matplotlib plot
     """
 
     # Set the custom color cycle globally without cycler
@@ -75,53 +74,64 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     R_theor_2in1out = np.array([(1-A_2in1out-B_2in1out)/A_2in1out, (1-A_2in1out-B_2in1out)/B_2in1out])
     legend2_2in1out = [r'$x_1^{\,!}$', r'$x_2^{\,!}$', r'$y^{\,!}$']
 
-    # sizes for both
+    # position lattice is the same for both
     pos_lattice_both = pos_lattice_2in1out
 
-    # figure
+    # instantitate figure
     fig, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8)) = plt.subplots(2, 4, figsize=(17, 6))
 
-    # plt.text(0.5, 0.5, 'matplotlib',
-    #          horizontalalignment='center',
-    #          verticalalignment='center',
-    #          transform = ax.transAxes)
+    # ---- Row 1 - 1 input 2 outputs ----
 
-    # plot 1 input 2 output
+    # ||Loss||
     ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1))
     ax1.set_yscale('log')
     ax1.set_ylim(None, 1)
     ax1.set_title(r'$\|\mathcal{L}\|$')
-    # ax1.yaxis.set_major_locator(MaxNLocator(nbins=5))  # More ticks on the y-axis
-    # ax1.legend(legend4)
+
+    # "update" modality pressures
     ax2.plot(input_update_1in2out)
     ax2.plot(output_update_1in2out)
     ax2.set_title('"Update" modality pressure')
     ax2.legend(legend2_1in2out, loc='center right')
+
+    # R
     ax3.plot(R_1in2out)
+    # for theoretical calculation of resistances, not in use
     # ax3.plot(np.outer(R_theor_1in2out, np.ones(t)).T, '--')
     ax3.set_title(r'$R$')
+
+    # network structure
     nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color=Colorscheme.colors_lst[0],
                      node_color=Colorscheme.colors_lst[0], with_labels=True, arrows=False, font_color='white',
                      font_size=14, width=2, ax=ax4)
     ax4.set_title('Network structure')
 
-    # plot 2 input 1 output
+    # ---- Row 1 - 2 inputs 1 output ----
+
+    # ||Loss||
     ax5.plot(np.mean(np.mean(np.abs(loss_2in1out), axis=1), axis=1))
     ax5.set_xlabel('t')
     ax5.set_yscale('log')
     ax5.set_ylim(None, 1)
+
+    # "update" modality pressures
     ax6.plot(input_update_2in1out)
     ax6.plot(output_update_2in1out)
     ax6.set_xlabel('t')
     ax6.legend(legend2_2in1out, loc='center right', bbox_to_anchor=(1, 0.4))
+
+    # R
     ax7.plot(R_2in1out)
-    # ax8.plot(np.outer(R_theor_2in1out, np.ones(t)).T, '--')
+    # for theoretical calculation of resistances, not in use
+    # ax7.plot(np.outer(R_theor_2in1out, np.ones(t)).T, '--')
     ax7.set_xlabel('t')
-    # ax8.legend(legend3_2in1out)
+
+    # network structure
     nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color=Colorscheme.colors_lst[0],
                      node_color=Colorscheme.colors_lst[0], with_labels=True, arrows=False, font_color='white',
                      font_size=14, width=2, ax=ax8)
 
+    # Thicker spines
     for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]:
         set_thicker_spines(ax)  # Apply the spine thickness to each subplot
 
@@ -130,33 +140,38 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
 
 def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
     """
-    Two-panel plot comparing linear and nonlinear average loss matrices with an external colorbar.
+    Two-panel plot comparing linear and nonlinear update rules - ensemble mean of loss at end of training.
 
     Parameters:
     -----------
     loss_mat_lin : np.ndarray
-        3D array [Nin, Nout, ...] for the linear system
+        3D array [Nin, Nout, ensemble] for the linear system
     loss_mat_nonlin : np.ndarray
-        3D array [Nin, Nout, ...] for the nonlinear system
+        3D array [Nin, Nout, ensemble] for the nonlinear system
     Colorscheme : Color_Scheme
         Object with a `.cmap` attribute defining the colormap
+
+    outputs:
+    matplotlib plot
     """
     loss_mean_lin = np.mean(loss_mat_lin, axis=2)
     loss_mean_nonlin = np.mean(loss_mat_nonlin, axis=2)
 
-    Nin = np.arange(1, loss_mat_lin.shape[0]+1)
-    Nout = np.arange(1, loss_mat_lin.shape[1]+1)
+    Nin = np.arange(1, loss_mat_lin.shape[0]+1)  # array input dimension
+    Nout = np.arange(1, loss_mat_lin.shape[1]+1)  # array output dimension
 
+    # instantiate figure and grid for positioning colorbal
     fig = plt.figure(figsize=(6, 3))
     gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.3)
 
     ax1 = fig.add_subplot(gs[0])
     ax2 = fig.add_subplot(gs[1])
-    # cax = fig.add_subplot(gs[2])
+    # cax = fig.add_subplot(gs[2])  # no need to specify colorbar here
 
-    im1 = ax1.imshow(loss_mean_lin, cmap=Colorscheme.cmap, origin='lower',
-                     extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-                     vmin=0, vmax=0.3)
+    # linear update rule
+    ax1.imshow(loss_mean_lin, cmap=Colorscheme.cmap, origin='lower',
+               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
+               vmin=0, vmax=0.3)
     ax1.set_title(r'$\dot{R} \propto \Delta p$')
     ax1.set_xlabel('# Outputs')
     ax1.set_ylabel('# Inputs')
@@ -164,6 +179,7 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
     ax1.set_yticks(Nout)
     set_thicker_spines(ax1, linewidth=1.5)
 
+    # nonlinear update rule
     im2 = ax2.imshow(loss_mean_nonlin, cmap=Colorscheme.cmap, origin='lower',
                      extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
                      vmin=0, vmax=0.3)
@@ -173,21 +189,12 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
     ax2.set_yticks(Nout)
     set_thicker_spines(ax2, linewidth=1.5)
 
-    # create an axes on the right side of ax. The width of cax will be 5%
-    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    # divider = make_axes_locatable(ax2)
-    # # cax = divider.append_axes("right", size="5%", pad=0.05)
-    # cax = divider.append_axes("right", size="5%", pad=0.9)
-
+    # colorbar axis positioned at [1.05, 0] with 0.08 width and 1.0 height
     cax = ax2.inset_axes((1.05, 0, 0.08, 1.0))
-    # Now thicken the colorbar's surrounding box (spines)
-    fig.colorbar(im2, cax=cax)
-
     # Add colorbar to the dedicated axis
     cbar = fig.colorbar(im2, cax=cax)
     cbar.set_label(r'$\|\mathcal{L}\|$')
 
-    # plt.tight_layout()
     plt.show()
 
 
@@ -199,35 +206,36 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
                        Colorscheme: "Color_Scheme") -> None:
 
     """
-    two rows plot with 3 subfigures each
-    1) bar plot of resistances using gradient descent and my scheme
-    2) loss in time t using gradient descent and my scheme
-    3) cosine similarity between change in conductivities using gradient descent and my scheme
+    Two rows plot with 3 subfigures each
+    1) Bar plot of resistances at end of training using gradient descent (GD) and proposed scheme
+    2) loss a.f.o t using GD and proposed scheme
+    3) cosine similarity between change in conductivities using GD and my scheme
 
     inputs:
     too many
 
     outputs:
-    1 matplotlib plot
+    matplotlib plot
     """
-
     # Set color cycle globally
     plt.rcParams['axes.prop_cycle'] = plt.cycler('color', Colorscheme.colors_lst)
 
-    # Normalize R values
+    # Normalize R values so maximal will be 1
     R_mine_1in2out_norm = R_mine_1in2out[-1] / np.max(R_mine_1in2out[-1])
     R_GD_1in2out_norm = R_GD_1in2out[-1] / np.max(R_GD_1in2out[-1])
     R_mine_2in1out_norm = R_mine_2in1out[-1] / np.max(R_mine_2in1out[-1])
     R_GD_2in1out_norm = R_GD_2in1out[-1] / np.max(R_GD_2in1out[-1])
 
+    # only use run up to t=250
     T = 250
 
-    # Average losses
+    # MAE Loss up to t=250
     loss_mine_1in2out_mean = np.mean(np.mean(np.abs(loss_mine_1in2out), axis=1), axis=1)[:T]
     loss_GD_1in2out_mean = np.mean(np.mean(np.abs(loss_GD_1in2out), axis=1), axis=1)[:T]
     loss_mine_2in1out_mean = np.mean(np.mean(np.abs(loss_mine_2in1out), axis=1), axis=1)[:T]
     loss_GD_2in1out_mean = np.mean(np.mean(np.abs(loss_GD_2in1out), axis=1), axis=1)[:T]
 
+    # weird setup for bars
     x = np.arange(len(R_GD_1in2out_norm))
     bar_width = 0.35
 
@@ -235,67 +243,67 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     fig = plt.figure(figsize=(15, 6))
     gs = gridspec.GridSpec(2, 3, width_ratios=[1, 1.2, 1.2], height_ratios=[1, 1])
 
-    # --- Row 1 ---
-    # R bar plot: 1in2out
+    # ---- Row 1 - 1 input 2 outputs ----
+
+    # R bar plot
     ax0 = fig.add_subplot(gs[0, 0])
-    ax0.bar(x - bar_width / 2, R_GD_1in2out_norm, width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
-    ax0.bar(x + bar_width / 2, R_mine_1in2out_norm, width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax0.bar(x - bar_width / 2, R_GD_1in2out_norm,
+            width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax0.bar(x + bar_width / 2, R_mine_1in2out_norm,
+            width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
     ax0.set_yticks([0, 0.5, 1])
-    # ax0.set_ylabel('$R$')
     ax0.set_title('$R$')
     ax0.legend()
 
-    # Loss plot: 1in2out
+    # Loss plot
     ax1 = fig.add_subplot(gs[0, 1])
     ax1.plot(loss_GD_1in2out_mean, label='GD')
     ax1.plot(loss_mine_1in2out_mean, label='this work')
     ax1.set_title(r'$\|\mathcal{L}\|$')
     ax1.set_yscale('log')
     ax1.set_ylim(5e-9, 1)
-    # ax1.set_ylabel(r'$\|\mathcal{L}\|$')
     ax1.legend()
 
-    # Cosine similarity: 1in2out
+    # Cosine similarity
     ax2 = fig.add_subplot(gs[0, 2])
     ax2.plot(cosine_sim_1in2out[:T])
-    ax2.plot(np.zeros([T]), '--k')
-    # Right panels (cosine similarity)
+    ax2.plot(np.zeros([T]), '--k')  # dotted line at cosine=0
     ax2.set_yticks([-1, 0, 1])
     ax2.set_title(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
-    # ax2.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
     ax2.set_ylim(-1, 1)
 
-    # --- Row 2 ---
-    # R bar plot: 2in1out
+    # ---- Row 1 - 2 inputs 1 output ----
+
+    # R bar plot
     ax3 = fig.add_subplot(gs[1, 0])
-    ax3.bar(x - bar_width / 2, R_GD_2in1out_norm, width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
-    ax3.bar(x + bar_width / 2, R_mine_2in1out_norm, width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax3.bar(x - bar_width / 2, R_GD_2in1out_norm,
+            width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax3.bar(x + bar_width / 2, R_mine_2in1out_norm,
+            width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
     ax3.set_yticks([0, 0.5, 1])
-    # ax3.set_ylabel('$R$')
     ax3.set_xlabel('edge #')
     ax3.legend()
 
-    # Loss plot: 2in1out
+    # Loss plot
     ax4 = fig.add_subplot(gs[1, 1])
     ax4.plot(loss_GD_2in1out_mean, label='GD')
     ax4.plot(loss_mine_2in1out_mean, label='this work')
     ax4.set_yscale('log')
     ax4.set_ylim(5e-9, 1)
-    # ax4.set_ylabel(r'$\|\mathcal{L}\|$')
     ax4.set_xlabel('$t$')
     ax4.legend()
 
-    # Cosine similarity: 2in1out
+    # Cosine similarity
     ax5 = fig.add_subplot(gs[1, 2])
     ax5.plot(cosine_sim_2in1out[:T])
-    ax5.plot(np.zeros([T]), '--k')
+    ax5.plot(np.zeros([T]), '--k')  # dotted line at cosine=0
     ax5.set_yticks([-1, 0, 1])
-    # ax5.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
     ax5.set_xlabel('$t$')
     ax5.set_ylim(-1, 1)
 
+    # Thicker spines
     for ax in [ax0, ax1, ax2, ax3, ax4, ax5]:
-        set_thicker_spines(ax)  # Apply the spine thickness to each subplot
+        set_thicker_spines(ax)
 
     plt.tight_layout()
     plt.show()
@@ -305,18 +313,21 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
                              dataset_shape: NDArray[np.int_], Colorscheme: "Color_Scheme",
                              smooth: bool = True, window_size: int = 5) -> None:
     """
-    Plots the accuracy in time for the Iris problem
+    Plots the accuracy in time for the Iris problem where R_dot=delta_p
 
     input:
     t_final        - int, final time step
     t_for_accuracy - array of ints, times during simulation when accuracy was calculated
     accuracy_in_t  - array of floats, accuracy at simulation times "t_for_accuracy"
-    dataset_len    - length of dataset used, for Iris it is 150
+    dataset_shape  - shape of dataset used, for Iris it is [150, ?]
+    Colorscheme    - Object with a `.cmap` attribute defining the colormap
+    smooth         - boolean of whether to perform moveing mean on test accuracy
+    window_size    - int, moving mean window
 
     output:
-    plot of accuracy a.f.o time
+    plot of accuracy a.f.o time with confidence bounds as STD over ensemble
     """
-    opacity = 0.25
+    opacity = 0.25  # for confidence STD bounds
 
     # Apply smoothing for the average accuracy lines
     if smooth:
@@ -333,6 +344,7 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
 
         t_for_accuracy_smoothed = t_for_accuracy
 
+    # test accuracy for untrained network is 33%
     mean_accuracy[0] = 1/3
 
     # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
@@ -351,9 +363,9 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
     # axes
     plt.xlabel('$t$', fontsize=14)  # Set x-axis label with font size
     plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
-    # plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
     plt.ylim([0, 1])
 
+    # Thicker spines
     set_thicker_spines(plt.gca(), linewidth=1.5)  # apply to the current Axes
 
 
@@ -365,82 +377,74 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
                               Colorscheme: "Color_Scheme", smooth: bool = True, window_size: int = 5):
     """
     Plots the accuracy in time for the Iris problem using 4 materials.
-    """
-    # length of classification dataset
-    dataset_len = dataset_shape[0]
 
+    input:
+    t_final        - int, final time step
+    t_for_accuracy - array of ints, times during simulation when accuracy was calculated
+    accuracy_in_t  - array of floats, accuracy at simulation times "t_for_accuracy"
+    dataset_shape  - shape of dataset used, for Iris it is [150, ?]
+    Colorscheme    - Object with a `.cmap` attribute defining the colormap
+    smooth         - boolean of whether to perform moving mean on test accuracy
+    window_size    - int, moving mean window
+
+    output:
+    plot of accuracy a.f.o time with confidence bounds as STD over ensemble
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    dataset_len = dataset_shape[0]
     opacity = 0.25
 
-    # legend - 4 materials
-    legend = [r'$R \propto \Delta p$',
-              r'$\dot{R} \propto \Delta p$',
+    material_keys = ['deltaR_deltap', 'deltaR_Q', 'deltaR_Power', 'R_deltap']
+    legend = [r'$\dot{R} \propto \Delta p$',
               r'$\dot{R} \propto Q$',
-              r'$\dot{R} \propto \mathrm{Power}$']
+              r'$\dot{R} \propto \mathrm{Power}$',
+              r'$R \propto \Delta p$']
+    accuracy_data = [accuracy_in_t_deltaR_propto_deltap,
+                     accuracy_in_t_deltaR_propto_Q,
+                     accuracy_in_t_deltaR_propto_Power,
+                     accuracy_in_t_R_propto_deltap]
 
-    # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
+    mean_accuracies = {}
+    std_accuracies = {}
+
+    for key, data in zip(material_keys, accuracy_data):
+        mean = np.mean(data, axis=0)
+        std = np.std(data, axis=0)
+        if smooth:
+            mean = statistics.mov_ave(mean, window_size)
+            std = statistics.mov_ave(std, window_size)
+        mean_accuracies[key] = mean
+        std_accuracies[key] = std
+
+    if smooth:
+        t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracies['R_deltap'])]
+    else:
+        t_for_accuracy_smoothed = t_for_accuracy
+
+    # test accuracy for untrained network is 33%
+    for key in material_keys:
+        mean_accuracies[key][0] = 1 / 3
+
+    # Vertical lines to indicate dataset cycles
     for t in range(t_final):
         if t % dataset_len == 0:
             plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1)
 
-    # Apply smoothing for the average accuracy lines
-    if smooth:
-        mean_accuracy_R_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_R_propto_deltap, axis=0), window_size)
-        mean_accuracy_deltaR_propto_deltap = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_deltap, axis=0),
-                                                                window_size)
-        mean_accuracy_deltaR_propto_Q = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_Q, axis=0), window_size)
-        mean_accuracy_deltaR_propto_Power = statistics.mov_ave(np.mean(accuracy_in_t_deltaR_propto_Power, axis=0),
-                                                               window_size)
+    # Plotting
+    line_styles = ['-', '-', '--', '--']
+    for i, key in enumerate(material_keys):
+        plt.plot(t_for_accuracy_smoothed, mean_accuracies[key],
+                 color=Colorscheme.colors_lst[i],
+                 linestyle=line_styles[i], linewidth=3, alpha=1., marker=None)
 
-        # Standard deviations for confidence bounds
-        std_R_propto_deltap = statistics.mov_ave(np.std(accuracy_in_t_R_propto_deltap, axis=0), window_size)
-        std_deltaR_propto_deltap = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_deltap, axis=0), window_size)
-        std_deltaR_propto_Q = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_Q, axis=0), window_size)
-        std_deltaR_propto_Power = statistics.mov_ave(np.std(accuracy_in_t_deltaR_propto_Power, axis=0), window_size)
+    for i, key in enumerate(material_keys):
+        plt.fill_between(t_for_accuracy_smoothed,
+                         mean_accuracies[key] - std_accuracies[key],
+                         mean_accuracies[key] + std_accuracies[key],
+                         color=Colorscheme.colors_lst[i], alpha=opacity)
 
-        t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracy_R_propto_deltap)]  # t_for_accuracy after smoothing
-    else:
-        mean_accuracy_R_propto_deltap = np.mean(accuracy_in_t_R_propto_deltap, axis=0)
-        mean_accuracy_deltaR_propto_deltap = np.mean(accuracy_in_t_deltaR_propto_deltap, axis=0)
-        mean_accuracy_deltaR_propto_Q = np.mean(accuracy_in_t_deltaR_propto_Q, axis=0)
-        mean_accuracy_deltaR_propto_Power = np.mean(accuracy_in_t_deltaR_propto_Power, axis=0)
-
-        std_R_propto_deltap = np.std(accuracy_in_t_R_propto_deltap, axis=0)
-        std_deltaR_propto_deltap = np.std(accuracy_in_t_deltaR_propto_deltap, axis=0)
-        std_deltaR_propto_Q = np.std(accuracy_in_t_deltaR_propto_Q, axis=0)
-        std_deltaR_propto_Power = np.std(accuracy_in_t_deltaR_propto_Power, axis=0)
-
-        t_for_accuracy_smoothed = t_for_accuracy
-
-    mean_accuracy_R_propto_deltap[0] = 1/3
-    mean_accuracy_deltaR_propto_deltap[0] = 1/3
-    mean_accuracy_deltaR_propto_Q[0] = 1/3
-    mean_accuracy_deltaR_propto_Power[0] = 1/3
-
-    # Plot the smoothed mean accuracy with lines connecting points
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q,
-             color=Colorscheme.colors_lst[2], alpha=1., marker=None, linestyle='-', linewidth=3)
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap,
-             color=Colorscheme.colors_lst[1], alpha=1., marker=None, linestyle='-', linewidth=3)
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power,
-             color=Colorscheme.colors_lst[3], alpha=1., marker=None, linestyle='--', linewidth=3)
-    plt.plot(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap,
-             color=Colorscheme.colors_lst[0], alpha=1., marker=None, linestyle='--', linewidth=3)
-
-    # Plot confidence intervals using fill_between
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Q - std_deltaR_propto_Q,
-                     mean_accuracy_deltaR_propto_Q + std_deltaR_propto_Q, color=Colorscheme.colors_lst[0],
-                     alpha=opacity)
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_deltap - std_deltaR_propto_deltap,
-                     mean_accuracy_deltaR_propto_deltap + std_deltaR_propto_deltap, color=Colorscheme.colors_lst[1],
-                     alpha=opacity)
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_deltaR_propto_Power - std_deltaR_propto_Power,
-                     mean_accuracy_deltaR_propto_Power + std_deltaR_propto_Power, color=Colorscheme.colors_lst[2],
-                     alpha=opacity)
-    plt.fill_between(t_for_accuracy_smoothed, mean_accuracy_R_propto_deltap - std_R_propto_deltap,
-                     mean_accuracy_R_propto_deltap + std_R_propto_deltap, color=Colorscheme.colors_lst[3],
-                     alpha=opacity)
-
-    # Adding a single line for each legend entry with the same colors
     for i in range(4):
         plt.plot([], [], color=Colorscheme.colors_lst[i], label=legend[i])
 
@@ -449,10 +453,8 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
     plt.ylabel('Accuracy', fontsize=14)
     plt.ylim([0, 1])
     plt.legend(loc='best')
-    # plt.xscale('log')
 
-    set_thicker_spines(plt.gca(), linewidth=1.5)  # apply to the current Axes
-
+    set_thicker_spines(plt.gca(), linewidth=1.5)
     plt.show()
 
 

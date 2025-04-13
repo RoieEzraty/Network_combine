@@ -191,54 +191,6 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
     plt.show()
 
 
-# def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
-#     """
-#     Two-panel plot comparing linear and nonlinear average loss matrices as a function of
-#     #inputs and #outputs as nice boxes in cool color scheme.
-#     lin scale use loss_mat outputed from multiple_Nin_Nout.ipynb
-
-#     Parameters:
-#     -----------
-#     loss_mat_lin : np.ndarray
-#         3D array [Nin, Nout, ...] for the linear system
-#     loss_mat_nonlin : np.ndarray
-#         3D array [Nin, Nout, ...] for the nonlinear system
-#     Colorscheme : Color_Scheme
-#         Object with a `.cmap` attribute defining the colormap
-#     """
-#     loss_mean_lin = np.mean(loss_mat_lin, axis=2)
-#     loss_mean_nonlin = np.mean(loss_mat_nonlin, axis=2)
-
-#     Nin = np.arange(1, loss_mat_lin.shape[0]+1)
-#     Nout = np.arange(1, loss_mat_lin.shape[1]+1)
-
-#     fig, axs = plt.subplots(1, 2, figsize=(8, 6), sharey=True)
-
-#     for ax, loss_mean, title in zip(
-#         axs,
-#         [loss_mean_lin, loss_mean_nonlin],
-#         ['Linear', 'Nonlinear']
-#     ):
-#         im = ax.imshow(loss_mean, cmap=Colorscheme.cmap, origin='lower',
-#                        extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-#                        vmin=0, vmax=0.3)
-
-#         ax.set_xlabel('# Outputs')
-#         ax.set_title(title)
-#         ax.set_xticks(Nin)
-#         ax.set_yticks(Nout)
-#         set_thicker_spines(ax, linewidth=1.5)
-
-#     axs[0].set_ylabel('# Inputs')
-
-#     # Add a shared colorbar
-#     cbar = fig.colorbar(im, ax=axs.ravel().tolist(), shrink=0.85)
-#     cbar.set_label('Loss')
-
-#     plt.tight_layout()
-#     plt.show()
-
-
 def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray[np.float_],
                        R_mine_2in1out: NDArray[np.float_], R_GD_2in1out: NDArray[np.float_],
                        loss_mine_1in2out: NDArray[np.float_], loss_GD_1in2out: NDArray[np.float_],
@@ -288,24 +240,29 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     ax0 = fig.add_subplot(gs[0, 0])
     ax0.bar(x - bar_width / 2, R_GD_1in2out_norm, width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
     ax0.bar(x + bar_width / 2, R_mine_1in2out_norm, width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
-    ax0.set_ylabel('$R$')
+    ax0.set_yticks([0, 0.5, 1])
+    # ax0.set_ylabel('$R$')
+    ax0.set_title('$R$')
     ax0.legend()
 
     # Loss plot: 1in2out
     ax1 = fig.add_subplot(gs[0, 1])
     ax1.plot(loss_GD_1in2out_mean, label='GD')
     ax1.plot(loss_mine_1in2out_mean, label='this work')
+    ax1.set_title(r'$\|\mathcal{L}\|$')
     ax1.set_yscale('log')
     ax1.set_ylim(5e-9, 1)
-    ax1.set_ylabel(r'$\|\mathcal{L}\|$')
+    # ax1.set_ylabel(r'$\|\mathcal{L}\|$')
     ax1.legend()
 
     # Cosine similarity: 1in2out
     ax2 = fig.add_subplot(gs[0, 2])
     ax2.plot(cosine_sim_1in2out[:T])
     ax2.plot(np.zeros([T]), '--k')
-    # ax2.set_ylabel('cosine similarity')
-    ax2.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
+    # Right panels (cosine similarity)
+    ax2.set_yticks([-1, 0, 1])
+    ax2.set_title(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
+    # ax2.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
     ax2.set_ylim(-1, 1)
 
     # --- Row 2 ---
@@ -313,7 +270,8 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     ax3 = fig.add_subplot(gs[1, 0])
     ax3.bar(x - bar_width / 2, R_GD_2in1out_norm, width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
     ax3.bar(x + bar_width / 2, R_mine_2in1out_norm, width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
-    ax3.set_ylabel('$R$')
+    ax3.set_yticks([0, 0.5, 1])
+    # ax3.set_ylabel('$R$')
     ax3.set_xlabel('edge #')
     ax3.legend()
 
@@ -323,7 +281,7 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     ax4.plot(loss_mine_2in1out_mean, label='this work')
     ax4.set_yscale('log')
     ax4.set_ylim(5e-9, 1)
-    ax4.set_ylabel(r'$\|\mathcal{L}\|$')
+    # ax4.set_ylabel(r'$\|\mathcal{L}\|$')
     ax4.set_xlabel('$t$')
     ax4.legend()
 
@@ -331,8 +289,8 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     ax5 = fig.add_subplot(gs[1, 2])
     ax5.plot(cosine_sim_2in1out[:T])
     ax5.plot(np.zeros([T]), '--k')
-    # ax5.set_ylabel('cosine similarity')
-    ax5.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
+    ax5.set_yticks([-1, 0, 1])
+    # ax5.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
     ax5.set_xlabel('$t$')
     ax5.set_ylim(-1, 1)
 

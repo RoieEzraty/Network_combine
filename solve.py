@@ -19,21 +19,20 @@ if TYPE_CHECKING:
 
 # @lru_cache(maxsize=20)
 def solve_flow(Strctr: "Network_Structure", CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
-               K_vec: NDArray[np.float_], roundto: Optional[float] = 10**-10) -> Tuple[NDArray[np.float_],
-                                                                                       NDArray[np.float_]]:
+               K_vec: NDArray[np.float_]) -> Tuple[NDArray[np.float_], NDArray[np.float_]]:
     """
     Solves for the pressure at nodes and flow at edges, given Lagrangian etc.
     flow at edge defined as difference in pressure between input and output nodes time conductivity at each edge.
     2nd part of State.solve_flow_given_problem, Comes after functions.setup_constraints_given_pin.
 
     input:
-    BigClass -  class instance including User_Variables, Network_Structure instances, etc.
+    Strctr: "Network_Structure" class instance with the input, intermediate and output nodes
     CstrTuple - Tuple consisting - Cstr_full - 2D array without last column, which is f from Rocks & Katifori 2018
                                                https://www.pnas.org/cgi/doi/10.1073/pnas.1806790116
                                    Cstr -      Cstr_full without last line
                                    f    -      constraint vector (from Rocks and Katifori 2018)1D np.arrays sized NEdges
                                                such that EI[i] is node connected to EJ[i] at certain edge
-    R_vec  - [NE] 2D cubic np.array of resistivities
+    K_vec  - [NE] 2D cubic np.array of conductances (inverse of reistances)
     round  - float, value below which the absolute value of u and p are rounded to 0.
 
     output:
@@ -68,5 +67,16 @@ def round_small(p: NDArray[np.float_], u: NDArray[np.float_], roundto: float = 1
     return p, u
 
 
-def dot_triple(X, Y, Z):
+def dot_triple(X: NDArray[np.float_], Y: NDArray[np.float_], Z: NDArray[np.float_]) -> NDArray[np.float_]:
+    """
+    Matrix triple product X @ Y @ Z.
+
+    Parameters
+    ----------
+    X, Y, Z : np.ndarray
+
+    Returns
+    -------
+    np.ndarray
+    """
     return np.dot(X, np.dot(Y, Z))

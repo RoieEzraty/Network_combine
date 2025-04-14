@@ -44,7 +44,6 @@ def color_scheme(show: bool = False) -> Tuple[list[str], str, Colormap]:
         # Plot the custom gradient
         plt.subplot(1, 2, 1)
         plt.imshow(gradient, aspect='auto', cmap=custom_cmap, extent=[0, 1, 1, 256])
-        # plt.imshow(gradient, cmap=custom_cmap)
         plt.title("Custom Color Gradient")
         plt.xticks([])  # Remove x ticks
         plt.yticks([])  # Remove y ticks

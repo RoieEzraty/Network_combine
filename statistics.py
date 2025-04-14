@@ -19,27 +19,52 @@ if TYPE_CHECKING:
 
 def final_err(BigClass: "Big_Class", samples: int = 40):
     """
-    add desc
+    Final relative error over the last `samples` time steps.
+
+    This function evaluates the mean absolute error of the loss values from the
+    simulation over the last `samples` time steps and normalizes it by the mean
+    absolute value of the target output in that same period.
+
+    inputs:
+    BigClass - Class instance containing User_Variables, Network_Structure, etc.
+    samples  - int, optional Number of most recent time steps to include in the error calculation
+
+    output:
+    float of final relative error: mean absolute loss over the last `samples` time steps,
+        normalized by the mean absolute value of the corresponding target values.
     """
-    numerator = np.mean(np.mean(np.mean(np.abs(BigClass.State.loss_in_t), axis=1), axis=1)[-40:])
-    denominator = np.mean(np.abs(BigClass.Variabs.targets)[-40:])
+    numerator = np.mean(np.mean(np.mean(np.abs(BigClass.State.loss_in_t), axis=1), axis=1)[-samples:])
+    denominator = np.mean(np.abs(BigClass.Variabs.targets)[-samples:])
     return numerator / denominator
 
 
 def calculate_accuracy_1sample(output, targets_mat: NDArray[np.float_], target_i: NDArray[np.float_]) -> float:
     """
-    add desc
-    """
-    # l2_vec: NDArray[np.float_] = zeros(3)
-    # for i in range(3):
-    #     l2_vec[i] = norm(output - targets_mat[i])
-    # accuracy: int = int(np.where(l2_vec == np.min(l2_vec)) == np.where(target_i == 1.))
+    Classification accuracy for a single iris sample using L2 distance.
 
+    Compares network output vector to a matrix of possible class targets targets_mat
+    and selects the class whose target vector is closest in L2 norm. It then compares
+    the predicted class to the true class target_i (provided as a tokenized vector).
+
+    Parameters
+    ----------
+    output : np.ndarray
+        Output vector from the network for a single sample.
+    targets_mat : np.ndarray of shape (3, 3)
+        A matrix containing the prototype vectors for each class.
+    target_i : np.ndarray of shape (3,)
+        The one-hot encoded true target class for this sample.
+
+    Returns
+    -------
+    float
+        1.0 if the predicted class matches the true class, otherwise 0.0.
+    """
     l2_vec = np.zeros(3)
     for i in range(3):
         l2_vec[i] = norm(output - targets_mat[i])
 
-    # The problematic line, wrapped in try-except
+    # problematic line, wrapped in try-except
     try:
         accuracy: int = int(np.where(l2_vec == np.min(l2_vec)) == np.where(target_i == 1.))
     except ValueError as e:
@@ -58,7 +83,7 @@ def calculate_accuracy_1sample(output, targets_mat: NDArray[np.float_], target_i
 
 def power_dissip(u: NDArray[np.float_], R: NDArray[np.float_]) -> NDArray[np.float_]:
     """
-    power_dissip calculates the power dissipation in network given flow and conductivity constellation
+    Calculates the power dissipation in network given flow and resistances on edges
 
     input:
     u - 1D np.array [Nedges] of velocities at edges
@@ -73,7 +98,7 @@ def power_dissip(u: NDArray[np.float_], R: NDArray[np.float_]) -> NDArray[np.flo
 
 def power_dissip_norm(u: NDArray[np.float_], R: NDArray[np.float_], input: NDArray[np.float_]) -> NDArray[np.float_]:
     """
-    power_dissip calculates the power dissipation in network given flow and conductivity constellation
+    Calculates the power dissipation in network, normalized by the input pressure squared, given flow and resistances
 
     input:
     u     - 1D np.array [Nedges] of velocities at edges
@@ -88,47 +113,46 @@ def power_dissip_norm(u: NDArray[np.float_], R: NDArray[np.float_], input: NDArr
     return P_norm
 
 
-def dw_Balasub(alpha: float, p: NDArray[np.float_], in_nodes: NDArray[np.int_], out_nodes: NDArray[np.int_],
-               DM: NDArray[np.int_], R: NDArray[np.float_], M: NDArray[np.float_]) -> NDArray[np.float_]:
+def mov_ave(data: NDArray[np.float_], window_size: int) -> NDArray[np.float_]:
     """
-    dw_Balasub calculates the change in weights (conductances) by contrastive learning
-    from the analytic derivation in Stern & Balasubramanian 2024 https://doi.org/10.1103/PhysRevE.109.024311
-    (equation 17)
+    Apply a simple moving average filter to 1D data over a specified window size
+    using convolution.
 
-    input:
-    alpha     - float, learning rate
-    p         - 1D np.array [NN] of pressures on all network nodes
-    out_nodes - 1D np.array [Nout] indices of output nodes from the pressure vector p
-    DM        - np.array [NEdges, NNodes], incidence matrix
-    R         - 1D np.array [NE] resistances of edges
-    M         - np.array [Nout, Nin] regression task matrix
+    Parameters
+    ----------
+    data : np.ndarray
+        1D input data to be smoothed.
+    window_size : int
+        The number of elements to average over.
 
-    output:
-    dw - 1D np.array [NE] change in conductivities (inverse of resistances) as in contrastive learning
+    Returns
+    -------
+    np.ndarray
+        The smoothed data array after applying the moving average.
+        Its length is `len(data) - window_size + 1`.
     """
-    epsilon = 10**-5  # add for positive definiteness
-    Nin = np.size(in_nodes)  # number of input nodes
-    NN = np.size(p)  # number of nodes in network
+    return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
-    diagw = np.diag(1/R)  # diagonal [NN, NN] of conductivities
-    # print('diagw ', diagw)
-    H = DM.T@diagw@DM  # Hessian
-    H += np.diag(np.ones(NN))*epsilon  # add for positive definiteness
-    # print('H ', H)
-    invH = inv(H)  # invert H
-    # print('invH ', invH)
-    A = np.zeros([NN, 1])  # desired response vector [NN]
-    A[out_nodes] = M @ np.ones([Nin, 1])  # desired response is only at outputs
-    # print('A ', A)
-    B = np.sum(p[out_nodes])  # desired response scalar
-    # print('B ', B)
-    dw = -alpha*B*(DM@p)*(DM@invH@A)  # change in conductivities
-    return dw
+
+def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
+    """
+    Compute cosine similarity between two vectors a and b.
+
+    Parameters
+    ----------
+    a,b : np.ndarrays
+
+    Returns
+    -------
+    float
+        Cosine similarity between vectors `a` and `b`, ranging [-1, 1]
+    """
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
 def dK(R_in_t: list[NDArray[np.float_]]) -> NDArray[np.float_]:
     """
-    change in conductivity during latest time step, calculated by difference between two inverse resistance vectors
+    change in conductances during latest time step, calculated by difference between two inverse resistance vectors
 
     input:
     R_in_t - List of 1D np.arrays [NE] of edge resistance values in time (list rows)
@@ -139,17 +163,41 @@ def dK(R_in_t: list[NDArray[np.float_]]) -> NDArray[np.float_]:
     return 1/R_in_t[-1]-1/R_in_t[-2]
 
 
-# def dot_dRs(dR1: NDArray[np.float_], dR2: NDArray[np.float_]) -> float:
-#     return dR1@dR2
+# # NOT IN USE
 
 
-def mov_ave(data, window_size):
-    """Apply a simple moving average filter."""
-    return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
+# def dw_Balasub(alpha: float, p: NDArray[np.float_], in_nodes: NDArray[np.int_], out_nodes: NDArray[np.int_],
+#                DM: NDArray[np.int_], R: NDArray[np.float_], M: NDArray[np.float_]) -> NDArray[np.float_]:
+#     """
+#     dw_Balasub calculates the change in weights (conductances) by contrastive learning
+#     from the analytic derivation in Stern & Balasubramanian 2024 https://doi.org/10.1103/PhysRevE.109.024311
+#     (equation 17)
 
+#     input:
+#     alpha     - float, learning rate
+#     p         - 1D np.array [NN] of pressures on all network nodes
+#     out_nodes - 1D np.array [Nout] indices of output nodes from the pressure vector p
+#     DM        - np.array [NEdges, NNodes], incidence matrix
+#     R         - 1D np.array [NE] resistances of edges
+#     M         - np.array [Nout, Nin] regression task matrix
 
-def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+#     output:
+#     dw - 1D np.array [NE] change in conductivities (inverse of resistances) as in contrastive learning
+#     """
+#     epsilon = 10**-5  # add for positive definiteness
+#     Nin = np.size(in_nodes)  # number of input nodes
+#     NN = np.size(p)  # number of nodes in network
+
+#     diagw = np.diag(1/R)  # diagonal [NN, NN] of conductivities
+#     H = DM.T@diagw@DM  # Hessian
+#     eps_diag = np.diag(np.ones(NN, dtype=np.float64)) * epsilon
+#     H = H + eps_diag  # add for positive definiteness
+#     invH = inv(H)  # invert H
+#     A = np.zeros([NN, 1])  # desired response vector [NN]
+#     A[out_nodes] = M @ np.ones([Nin, 1])  # desired response is only at outputs
+#     B = np.sum(p[out_nodes])  # desired response scalar
+#     dw = -alpha*B*(DM@p)*(DM@invH@A)  # change in conductivities
+#     return dw
 
 
 # def flow_MSE(u: NDArray[np.float_], step: int, u_nxt=[]) -> NDArray[float_]:
@@ -196,32 +244,6 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 # 	else:
 # 		Hamming = np.mean(K_cells_nxt != K_cells)
 # 	return Hamming
-
-# def calc_loss(output, target, function):
-# 	"""
-# 	calc_loss calculates the loss between output and target given the loss function "function"
-
-# 	inputs:
-# 	output   - array, output of flow through ground nodes
-# 	target   - array, desired target output
-# 	function - string, naming the method used to calculate the loss
-
-# 	output:
-# 	loss - float, loss as in machine learning
-# 	"""
-# 	if function == 'MSE':  # Mean Square error where output and taget are 1D arrays of same length.
-# 		loss = np.mean(np.square(output-target))
-# 	elif function == 'abs_diff':
-# 		loss = np.mean(np.abs((output-target)/((output+target)/2)))  # mean for Allostery since output is 2dim. mean is redundant in regression.
-# 		# loss = np.abs((output-target)/((output+target)/2))
-# 	elif function == 'diff':
-# 		loss = target-output  # mean for Allostery since output is 2dim. mean is redundant in regression.
-# 	elif function == 'MSE_normalized':
-# 		loss = np.mean(np.square(output-target)/((np.square(output)+np.square(target))/4))
-# 	elif function == 'cross_entropy':  # as in Li & Mao 2024 https://arxiv.org/abs/2404.15471
-# 		pc = array([np.exp(output[i])/np.sum(np.exp(output)) for i in range(len(output))])  # predicted probability of output
-# 		loss = - np.dot(target, np.log(pc))
-# 	return loss
 
 
 # def calc_ratio_loss(output, target, input_p):

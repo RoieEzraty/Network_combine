@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from Network_State import Network_State
     from Big_Class import Big_Class
 
-import colors, functions
+import colors, statistics
 
 # ================================
 # functions for plots
@@ -69,8 +69,8 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
         if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax1.axvline(x=t, color='red', linestyle='--', linewidth=1)
     if movmean_loss:
-        movmean_loss_t = functions.moving_average(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t), axis=1),
-                                                          axis=1), 80)
+        movmean_loss_t = statistics.mov_ave(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t), axis=1),
+                                            axis=1), 80)
         ax1.plot(np.abs(movmean_loss_t[1:]))
     else:
         ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))

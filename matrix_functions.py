@@ -31,9 +31,22 @@ def build_input_output_and_ground(Nin: int, Nout: int, in_nodes: NDArray[np.int_
     build_input_output_and_ground builds the input and output pairs and ground node values as arrays
 
     inputs:
-    Nin    - int, # input nodes
-    Ninter - int, # intermediate nodes between input and output
-    Nout   - int, # output nodes
+    Nin        - int, # input nodes
+    Ninter     - int, # intermediate nodes between input and output
+    Nout       - int, # output nodes
+    out_nodes  - optional NDArray of indices of input nodes, otherwise decided here
+    out_nodes  - optional NDArray of indices of output nodes, otherwise decided here
+    add_ground - optional boolean of whether to add ground node as last one
+    net_type   - optional string, type of network structure:
+                 "FC" - Fully Connected, each input connected to each output (and ground)
+                 "square" - 2D square network, each node connected to additional 4
+                 "beads" - crosses where resistances are binary low/high
+    seed       - int, random seed choosing node index of input output etc. for square network
+    net_height - int, number of rows square network
+    net_len    - int, number of columns square network
+    extranNin  - int, number of extra input nodes (of which loss is not calculated)
+    Ninter     - int, number of nodes that are between input and output, floating
+    extraNout  - int, number of extra output nodes (of which loss is not calculated)
 
     outputs:
     input_nodes_arr  - array of all input nodes in task
@@ -56,7 +69,6 @@ def build_input_output_and_ground(Nin: int, Nout: int, in_nodes: NDArray[np.int_
         else:  # normal net
             rand_nodes = rand.sample(range(0, net_height * net_len),
                                      Nin + extraNin + Ninter + Nout + extraNout + Nground)
-        # rand_nodes = array([0, net_height*net_len-1, net_height*(net_len-1), net_len])
         # input nodes
         if in_nodes.size > 0:  # input nodes assigned by user
             input_nodes_arr: NDArray[np.int_] = in_nodes
@@ -90,7 +102,6 @@ def build_input_output_and_ground(Nin: int, Nout: int, in_nodes: NDArray[np.int_
         else:
             ground_nodes_arr = array([], dtype=np.int_)
         extraOutput_nodes_arr = array([], dtype=np.int_)
-        # output_nodes_arr = array([((row+1)*net_height-row)*5-1, (net_height*(net_len-(row+1))+(row+1))*5-1])
         output_nodes_arr = array([((row+1)*net_height-row)*5-1])
     else:  # network is Fully Connected ("FC")
         # input nodes
@@ -103,8 +114,11 @@ def build_input_output_and_ground(Nin: int, Nout: int, in_nodes: NDArray[np.int_
         output_nodes_arr = array([Nin + extraNin + Ninter + i for i in range(Nout)])
         # extra outputs not accounted in loss
         extraOutput_nodes_arr = array([Nin + extraNin + Ninter + Nout + i for i in range(extraNout)], dtype=np.int_)
-        # last node is ground
-        ground_nodes_arr = array([Nin + extraNin + Ninter + Nout + extraNout])
+        if add_ground:
+            # last node is ground
+            ground_nodes_arr = array([Nin + extraNin + Ninter + Nout + extraNout])
+        else:  # don't add a ground node where p=0
+            ground_nodes_arr = array([], dtype=np.int_)
     # put all in tuple
     inInterOutGround_tuple = (input_nodes_arr, extraInputs_nodes_arr, inter_nodes_arr, output_nodes_arr,
                               extraOutput_nodes_arr, ground_nodes_arr)

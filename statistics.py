@@ -6,7 +6,6 @@ from numpy import array, zeros
 from numpy.linalg import norm, inv
 from numpy.typing import NDArray
 from typing import TYPE_CHECKING
-from scipy.signal import savgol_filter
 
 if TYPE_CHECKING:
     from Big_Class import Big_Class

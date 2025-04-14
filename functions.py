@@ -36,13 +36,15 @@ def loss_fn_2samples(output1: NDArray[np.float_], output2: NDArray[np.float_],
     L1: NDArray[np.float_] = desired1-output1
     L2: NDArray[np.float_] = desired2-output2
     loss: NDArray[np.float_] = np.array([L1, L2])
-    if Power1:
+
+    if Power1:  # add Power to loss, as in Stern 2024 power-efficiency arXiv:2310.10437v1
         if not Power2 or not lam:
             print('not enough arguments input to loss function')
         else:
             print('loss before power', loss)
             print('delta_loss', lam * np.array([[Power1], [Power2]]))
             loss += lam * np.array([[Power1], [Power2]])
+
     return loss
 
 
@@ -61,7 +63,8 @@ def loss_fn_1sample(output: np.ndarray, desired: np.ndarray,
     """
     L1: NDArray[np.float_] = desired-output
     loss: NDArray[np.float_] = np.array([L1])
-    if Power:
+
+    if Power:  # add Power to loss, as in Stern 2024 power-efficiency arXiv:2310.10437v1
         if not lam:
             print('not enough arguments input to loss function')
         else:
@@ -69,6 +72,7 @@ def loss_fn_1sample(output: np.ndarray, desired: np.ndarray,
             print('loss before power', loss)
             loss += lam * Power
             print('loss after power ', loss)
+
     return loss
 
 
@@ -146,77 +150,62 @@ def Constraints_nodes(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_
                                                   NDArray[np.float_], NDArray[np.float_],
                                                   NDArray[np.float_]]],) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Constraints_nodes sets up the constraints on nodes for specific problem ("measure" or "dual"),
-    for specific sampled pressure input_drawn.
-    1st part of State.solve_flow_given_problem, after which the flow is solved under solve_flow
+    Assemble node constraints and their pressure values for solving flow in a network.
 
-    inputs:
-    nodes_tuple    - Tuple of indices of nodes: (input_nodes_arr, inter_nodes_arr) for the "measure" problem
-                                                or (input_nodes_arr, inter_nodes_arr, output_nodes_arr) for "dual".
-    nodeData_tuple - Tuple, pressure values of nodes_tuple: (input_nodes_arr, inter_nodes_arr) for the "measure" problem
-                                                            or (input_nodes_arr, inter_nodes_arr, output_nodes_arr)
-                                                            for "dual".
+    Parameters
+    ----------
+    nodes_tuple : tuple of np.ndarray
+        Indices of constrained nodes.
+        Supported formats:
+        - (in_nodes, extra_in_nodes, ground_nodes)
+        - + extra_output_nodes
+        - + output_nodes, extra_output_nodes
+        - + inter_nodes
+    nodeData_tuple : tuple of np.ndarray
+        Corresponding pressure values for the constrained nodes.
 
-    outputs:
-    NodeData    - 1D array at length as "Nodes" corresponding to pressures at each node from "Nodes"
-    Nodes       - 1D array of nodes that have a constraint
-    GroundNodes - 1D array of nodes that have a constraint of ground (outlet)
+    Returns
+    -------
+    NodeData : np.ndarray
+        Pressure values of all constrained nodes, in order.
+    Nodes : np.ndarray
+        Indices of constrained nodes, in the same order as NodeData.
+    GroundNodes : np.ndarray
+        Indices of ground nodes (outlets) for pressure reference.
     """
-    InNodes: NDArray[np.int_] = nodes_tuple[0]
-    InNodeData: NDArray[np.float_] = nodeData_tuple[0]
-    extraInNodes: NDArray[np.int_] = nodes_tuple[1]
-    extraInNodeData: NDArray[np.float_] = nodeData_tuple[1]
-    GroundNodes: NDArray[np.int_] = nodes_tuple[2]
-    if len(nodes_tuple) == 3:  # system is in measure mode, not dual
-        OutputNodes: NDArray[np.int_] = array([], dtype=int)
-        OutputNodeData: NDArray[np.float_] = array([], dtype=float)
-        extraOutputNodes: NDArray[np.int_] = array([], dtype=int)
-        extraOutputNodeData: NDArray[np.float_] = array([], dtype=float)
-        InterNodes: NDArray[np.int_] = array([], dtype=int)
-        InterNodeData: NDArray[np.float_] = array([], dtype=float)
-    elif len(nodes_tuple) == 4:  # system is in measure mode, not dual
-        if len(nodeData_tuple) != 3:
-            print('nodeData_tuple incompatible')
-        else:
-            OutputNodes = array([], dtype=int)
-            OutputNodeData = array([], dtype=float)
-            extraOutputNodes = nodes_tuple[3]
-            extraOutputNodeData = nodeData_tuple[2]
-            InterNodes = array([], dtype=int)
-            InterNodeData = array([], dtype=float)
-    elif len(nodes_tuple) == 5:  # system is in dual mode
-        if len(nodeData_tuple) != 4:
-            print('nodeData_tuple incompatible')
-        else:
-            OutputNodes = nodes_tuple[3]
-            OutputNodeData = nodeData_tuple[2]
-            extraOutputNodes = nodes_tuple[4]
-            extraOutputNodeData = nodeData_tuple[3]
-            InterNodes = array([], dtype=int)
-            InterNodeData = array([], dtype=float)
-    elif len(nodes_tuple) == 6:  # system is in dual mode with inter nodes
-        if len(nodeData_tuple) != 5:
-            print('nodeData_tuple incompatible')
-        else:
-            OutputNodes = nodes_tuple[3]
-            OutputNodeData = nodeData_tuple[2]
-            extraOutputNodes = nodes_tuple[4]
-            extraOutputNodeData = nodeData_tuple[3]
-            InterNodes = nodes_tuple[5]
-            InterNodeData = nodeData_tuple[4]
-    # print('InNodeData', InNodeData)
-    # print('OutputNodes', OutputNodes)
-    # print('OutputNodeData', OutputNodeData)
-    # print('InterNodes', InterNodes)
-    # print('InterNodeData', InterNodeData)
-    NodeData: NDArray[np.float_] = np.append(np.append(np.append(np.append(InNodeData, extraInNodeData), InterNodeData),
-                                                       OutputNodeData), extraOutputNodeData)
-    Nodes: NDArray[np.int_] = np.append(np.append(np.append(np.append(InNodes, extraInNodes), InterNodes),
-                                                  OutputNodes), extraOutputNodes)
+    # Required core inputs
+    InNodes, extraInNodes, GroundNodes = nodes_tuple[:3]
+    InNodeData, extraInNodeData = nodeData_tuple[:2]
+
+    # Initialize optional components
+    OutputNodes = np.array([], dtype=int)
+    OutputNodeData = np.array([], dtype=float)
+    extraOutputNodes = np.array([], dtype=int)
+    extraOutputNodeData = np.array([], dtype=float)
+    InterNodes = np.array([], dtype=int)
+    InterNodeData = np.array([], dtype=float)
+
+    # Dispatch based on additional inputs
+    if len(nodes_tuple) >= 4:
+        extraOutputNodes = nodes_tuple[3]
+        extraOutputNodeData = nodeData_tuple[2]
+    if len(nodes_tuple) >= 5:
+        OutputNodes = nodes_tuple[3]
+        extraOutputNodes = nodes_tuple[4]
+        OutputNodeData = nodeData_tuple[2]
+        extraOutputNodeData = nodeData_tuple[3]
+    if len(nodes_tuple) == 6:
+        InterNodes = nodes_tuple[5]
+        InterNodeData = nodeData_tuple[4]
+
+    # Combine node data and indices in correct order
+    NodeData = np.concatenate([InNodeData, extraInNodeData, InterNodeData, OutputNodeData, extraOutputNodeData])
+    Nodes = np.concatenate([InNodes, extraInNodes, InterNodes, OutputNodes, extraOutputNodes])
+
     return NodeData, Nodes, GroundNodes
 
 
-def random_gen_M(random_state: int, size: NDArray[np.int_]) -> NDArray[np.float_]:
+def random_gen_M(random_state: int, size: int) -> NDArray[np.float_]:
     """
     random_gen_M generates a random M_values array for regression task
     use for multiple_Nin_Nout for example, and before train_loop()
@@ -224,6 +213,9 @@ def random_gen_M(random_state: int, size: NDArray[np.int_]) -> NDArray[np.float_
     inputs:
     random_state - int, random seed
     size         - int, size of M_values, train_loop then decides how many to take
+
+    output:
+    1D [Nin*Nout] array of random values for task matrix M
     """
     # generate random state
     random_gen = np.random.RandomState(random_state)
@@ -257,9 +249,3 @@ def normalize_M(M_values: NDArray[np.float_],
     M_line: NDArray[np.float_] = np.sum(M_mat, axis=1)
     M_values_norm = M_values[:Nin*Nout]/np.max(M_line)*normalization  # max sum over line = "normalization"
     return M_values_norm
-
-
-def moving_average(a, n=3):
-    ret = np.cumsum(a, dtype=float)
-    ret[n:] = ret[n:] - ret[:-n]
-    return ret[n - 1:] / n

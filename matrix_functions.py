@@ -428,15 +428,13 @@ def buildL(DM: NDArray[np.int_], K_mat: NDArray[np.float_], Cstr: NDArray[np.flo
 
 def K_from_R(R_vec: NDArray[np.float_]) -> NDArray[np.float_]:
     """
-    Given resistances, calculate conductivities, output vector and matrix
+    Given resistances, calculate conductances
 
     inputs:
     R_vec - resistances as array sized [NE,]
-    NE    - # edges, int
 
     outputs:
     K_vec - conductances as array sized [NE,]
-    K_vec - conductances as array sized [NE, NE] with off diagonal element = 0
     """
     K_vec: NDArray[np.float_] = 1/R_vec
     # Replace -inf with a large negative value (or directly clip it)
@@ -444,43 +442,40 @@ def K_from_R(R_vec: NDArray[np.float_]) -> NDArray[np.float_]:
     return K_vec
 
 
-def ChangeRFromFlow(BigClass: "Big_Class", R_max, R_min, R_change_scheme='marbles_pressure',
+def ChangeRFromFlow(BigClass: "Big_Class", R_max, R_min, R_change_scheme='beads_pressure',
                     allowed_cells=[], beta=0.0):
     """
-    Change conductivities of full network given velocities
-    This is done by dividing the network into cells
-    and changing the K's cell by cell
+    Change conductivities of full network given velocities - for beads network only
+    Dividing the network into cells and changing the K's cell by cell
 
     input:
     BigClass - class instance including the user variables (Variabs), network structure (Strctr) and networkx (NET)
            and network state (State) class instances
            I will not go into everything used from there to save space here.
-    K_backg         - [NEdges] 2D cubic np.array of background conductivities, as if no marbles
-    NGrid           - number of cells at each side of the network
-    K_change_scheme - str, scheme for how to change conductivities due to u or p. default='marbles_pressure'
+    R_max           - float, value of maximal resistance
+    R_min           - float, value of minimal resistance
+    R_change_scheme - str, scheme for how to change conductivities due to u or p. default='beads_pressure'
     allowed_cells   - np.array of ints denoting the cells whose K's are allowed to change
-    K_max           - float, value of maximal conductivity, default=1
-    K_min           - float, value of minimal conductivity, default=0.5
     beta            - float, vaule for conductivity change proportional to velocity squared, default=0.0
 
     output:
-    K_nxt - [NEdges] 2D cubic np.array of conductivities for next iteration
+    R_nxt - [NEdges] 1D  np.array of resistances for next iteration
     """
-    u = BigClass.State.u
-    thresh = BigClass.Variabs.p_thresh
+    u = BigClass.State.u  # flow velocity
+    thresh = BigClass.Variabs.p_thresh  # threshold pressure to move bead
     R = BigClass.State.R_in_t[-1]
     R_nxt = copy.copy(R)
-    R_backg = BigClass.State.R_backg
+    R_backg = BigClass.State.R_backg  # default resistance configuration for all network
 
     if R_change_scheme == 'propto_current_squared':  # resistances (1/conductances) are proportional to Q^2
         u_sqrd_mean = np.mean(u**2)
         R_nxt = R + beta * u ** 2 / u_sqrd_mean * (R_max - R) / R_max
     # if conductances change due to delta p or Q
-    elif R_change_scheme in ['marbles_u', 'marbles_pressure', 'marbles_p_lower_l_half', 'marbles_p_upper_l_half']:
+    elif R_change_scheme in ['beads_u', 'beads_pressure', 'beads_p_lower_l_half', 'beads_p_upper_l_half']:
         NCells = int(len(R_nxt)/4)  # total number of cells in network
         for i in range(NCells):  # change R's in every cell separately
             # skip update of the R's in that cell since it is not at lower left half of domain
-            if (R_change_scheme in ['marbles_p_lower_l_half', 'marbles_p_upper_l_half']) and i not in allowed_cells:
+            if (R_change_scheme in ['beads_p_lower_l_half', 'beads_p_upper_l_half']) and i not in allowed_cells:
                 print(f'cell #{i} skipped')
                 pass
             else:  # update R's cell by cell
@@ -490,7 +485,7 @@ def ChangeRFromFlow(BigClass: "Big_Class", R_max, R_min, R_change_scheme='marble
                     thresh_sub = thresh[4*i:4*(i+1)]
                 else:
                     thresh_sub = copy.copy(thresh)
-                R_backg_sub = R_backg[4*i:4*(i+1)]  # background conductivities at particular cell
+                R_backg_sub = R_backg[4*i:4*(i+1)]  # background resistances at particular cell
                 # change R's at particular cell
                 R_sub_nxt = ChangeRFromFlow_singleCell(u_sub, thresh_sub, R_sub, R_backg_sub, R_max, R_min,
                                                        R_change_scheme)
@@ -507,22 +502,22 @@ def ChangeRFromFlow_singleCell(u, p_thresh, R, R_backg, R_max, R_min, R_change_s
     u               - 1D np.array of flow through cell edges, 4 elements
     thresh          - threshold of velocity that moves the bead and changes K, float
     R               - [2, 2] 2D cubic np.array of conductivities
-    R_backg         - [2, 2] 2D cubic np.array of background conductivities, as if no marbles
+    R_backg         - [2, 2] 2D cubic np.array of background conductivities, as if no beads
     R_max           - value of maximal conductivity
     R_min           - value of minimal conductivity
-    R_change_scheme - str, scheme for how to change conductivities due to u or p. default='marbles_pressure'
+    R_change_scheme - str, scheme for how to change conductivities due to u or p. default='beads_pressure'
 
     output:
     R_nxt - 2D cubic array of conductivities with 4 elements on diag for next iteration
     """
 
-    # if beadss move due to pressure difference delta_p
-    if R_change_scheme in ['marbles_pressure', 'marbles_p_lower_l_half', 'marbles_p_upper_l_half']:
+    # if beads move due to pressure difference delta_p
+    if R_change_scheme in ['beads_pressure', 'beads_p_lower_l_half', 'beads_p_upper_l_half']:
         delta_p = u * R  # pressure difference at edge
         # all indices where u enters the cell at delta_p greater than threshold to move bead
         u_in_ind = np.where(delta_p > p_thresh)[0]
         u_out_ind = np.where(u == min(u.T))[0]  # indices if minimal flow, possibly exiting the cell
-    elif R_change_scheme == 'marbles_u':  # marbles move due to flow u
+    elif R_change_scheme == 'beads_u':  # beads move due to flow u
         u_thresh = p_thresh / R_min
         # all indices where u enters the cell at velocity greater than threshold to move bead
         u_in_ind = np.where(u > u_thresh)[0]
@@ -603,43 +598,3 @@ def ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarr
     f[NN:, 0] = CStr[:, -1]
 
     return CStr, CStr[:, :-1], f
-
-
-def edges_from_EI_EJ(nodes_array, EI, EJ) -> NDArray[np.int_]:
-    """
-    get all network edges connected to nodes in the nodes_array
-    """
-    edges: NDArray[np.int_] = array([np.where(np.append(EI, EJ) == nodes_array[i])[0] % len(EI)
-                                     for i in range(len(nodes_array))])
-    return edges
-
-
-def edge_directions_from_EI(nodes_array, EI, edges) -> NDArray[np.int_]:
-    """
-    get all directions of edges connected to nodes in nodes_array
-    1 = input to node
-    -1 = output from node
-    """
-    input_edges = np.array([np.where(EI == nodes_array[i])[0] for i in range(len(nodes_array))])
-
-    # Check if elements of array1 are in array2
-    edge_directions = np.where(np.isin(edges, input_edges), -1, 1)
-    return edge_directions
-
-
-def random_gen_M(random_state: int, size: int) -> NDArray[np.float_]:
-    """
-    random_gen_M generates a random M_values array for regression task
-    use for multiple_Nin_Nout for example, and before train_loop()
-
-    inputs:
-    random_state - int, random seed
-    size         - size of M_values, train_loop then decides how many to take
-    """
-    # generate random state
-    random_gen = np.random.RandomState(random_state)
-
-    # Generate random values with the defined random state
-    M_values = random_gen.rand(size)
-
-    return M_values

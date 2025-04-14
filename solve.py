@@ -3,7 +3,7 @@ import numpy as np
 
 from numpy.linalg import inv as inv
 from numpy.typing import NDArray
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Union
 from typing import TYPE_CHECKING
 
 import matrix_functions
@@ -67,7 +67,9 @@ def round_small(p: NDArray[np.float_], u: NDArray[np.float_], roundto: float = 1
     return p, u
 
 
-def dot_triple(X: NDArray[np.float_], Y: NDArray[np.float_], Z: NDArray[np.float_]) -> NDArray[np.float_]:
+def dot_triple(X: Union[NDArray[np.float_], NDArray[np.int_]],
+               Y: Union[NDArray[np.float_], NDArray[np.int_]],
+               Z: Union[NDArray[np.float_], NDArray[np.int_]]) -> NDArray[np.float_]:
     """
     Matrix triple product X @ Y @ Z.
 

@@ -611,7 +611,7 @@ class Network_State:
         elif BigClass.Strctr.net_type == 'beads':
             self.R_in_t.append(matrix_functions.ChangeRFromFlow(BigClass, BigClass.Variabs.R_max,
                                                                 BigClass.Variabs.R_min,
-                                                                R_change_scheme='marbles_pressure', allowed_cells=[],
+                                                                R_change_scheme='beads_pressure', allowed_cells=[],
                                                                 beta=0.0))
         # if user asks to not print
         if BigClass.Variabs.supress_prints:

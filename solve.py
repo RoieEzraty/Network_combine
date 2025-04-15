@@ -18,12 +18,13 @@ if TYPE_CHECKING:
 
 
 # @lru_cache(maxsize=20)
-def solve_flow(Strctr: "Network_Structure", CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
+def solve_flow(Strctr: "Network_Structure",
+               CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
                K_vec: NDArray[np.float_]) -> Tuple[NDArray[np.float_], NDArray[np.float_]]:
     """
     Solves for the pressure at nodes and flow at edges, given Lagrangian etc.
     flow at edge defined as difference in pressure between input and output nodes time conductivity at each edge.
-    2nd part of State.solve_flow_given_problem, Comes after functions.setup_constraints_given_pin.
+    2nd part of State.solve_flow_given_modality, Comes after functions.setup_constraints_given_pin.
 
     input:
     Strctr: "Network_Structure" class instance with the input, intermediate and output nodes

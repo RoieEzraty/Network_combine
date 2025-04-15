@@ -32,39 +32,33 @@ class Network_State:
         self.t: int = 0  # time, defined as number of R updates, i.e. times the learning rate alpha is used.
         self.p: NDArray[np.float_] = array([])  # pressure
         self.u: NDArray[np.float_] = array([])  # flow rate
-        self.input_drawn_in_t: List[NDArray[np.float_]] = []  # pressure at inputs in time, sampled
-        self.extraInput_in_t: List[NDArray[np.float_]] = []  # pressure at extra inputs in time
-        self.inter_in_t: List[NDArray[np.float_]] = []
-        # pressure at outputs and extra in time
-        self.output_in_t: List[NDArray[np.float_]] = []
-        self.extraOutput_in_t: List[NDArray[np.float_]] = []
-        self.desired_in_t: List[NDArray[np.float_]] = []
-        # inputs and extra inputs at update modality in time
-        # self.input_update_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.Nin)]
-        # self.extraInput_update_in_t: List[NDArray[np.float_]] = [2. * np.ones(Variabs.extraNin)]
-        # self.inter_update_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
-        # # outputs and extra outputs during update modality in time
-        # self.output_update_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.Nout)]
-        # self.extraOutput_update_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNout)]
+        # "measurement" modality
+        self.input_drawn_in_t: List[NDArray[np.float_]] = []  # pressure at inputs in time
+        self.extraInput_in_t: List[NDArray[np.float_]] = []  # pressure at additional inputs in time
+        self.inter_in_t: List[NDArray[np.float_]] = []  # pressure at intermediate nodes (not input/output) in time
+        self.output_in_t: List[NDArray[np.float_]] = []  # pressure at outputs in time
+        self.extraOutput_in_t: List[NDArray[np.float_]] = []  # pressure at additional outputs, loss not calculated
+        self.desired_in_t: List[NDArray[np.float_]] = []  # desired output pressure for each sample, input dependent
+        # "update" modality
         if input_update_initial.size:
             self.input_update_in_t: List[NDArray[np.float_]] = [input_update_initial]
         else:
             self.input_update_in_t = [1. * np.ones(Variabs.Nin)]
         self.extraInput_update_in_t: List[NDArray[np.float_]] = [1. * np.ones(Variabs.extraNin)]
         self.inter_update_in_t: List[NDArray[np.float_]] = [np.random.random(Variabs.Ninter)]
-        # outputs and extra outputs during update modality in time
         if output_update_initial.size:
             self.output_update_in_t: List[NDArray[np.float_]] = [output_update_initial]
         else:
             self.output_update_in_t = [0.5 * np.ones(Variabs.Nout)]
         self.extraOutput_update_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
+        # Loss and Power
         self.loss_in_t: List[NDArray[np.float_]] = []
         self.loss_norm_in_t: List[NDArray[np.float_]] = []  # normalized loss
-        self.Power_norm_in_t: List[NDArray[np.float_]] = []
+        self.Power_norm_in_t: List[NDArray[np.float_]] = []  # Power dissipation in whole network, normalized by inputs
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_update_in_t[-1])
-        self.reset_thresh_b: float = 1e4
-        self.reset_thresh_s: float = -1e4
+        self.reset_thresh_b: float = 1e4  # large positive value for R above which R=0
+        self.reset_thresh_s: float = -1e4  # large negative value for R above which R=0
         # self.reset_thresh_s: float = 0
 
     def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
@@ -73,22 +67,22 @@ class Network_State:
 
         inputs:
         BigClass - class instance including User_Variables, Network_Structure instances, etc.
-        R_vec_i  - initial resistances, array of size [NE,]
+        R_vec_i  - optional initial resistances, array of size [NE,]
         """
-        if R_vec_i is not None:
+        if R_vec_i is not None:  # user speficied initial resistances
             if np.size(R_vec_i) != BigClass.Strctr.NE:
                 print('R_vec_i has wrong size, initializing all ones')
                 self.R_in_t: List[NDArray[np.float_]] = [np.ones((BigClass.Strctr.NE), dtype=float)]
             else:
                 self.R_in_t = [R_vec_i]
-        else:
+        else:  # uniform resistances - not user specified
             self.R_in_t = [np.ones((BigClass.Strctr.NE), dtype=float)]
-        # background resistances for bead net
+        # resistances for bead net as if w/out beads
         self.R_backg: NDArray[np.float_] = BigClass.Variabs.R_min * np.ones(BigClass.Strctr.NE)
 
     def initiate_accuracy_vec(self, BigClass: "Big_Class", measure_accuracy_every: int) -> None:
         """
-        Initiate array for accuracy with length=iteration/measure_accuracy_every
+        For classification task, initiate array for accuracy with length=iteration/measure_accuracy_every
 
         inputs:
         BigClass               - class instance including User_Variables, Network_Structure instances, etc.
@@ -99,20 +93,24 @@ class Network_State:
         self.t_for_accuracy: NDArray[np.int_] = zeros(accuracy_size, dtype=np.int_)
 
     def draw_p_in_and_desired(self, Variabs: "User_Variables", i: int, noise_to_extra: Optional[bool] = False,
-                              problem: Optional[str] = "measure") -> None:
+                              modality: Optional[str] = "measure") -> None:
         """
         Every time step, draw random input pressures and calculate the desired output given input
 
         inputs:
-        Variabs - User_Variables class
-        i       - int, iteration #
+        Variabs        - User_Variables class
+        i              - int, iteration #
+        noise_to_extra - bool, whether to add noise to p on extra nodes
+        modality       - str, "measure" for measurement modality where outputs are measured
+                              "update" for update modality where outputs are constained
+                              and after which resistances change
 
         outputs
         input_drawn: np.ndarray sized [Nin,], input pressures
         desired: np.ndarray sized [Nout,], desired output defined by the task M*p_input
         """
         # draw  input from train or test sets
-        if problem == 'measure_for_accuracy':
+        if modality == 'measure_for_accuracy':
             self.input_drawn: NDArray[np.float_] = copy.copy(Variabs.X_test[i % np.shape(Variabs.X_test)[0]])
         else:
             self.input_drawn = copy.copy(Variabs.X_train[i % np.shape(Variabs.X_train)[0]])
@@ -127,7 +125,7 @@ class Network_State:
 
         # calculate desired output from train or test sets
         if Variabs.task_type == 'Iris_classification':
-            if problem == 'measure_for_accuracy':
+            if modality == 'measure_for_accuracy':
                 self.desired: NDArray[np.float_] = \
                     np.matmul(Variabs.y_test[i % np.shape(Variabs.X_test)[0]], self.targets_mat)
             else:
@@ -137,7 +135,7 @@ class Network_State:
             self.desired = Variabs.y_train[i % np.shape(Variabs.X_train)[0]]
 
         # append to arrays in time
-        if problem == 'measure_for_accuracy':  # don't add to time vector if this is accuracy calculation
+        if modality == 'measure_for_accuracy':  # don't add to time vector if this is accuracy calculation
             pass
         else:
             self.input_drawn_in_t.append(self.input_drawn)
@@ -145,9 +143,7 @@ class Network_State:
             self.desired_in_t.append(self.desired)
 
         # optionally print to user
-        if Variabs.supress_prints:
-            pass
-        else:  # print
+        if not Variabs.supress_prints:
             print('input_drawn', self.input_drawn)
             # print('extraInput', self.extraInput)
             print('desired output=', self.desired)
@@ -167,39 +163,51 @@ class Network_State:
 
     def assign_targets_Iris(self, BigClass: "Big_Class") -> None:
         """
+        Compute and assign class-specific output targets for the Iris classification task.
+
+        For each of the 3 Iris classes:
+        - Computes the mean of the input data belonging to that class.
+        - Simulates the network flow for that class-specific input mean.
+        - Stores the resulting output as the target for that class.
+
+        Parameters
+        ----------
+        BigClass - class instance including User_Variables, Network_Structure instances, etc.
         """
         targets_mat: NDArray[np.float_] = zeros([3, 3], dtype=np.float_)
         for j in range(3):  # go over all 3 Iris classes
-            # take the mean of all data inputs of a specific Iris class
-            self.draw_p_means_Iris(BigClass.Variabs, j)
-            # measure output while input is mean, don't change resistances
-            self.solve_flow_given_problem(BigClass, "measure_for_mean")
+            self.draw_p_means_Iris(BigClass.Variabs, j)  # compute class-mean input for class j
+            self.solve_flow_given_modality(BigClass, "measure_for_mean")  # simulate without changing resistances
             targets_mat[j] = self.output  # The new target is the outputs of the mean input
         self.targets_mat: NDArray[np.float_] = targets_mat  # save into targets_mat array
-        if BigClass.Variabs.supress_prints:  # don't print outputs
-            pass
-        else:  # print
+
+        # optionally print to user
+        if not BigClass.Variabs.supress_prints:
             print('targets_mat', self.targets_mat)
 
-    def solve_flow_given_problem(self, BigClass: "Big_Class", problem: str,
-                                 noise_to_extra: Optional[bool] = False, access_inters: Optional[bool] = False) -> None:
+    def solve_flow_given_modality(self, BigClass: "Big_Class", modality: str,
+                                  noise_to_extra: Optional[bool] = False,
+                                  access_inters: Optional[bool] = False) -> None:
         """
         Calculates the constraint matrix Cstr, then solves the flow,
         using functions from functions.py and solve.py,
-        given the problem in problem variable.
+        given the modality variable.
 
         inputs:
-        BigClass  - class instance including User_Variables, Network_Structure instances, etc.
-        problem   - string stating the problem type: "measure" for no constraint on outputs
+        BigClass - class instance including User_Variables, Network_Structure instances, etc.
+        modality - string stating the modality type: "measure" for no constraint on outputs
                                                      "measure_for_mean" for outputs of mean of Iris class
+                                                     "measure_for_accuracy" for outputs of mean of Iris class
                                                      "update" for constrained outputs as well
+        noise_to_extra - optional bool, whether to add noise to p on extra nodes
+        access_inters  - optional bool, whether to change pressure in inter nodes
 
         outputs:
         p - pressure at every node under the specific BC, after convergence while allowing conductivities to change
         u - flow at every edge under the specific BC, after convergence while allowing conductivities to change
         """
         # Calculate pressure p and flow u
-        if problem == 'measure' or problem == 'measure_for_mean' or problem == 'measure_for_accuracy':
+        if modality == 'measure' or modality == 'measure_for_mean' or modality == 'measure_for_accuracy':
             if noise_to_extra:
                 CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
                 CstrTuple = \
@@ -218,7 +226,7 @@ class Network_State:
                                                           (self.input_drawn, self.extraInput),
                                                           BigClass.Strctr.NN, BigClass.Strctr.EI,
                                                           BigClass.Strctr.EJ)
-        elif problem == 'update':
+        elif modality == 'update':
             if BigClass.Variabs.access_interNodes or access_inters:  # if update modality accesses interNodes separately
                 CstrTuple = \
                     functions.setup_constraints_given_pin((BigClass.Strctr.input_nodes_arr,
@@ -250,19 +258,19 @@ class Network_State:
 
         self.p, self.u = solve.solve_flow(BigClass.Strctr, CstrTuple, self.K_vec)
 
-        # Update the State class variables
-        if problem in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:
+        # add to State class variables
+        if modality in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:
             self.inter = copy.copy(self.p[BigClass.Strctr.inter_nodes_arr].ravel())
             self.output: NDArray[np.float_] = copy.copy(self.p[BigClass.Strctr.output_nodes_arr].ravel())
             self.extraOutput = copy.copy(self.p[BigClass.Strctr.extraOutput_nodes_arr].ravel())
-            if BigClass.Variabs.supress_prints:
-                pass
-            else:  # print
+
+            # print
+            if not BigClass.Variabs.supress_prints:
                 # print('inter measured=', self.inter)
                 print('output measured=', self.output)
                 # print('extraOutput measured=', self.extraOutput)
 
-            if problem == 'measure':  # Only save in time if measuring during training
+            if modality == 'measure':  # Only save in time if measuring during training
                 self.output_in_t.append(self.output)
                 self.extraOutput_in_t.append(self.extraOutput)
                 self.inter_in_t.append(self.inter)
@@ -333,10 +341,9 @@ class Network_State:
             self.input_update_nxt = self.input_update_in_t[0]
 
         self.input_update_in_t.append(self.input_update_nxt)  # append into list in time
-        # if user ask to not print
-        if BigClass.Variabs.supress_prints:
-            pass
-        else:  # print
+
+        # print
+        if not BigClass.Variabs.supress_prints:
             print('input_update_nxt=', self.input_update_nxt)
 
     def update_extraInput(self, BigClass: "Big_Class"):
@@ -387,10 +394,9 @@ class Network_State:
             self.extraInput_update_nxt = self.extraInput_update_in_t[0]
 
         self.extraInput_update_in_t.append(self.extraInput_update_nxt)  # append into list in time
-        # if user ask to not print
-        if BigClass.Variabs.supress_prints:
-            pass
-        else:  # print
+
+        # print
+        if not BigClass.Variabs.supress_prints:
             print('extraInput_update_nxt=', self.extraInput_update_nxt)
 
     def update_inter(self, BigClass: "Big_Class") -> None:
@@ -439,10 +445,9 @@ class Network_State:
             self.inter_update_nxt = self.inter_update_in_t[0]
 
         self.inter_update_in_t.append(self.inter_update_nxt)  # append into list in time
-        # if user ask to not print
-        if BigClass.Variabs.supress_prints:
-            pass
-        else:  # print
+
+        # print
+        if not BigClass.Variabs.supress_prints:
             print('inter_update_nxt=', self.inter_update_nxt)
 
     def update_output(self, BigClass: "Big_Class"):
@@ -506,10 +511,9 @@ class Network_State:
             self.output_update_nxt = self.output_update_in_t[0]
 
         self.output_update_in_t.append(self.output_update_nxt)
-        # if user ask to not print
-        if BigClass.Variabs.supress_prints:
-            pass
-        else:  # print
+
+        # print
+        if not BigClass.Variabs.supress_prints:
             print('output_update_nxt', self.output_update_nxt)
 
     def update_extraOutput(self, BigClass: "Big_Class"):
@@ -553,10 +557,9 @@ class Network_State:
             self.extraOutput_update_nxt = self.extraOutput_update_in_t[0]
 
         self.extraOutput_update_in_t.append(self.extraOutput_update_nxt)
-        # if user ask to not print
-        if BigClass.Variabs.supress_prints:
-            pass
-        else:  # print
+
+        # print
+        if not BigClass.Variabs.supress_prints:
             print('extraOutput_update_nxt', self.extraOutput_update_nxt)
 
     def update_Rs(self, BigClass: "Big_Class", delta_K=[]) -> None:
@@ -613,10 +616,9 @@ class Network_State:
                                                                 BigClass.Variabs.R_min,
                                                                 R_change_scheme='beads_pressure', allowed_cells=[],
                                                                 beta=0.0))
-        # if user asks to not print
-        if BigClass.Variabs.supress_prints:
-            pass
-        else:  # print
+
+        # print
+        if not BigClass.Variabs.supress_prints:
             pass
             # print('R_nxt', self.R_in_t[-1])
         # self.R_in_t[-1][BigClass.Strctr.EJ == BigClass.Strctr.ground_nodes_arr] = 1.
@@ -728,16 +730,16 @@ class Network_State:
     def calc_Power_norm(self, BigClass: "Big_Class"):
         self.Power_norm = statistics.power_dissip_norm(self.u, self.R_in_t[-1], self.input_drawn)
         self.Power_norm_in_t.append(self.Power_norm)
-        if BigClass.Variabs.supress_prints:
-            pass
-        else:
+
+        # print
+        if not BigClass.Variabs.supress_prints:
             print('Power dissipation normalized', self.Power_norm)
 
     def calculate_accuracy_fullDataset(self, BigClass: "Big_Class") -> None:
         self.accuracy_vec: NDArray[np.int_] = zeros(np.shape(BigClass.Variabs.dataset)[0], dtype=np.int_)
         for i, datapoint in enumerate(BigClass.Variabs.dataset):
-            self.draw_p_in_and_desired(BigClass.Variabs, i, problem='measure_for_accuracy')
-            self.solve_flow_given_problem(BigClass, "measure_for_accuracy")  # measure and don't change resistances
+            self.draw_p_in_and_desired(BigClass.Variabs, i, modality='measure_for_accuracy')
+            self.solve_flow_given_modality(BigClass, "measure_for_accuracy")  # measure and don't change resistances
             self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
                                                                          BigClass.Variabs.targets[i])
         self.accuracy = np.mean(self.accuracy_vec)
@@ -745,8 +747,8 @@ class Network_State:
     def calculate_accuracy_testset(self, BigClass: "Big_Class") -> None:
         self.accuracy_vec = zeros(np.shape(BigClass.Variabs.X_test)[0], dtype=np.int_)
         for i, datapoint in enumerate(BigClass.Variabs.X_test):
-            self.draw_p_in_and_desired(BigClass.Variabs, i, problem='measure_for_accuracy')
-            self.solve_flow_given_problem(BigClass, "measure_for_accuracy")  # measure and don't change resistances
+            self.draw_p_in_and_desired(BigClass.Variabs, i, modality='measure_for_accuracy')
+            self.solve_flow_given_modality(BigClass, "measure_for_accuracy")  # measure and don't change resistances
             # self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,
             #                                                              BigClass.Variabs.targets[i])
             self.accuracy_vec[i] = statistics.calculate_accuracy_1sample(self.output, self.targets_mat,

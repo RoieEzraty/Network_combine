@@ -248,7 +248,7 @@ def plot_colors(custom_cmap, red):
 def plot_accuracy(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],
                   dataset_len: np.int_) -> None:
     """
-    Plots the accuracy in time for the Iris problem
+    Plots the accuracy in time for the Iris classification task
 
     input:
     t_final        - int, final time step
@@ -327,7 +327,7 @@ def plot_importants_w_measured(BigClass: "Big_Class", M: Optional[NDArray[np.int
     """
     one plot with 4 subfigures of
     1) output / desired - 1.
-    2) inputs and outputs of the update problem
+    2) inputs and outputs of the update modality
     3) resistances in time
     4) absolute mean value of loss in time
 

@@ -100,9 +100,9 @@ def setup_constraints_given_pin(nodes_tuple: Union[Tuple[NDArray[np.int_], NDArr
     from which it calculates the constraints matrices Cstr and f.
 
     inputs:
-    nodes_tuple    - Tuple containing indices of nodes: (input_nodes_arr, inter_nodes_arr) for the "measure" problem
+    nodes_tuple    - Tuple containing indices of nodes: (input_nodes_arr, inter_nodes_arr) for "measurement" modality
                      or (input_nodes_arr, inter_nodes_arr, output_nodes_arr) for the "dual".
-    nodeData_tuple - Tuple, pressure values of nodes_tuple: (input_nodes_arr, inter_nodes_arr) for the "measure" problem
+    nodeData_tuple - Tuple, pressure values of nodes_tuple: (input_nodes_arr, inter_nodes_arr) for "measurement" modality
                                                             or (input_nodes_arr, inter_nodes_arr, output_nodes_arr)
                                                             for the "dual".
     NN             - int, total number of nodes in network

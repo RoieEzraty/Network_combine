@@ -313,7 +313,7 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
                              dataset_shape: NDArray[np.int_], Colorscheme: "Color_Scheme",
                              smooth: bool = True, window_size: int = 5) -> None:
     """
-    Plots the accuracy in time for the Iris problem where R_dot=delta_p
+    Plots the accuracy in time for the Iris classification task where R_dot=delta_p
 
     input:
     t_final        - int, final time step
@@ -376,7 +376,7 @@ def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_acc
                               accuracy_in_t_deltaR_propto_Power: np.ndarray,
                               Colorscheme: "Color_Scheme", smooth: bool = True, window_size: int = 5):
     """
-    Plots the accuracy in time for the Iris problem using 4 materials.
+    Plots the accuracy in time for the Iris classification task using 4 materials.
 
     input:
     t_final        - int, final time step

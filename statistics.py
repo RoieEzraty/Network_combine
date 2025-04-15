@@ -271,7 +271,7 @@ def dK(R_in_t: list[NDArray[np.float_]]) -> NDArray[np.float_]:
 
 # def calculate_p_nudge(BigClass, State, error=0.0, p_in=0.0, error_prev=0.0, p_in_prev=0.0):
 # 	"""
-# 	calculate_p_nudge calculates the nudged pressure - whether in contrastive learning or dual problem
+# 	calculate_p_nudge calculates the nudged pressure - whether in contrastive learning or update modality
 
 # 	inputs:
 # 	BigClass  - class instance with all relevant data

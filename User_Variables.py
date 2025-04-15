@@ -74,6 +74,8 @@ class User_Variables:
         self.R_min = R_min
         self.anneal = anneal
         self.T_annealing = T_annealing
+        self.reset_thresh_b: float = 1e4  # large positive value above which "update" modality input resets to initial
+        self.reset_thresh_s: float = -1e4  # large negative value below which "update" modality input resets to initial
 
     def create_dataset_and_targets(self, random_state, M_values: Optional[NDArray[np.float_]] = None,
                                    train_size: Optional[int] = None) -> None:

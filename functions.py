@@ -249,3 +249,31 @@ def normalize_M(M_values: NDArray[np.float_],
     M_line: NDArray[np.float_] = np.sum(M_mat, axis=1)
     M_values_norm = M_values[:Nin*Nout]/np.max(M_line)*normalization  # max sum over line = "normalization"
     return M_values_norm
+
+
+def reset_update(vec: NDArray[np.float_], reset_thresh_b: float, reset_thresh_s: float) -> bool:
+    """
+    Reset the input_update_nxt vector if any values diverge too far from expected bounds.
+
+    Parameters
+    ----------
+    vec : NDArray[np.float_]
+        update modality vector (e.g. State.input_update_nxt)
+    reset_thresh_b : float
+        Threshold for detecting abnormally large input values (above this).
+    reset_thresh_s : float
+        Threshold for detecting abnormally small input values (below this).
+
+    Returns
+    -------
+    boolean whether to reset update values or not
+    """
+    # find indices in input_update_nxt where values diverge
+    reset_inds_big = vec > reset_thresh_b
+    reset_inds_small = vec < reset_thresh_s
+    # reset them to initial value
+    # self.input_update_nxt[reset_inds] = self.input_update_in_t[0][reset_inds]
+    if np.any(array([reset_inds_big, reset_inds_small])):
+        return True
+    else:
+        return False

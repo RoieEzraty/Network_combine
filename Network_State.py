@@ -60,9 +60,6 @@ class Network_State:
         self.Power_norm_in_t: List[NDArray[np.float_]] = []  # Power dissipation in whole network, normalized by inputs
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_update_in_t[-1])
-        self.reset_thresh_b: float = 1e4  # large positive value for R above which R=0
-        self.reset_thresh_s: float = -1e4  # large negative value for R above which R=0
-        # self.reset_thresh_s: float = 0
 
     def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
         """
@@ -302,26 +299,20 @@ class Network_State:
         loss: NDArray[np.float_] = self.loss_in_t[-1]  # copy loss
         input_update: NDArray[np.float_] = self.input_update_in_t[-1]
         input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]
-        # dot product for alpha in pressure update
+
         if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
             input_drawn_prev: NDArray[np.float_] = self.input_drawn_in_t[-2]
-            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
-                delta: NDArray[np.float_] = (input_drawn-input_drawn_prev) * self.alpha * \
-                    (np.mean(loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))
-            else:
-                delta = (input_drawn-input_drawn_prev) * self.alpha * np.mean(loss[0]-loss[1])
-        else:  # if one sample of p in for every loss calcaultion are to be taken
-            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
-                delta = (input_drawn)*self.alpha*(np.mean(loss[0])/np.linalg.norm(loss[0]))  # normalize loss
-                # delta = (input_drawn)*self.alpha*np.mean(loss[0])*BigClass.Variabs.Nin  # don't normalize loss
-                # delta = (input_drawn)*self.alpha*np.abs(loss[0])*np.sign(np.mean(loss[0]))  # single sign of loss
-                # delta = (input_drawn)  # just the input
-                # delta = self.alpha*np.mean(loss[0])/input_drawn  # divide by input
-                # delta = np.ones(BigClass.Variabs.Nin)*self.alpha*np.mean(loss[0])  # no input
-            else:
-                # delta = (input_drawn)*self.alpha*np.mean(loss[0])  # alpha*L*x using dot product
-                delta = (input_drawn)*self.alpha*np.mean(loss[0])    # alpha*mean(L)*x
-            # print('input delta ', delta)
+        else:  # use zero input, output and loss for 2nd sample
+            input_drawn_prev = np.zeros([BigClass.Variabs.Nin])
+            loss = np.array([copy.copy(loss[0]), np.zeros([BigClass.Variabs.Nout])])  # good loss dims for next "if"
+            print('loss ', loss)
+        if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
+            delta: NDArray[np.float_] = (input_drawn-input_drawn_prev) * self.alpha * \
+                (np.mean(loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))
+        else:
+            delta = (input_drawn-input_drawn_prev) * self.alpha * np.mean(loss[0]-loss[1])
+
+        print('delta ', delta)
 
         # update modality is different under schemes of change of R
 
@@ -337,12 +328,8 @@ class Network_State:
             self.input_update_nxt = input_update
 
         # reset "update" modality values if diverging
-        # find indices in input_update_nxt where values diverge
-        reset_inds_big = np.abs(self.input_update_nxt) > self.reset_thresh_b
-        reset_inds_small = self.input_update_nxt < self.reset_thresh_s
-        # reset them to initial value
-        # self.input_update_nxt[reset_inds] = self.input_update_in_t[0][reset_inds]
-        if np.any(array([reset_inds_big, reset_inds_small])):
+        if functions.reset_update(self.input_update_nxt, BigClass.Variabs.reset_thresh_b,
+                                  BigClass.Variabs.reset_thresh_s):
             self.input_update_nxt = self.input_update_in_t[0]
 
         self.input_update_in_t.append(self.input_update_nxt)  # append into list in time
@@ -389,12 +376,8 @@ class Network_State:
             self.extraInput_update_nxt = extraInput_update
 
         # reset "update" modality values if diverging
-        # find indices in input_update_nxt where values diverge
-        reset_inds_big = np.abs(self.extraInput_update_nxt) > self.reset_thresh_b
-        reset_inds_small = self.extraInput_update_nxt < self.reset_thresh_s
-        # reset them to initial value
-        # self.extraInput_update_nxt[reset_inds] = self.extraInput_update_in_t[0][reset_inds]
-        if np.any(array([reset_inds_big, reset_inds_small])):
+        if functions.reset_update(self.extraInput_update_nxt, BigClass.Variabs.reset_thresh_b,
+                                  BigClass.Variabs.reset_thresh_s):
             self.extraInput_update_nxt = self.extraInput_update_in_t[0]
 
         self.extraInput_update_in_t.append(self.extraInput_update_nxt)  # append into list in time
@@ -439,12 +422,8 @@ class Network_State:
             self.inter_update_nxt = inter_update
 
         # reset "update" modality values if diverging
-        # find indices in input_update_nxt where values diverge
-        reset_inds_big = np.abs(self.inter_update_nxt) > self.reset_thresh_b
-        reset_inds_small = self.inter_update_nxt < self.reset_thresh_s
-        # reset them to initial value
-        # self.inter_update_nxt[reset_inds] = self.inter_update_in_t[0][reset_inds]
-        if np.any(array([reset_inds_big, reset_inds_small])):
+        if functions.reset_update(self.inter_update_nxt, BigClass.Variabs.reset_thresh_b,
+                                  BigClass.Variabs.reset_thresh_s):
             self.inter_update_nxt = self.inter_update_in_t[0]
 
         self.inter_update_in_t.append(self.inter_update_nxt)  # append into list in time
@@ -498,12 +477,8 @@ class Network_State:
             self.output_update_nxt = output_update
 
         # reset "update" modality values if diverging
-        # find indices in input_update_nxt where values diverge
-        reset_inds_big = np.abs(self.output_update_nxt) > self.reset_thresh_b
-        reset_inds_small = self.output_update_nxt < self.reset_thresh_s
-        # reset them to initial value
-        # self.output_update_nxt[reset_inds] = self.output_update_in_t[0][reset_inds]
-        if np.any(array([reset_inds_big, reset_inds_small])):
+        if functions.reset_update(self.output_update_nxt, BigClass.Variabs.reset_thresh_b,
+                                  BigClass.Variabs.reset_thresh_s):
             self.output_update_nxt = self.output_update_in_t[0]
 
         self.output_update_in_t.append(self.output_update_nxt)
@@ -543,12 +518,8 @@ class Network_State:
             self.extraOutput_update_nxt = extraOutput_update
 
         # reset "update" modality values if diverging
-        # find indices in input_update_nxt where values diverge
-        reset_inds_big = np.abs(self.extraOutput_update_nxt) > self.reset_thresh_b
-        reset_inds_small = self.extraOutput_update_nxt < self.reset_thresh_s
-        # reset them to initial value
-        # self.extraOutput_update_nxt[reset_inds] = self.extraOutput_update_in_t[0][reset_inds]
-        if np.any(array([reset_inds_big, reset_inds_small])):
+        if functions.reset_update(self.extraOutput_update_nxt, BigClass.Variabs.reset_thresh_b,
+                                  BigClass.Variabs.reset_thresh_s):
             self.extraOutput_update_nxt = self.extraOutput_update_in_t[0]
 
         self.extraOutput_update_in_t.append(self.extraOutput_update_nxt)

@@ -207,56 +207,53 @@ class Network_State:
         u - flow at every edge under the specific BC, after convergence while allowing conductivities to change
         """
         # Calculate pressure p and flow u
-        if modality == 'measure' or modality == 'measure_for_mean' or modality == 'measure_for_accuracy':
+        # Select nodes and pressure data based on modality
+        nodes_tuple: Union[Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]],
+                           Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_], NDArray[np.int_]],
+                           Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
+                                 NDArray[np.int_]],
+                           Tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.int_], NDArray[np.int_],
+                                 NDArray[np.int_], NDArray[np.int_]]]
+        nodeData_tuple: Union[Tuple[NDArray[np.float_], NDArray[np.float_]],
+                              Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
+                              Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]],
+                              Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_], NDArray[np.float_],
+                                    NDArray[np.float_]]]
+        if modality in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:
             if noise_to_extra:
-                CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
-                CstrTuple = \
-                    functions.setup_constraints_given_pin((BigClass.Strctr.input_nodes_arr,
-                                                           BigClass.Strctr.extraInput_nodes_arr,
-                                                           BigClass.Strctr.ground_nodes_arr,
-                                                           BigClass.Strctr.inter_nodes_arr),
-                                                          (self.input_drawn, self.extraInput, self.inter),
-                                                          BigClass.Strctr.NN,
-                                                          BigClass.Strctr.EI, BigClass.Strctr.EJ)
+                nodes_tuple = (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
+                               BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.inter_nodes_arr)
+                nodeData_tuple = (self.input_drawn, self.extraInput, self.inter)
             else:
-                CstrTuple = \
-                    functions.setup_constraints_given_pin((BigClass.Strctr.input_nodes_arr,
-                                                           BigClass.Strctr.extraInput_nodes_arr,
-                                                           BigClass.Strctr.ground_nodes_arr),
-                                                          (self.input_drawn, self.extraInput),
-                                                          BigClass.Strctr.NN, BigClass.Strctr.EI,
-                                                          BigClass.Strctr.EJ)
+                nodes_tuple = (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
+                               BigClass.Strctr.ground_nodes_arr)
+                nodeData_tuple = (self.input_drawn, self.extraInput)
         elif modality == 'update':
-            if BigClass.Variabs.access_interNodes or access_inters:  # if update modality accesses interNodes separately
-                CstrTuple = \
-                    functions.setup_constraints_given_pin((BigClass.Strctr.input_nodes_arr,
-                                                           BigClass.Strctr.extraInput_nodes_arr,
-                                                           BigClass.Strctr.ground_nodes_arr,
-                                                           BigClass.Strctr.output_nodes_arr,
-                                                           BigClass.Strctr.extraOutput_nodes_arr,
-                                                           BigClass.Strctr.inter_nodes_arr),
-                                                          (self.input_update_in_t[-1], self.extraInput_update_in_t[-1],
-                                                          self.output_update_in_t[-1],
-                                                          self.extraOutput_update_in_t[-1], self.inter_update_in_t[-1]),
-                                                          BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
-            else:  # if update modality does not access interNodes separately
-                CstrTuple = functions.setup_constraints_given_pin(
-                            (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
-                             BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.output_nodes_arr,
-                             BigClass.Strctr.extraOutput_nodes_arr),
-                            (self.input_update_in_t[-1], self.extraInput_update_in_t[-1], self.output_update_in_t[-1],
-                             self.extraOutput_update_in_t[-1]),
-                            BigClass.Strctr.NN, BigClass.Strctr.EI, BigClass.Strctr.EJ)
+            # Access inter nodes if needed
+            inters = BigClass.Variabs.access_interNodes or access_inters
 
-        # Constraint Tuple containing Cstr_full matrix, Cstr matrix and f vector
-        self.CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]  # type hint
-        self.CstrTuple = CstrTuple
+            nodes_tuple = (BigClass.Strctr.input_nodes_arr, BigClass.Strctr.extraInput_nodes_arr,
+                           BigClass.Strctr.ground_nodes_arr, BigClass.Strctr.output_nodes_arr,
+                           BigClass.Strctr.extraOutput_nodes_arr)
+            nodeData_tuple = (self.input_update_in_t[-1], self.extraInput_update_in_t[-1],
+                              self.output_update_in_t[-1], self.extraOutput_update_in_t[-1])
+
+            if inters:  # add inter nodes if needed
+                nodes_tuple += tuple([BigClass.Strctr.inter_nodes_arr])
+                nodeData_tuple += tuple([self.inter_update_in_t[-1]])
+        else:
+            raise ValueError(f"Unknown modality: {modality}")
+
+        # Constraint matrix given constrained nodes and values
+        self.CstrTuple: Tuple[NDArray[np.float_], NDArray[np.float_], NDArray[np.float_]]
+        self.CstrTuple = functions.setup_constraints_given_pin(nodes_tuple, nodeData_tuple, BigClass.Strctr.NN,
+                                                               BigClass.Strctr.EI, BigClass.Strctr.EJ)
 
         # R to K
         self.K_vec: NDArray[np.float_]  # type hint conductivities
         self.K_vec = matrix_functions.K_from_R(self.R_in_t[-1])  # calculate conductivities
 
-        self.p, self.u = solve.solve_flow(BigClass.Strctr, CstrTuple, self.K_vec)
+        self.p, self.u = solve.solve_flow(BigClass.Strctr, self.CstrTuple, self.K_vec)
 
         # add to State class variables
         if modality in {'measure', 'measure_for_mean', 'measure_for_accuracy'}:

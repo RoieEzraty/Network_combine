@@ -113,7 +113,10 @@ class Network_State:
         if modality == 'measure_for_accuracy':
             self.input_drawn: NDArray[np.float_] = copy.copy(Variabs.X_test[i % np.shape(Variabs.X_test)[0]])
         else:
+            print('i ', i)
+            print('i % np.shape(Variabs.X_train)[0] ', i % np.shape(Variabs.X_train)[0])
             self.input_drawn = copy.copy(Variabs.X_train[i % np.shape(Variabs.X_train)[0]])
+        print('input drawn ', self.input_drawn)
 
         # draw noise if needed
         if noise_to_extra:
@@ -290,7 +293,8 @@ class Network_State:
         Calculates next input pressure values in update modality given measurement, either for 1 or 2 sampled pressures
 
         inputs:
-        BigClass: Class instance containing User_Variables, Network_Structure, etc.
+        BigClass - Class instance containing User_Variables, Network_Structure, etc.
+        i        - ???
 
         outputs:
         input_update_nxt: np.ndarray [Nin,] input pressure of update modality at time t
@@ -311,8 +315,6 @@ class Network_State:
                 (np.mean(loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))
         else:
             delta = (input_drawn-input_drawn_prev) * self.alpha * np.mean(loss[0]-loss[1])
-
-        print('delta ', delta)
 
         # update modality is different under schemes of change of R
 

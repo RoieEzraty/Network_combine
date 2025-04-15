@@ -38,7 +38,7 @@ class User_Variables:
                  gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, include_Power: bool, lam: np.float_,
                  supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str, dataset_type: str,
                  measure_accuracy_every: Optional[int] = None, p_thresh: Optional[float] = 0.25,
-                 R_max: float = 46.0, R_min: float = 1.0, T_annealing=0.0) -> None:
+                 R_max: float = 46.0, R_min: float = 1.0, anneal: bool = False, T_annealing=0.0) -> None:
 
         self.iterations: int = iterations
         self.Nin: int = Nin
@@ -72,6 +72,7 @@ class User_Variables:
         self.p_thresh = p_thresh  # threshold of pressure to move bead in net_type 'beads'
         self.R_max = R_max
         self.R_min = R_min
+        self.anneal = anneal
         self.T_annealing = T_annealing
 
     def create_dataset_and_targets(self, random_state, M_values: Optional[NDArray[np.float_]] = None,

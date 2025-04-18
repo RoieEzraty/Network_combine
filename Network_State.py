@@ -113,10 +113,7 @@ class Network_State:
         if modality == 'measure_for_accuracy':
             self.input_drawn: NDArray[np.float_] = copy.copy(Variabs.X_test[i % np.shape(Variabs.X_test)[0]])
         else:
-            print('i ', i)
-            print('i % np.shape(Variabs.X_train)[0] ', i % np.shape(Variabs.X_train)[0])
             self.input_drawn = copy.copy(Variabs.X_train[i % np.shape(Variabs.X_train)[0]])
-        print('input drawn ', self.input_drawn)
 
         # draw noise if needed
         if noise_to_extra:
@@ -309,7 +306,6 @@ class Network_State:
         else:  # use zero input, output and loss for 2nd sample
             input_drawn_prev = np.zeros([BigClass.Variabs.Nin])
             loss = np.array([copy.copy(loss[0]), np.zeros([BigClass.Variabs.Nout])])  # good loss dims for next "if"
-            print('loss ', loss)
         if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
             delta: NDArray[np.float_] = (input_drawn-input_drawn_prev) * self.alpha * \
                 (np.mean(loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))

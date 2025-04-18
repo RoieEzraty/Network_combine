@@ -34,22 +34,15 @@ class User_Variables:
     outputs:
     Class instance User_Variables
     """
-    def __init__(self, iterations: int, Nin: int, extraNin: int, Ninter: int, Nout: int, extraNout: int,
-                 gamma: NDArray[np.float_], R_update: str, use_p_tag: bool, include_Power: bool, lam: np.float_,
-                 supress_prints: bool, bc_noise: float, access_interNodes: bool, task_type: str, dataset_type: str,
-                 measure_accuracy_every: Optional[int] = None, p_thresh: Optional[float] = 0.25,
-                 R_max: float = 46.0, R_min: float = 1.0, anneal: bool = False, T_annealing=0.0) -> None:
-
+    def __init__(self, iterations: int, Nin: int,  Nout: int, gamma: NDArray[np.float_], R_update: str,
+                 use_p_tag: bool, supress_prints: bool, task_type: str, dataset_type: str,
+                 measure_accuracy_every: Optional[int] = None, R_max: float = 46.0, R_min: float = 1.0,
+                 anneal: bool = False, T_annealing=0.0, Ninter: int = 0) -> None:
         self.iterations: int = iterations
         self.Nin: int = Nin
-        self.extraNin: int = extraNin
         self.Nout: int = Nout
-        self.extraNout: int = extraNout
-        self.Ninter: int = Ninter
         self.gamma: NDArray[np.float_] = gamma
         self.use_p_tag: bool = use_p_tag
-        self.include_Power = include_Power
-        self.lam = lam
         if use_p_tag:
             self.loss_fn: Union[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
                                           Optional[np.float_], Optional[np.float_], Optional[np.float_]], np.ndarray],
@@ -59,8 +52,6 @@ class User_Variables:
             self.loss_fn = functions.loss_fn_1sample
         self.R_update: str = R_update
         self.supress_prints: bool = supress_prints
-        self.bc_noise: float = bc_noise
-        self.access_interNodes: bool = access_interNodes
         self.task_type: str = task_type
         self.dataset_type: str = dataset_type
         if task_type == 'Iris_classification' and self.Nin != 4 and self.Nout != 3:
@@ -69,13 +60,22 @@ class User_Variables:
             self.Nout = 3
         if measure_accuracy_every is not None:
             self.measure_accuracy_every = measure_accuracy_every
-        self.p_thresh = p_thresh  # threshold of pressure to move bead in net_type 'beads'
-        self.R_max = R_max
-        self.R_min = R_min
+        self.Ninter: int = Ninter
+        self.R_max: float = R_max
+        self.R_min: float = R_min
         self.anneal = anneal
         self.T_annealing = T_annealing
         self.reset_thresh_b: float = 1e4  # large positive value above which "update" modality input resets to initial
         self.reset_thresh_s: float = -1e4  # large negative value below which "update" modality input resets to initial
+
+        # # predetermined ones
+        self.lam: float = -80.0**(1)
+        self.include_Power: bool = False
+        self.extraNin: int = 0
+        self.extraNout: int = 0
+        self.access_interNodes: bool = False
+        self.p_thresh = 0.1  # threshold of pressure to move bead in net_type 'beads'
+        self.bc_noise: float = 0.0  # noise to update modality
 
     def create_dataset_and_targets(self, random_state, M_values: Optional[NDArray[np.float_]] = None,
                                    train_size: Optional[int] = None) -> None:

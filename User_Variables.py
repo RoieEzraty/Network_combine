@@ -35,7 +35,7 @@ class User_Variables:
     Class instance User_Variables
     """
     def __init__(self, iterations: int, Nin: int,  Nout: int, gamma: NDArray[np.float_], R_update: str,
-                 use_p_tag: bool, supress_prints: bool, task_type: str, dataset_type: str,
+                 training_scheme: str, use_p_tag: bool, supress_prints: bool, task_type: str, dataset_type: str,
                  measure_accuracy_every: Optional[int] = None, R_max: float = 46.0, R_min: float = 1.0,
                  anneal: bool = False, T_annealing=0.0, Ninter: int = 0) -> None:
         self.iterations: int = iterations
@@ -51,6 +51,7 @@ class User_Variables:
         else:
             self.loss_fn = functions.loss_fn_1sample
         self.R_update: str = R_update
+        self.training_scheme: str = training_scheme
         self.supress_prints: bool = supress_prints
         self.task_type: str = task_type
         self.dataset_type: str = dataset_type

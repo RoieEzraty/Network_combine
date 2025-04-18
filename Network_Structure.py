@@ -65,3 +65,9 @@ class Network_Structure:
             self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence_square(self)
         elif type == 'beads':
             self.EI, self.EJ, self.EIEJ_plots, self.DM, self.NE, self.NN = matrix_functions.build_incidence_beads(self)
+
+    def build_inverse_incidence(self) -> None:
+        self.DM_dagger: NDArray[np.float_] = matrix_functions.inverse_incidence(self.DM)
+
+    def build_RM(self, Nin: int, Nout: int) -> None:
+        self.RM: NDArray[np.int_] = matrix_functions.build_rep_sel(Nin, Nout, self.DM)

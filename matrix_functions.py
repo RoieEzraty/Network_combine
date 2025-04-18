@@ -390,12 +390,36 @@ def build_incidence_beads(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_]
     print('EI', EI)
     print('EJ', EJ)
 
-    DM: NDArray[np.int_] = zeros([NE, NN], dtype=np.int_)  # Incidence matrix
+    DM: NDArray[np.int_] = zeros([NE, NN], dtype=int)  # Incidence matrix
     for i in range(NE):
         DM[i, int(EI[i])] = +1.
         DM[i, int(EJ[i])] = -1.
 
     return EI, EJ, EIEJ_plots, DM, NE, NN
+
+
+def inverse_incidence(DM: NDArray[np.int_]) -> NDArray[np.float_]:
+    """
+    inverts incidence matrix, should be done once for GD-like scheme
+
+    input:
+    DM - Incidence matrix np.array [NE, NN]
+
+    output:
+    DM_dagger - Shortened Lagrangian np.array cubic array sized [NNodes]
+    """
+    return np.linalg.pinv(DM)
+
+
+def build_rep_sel(Nin: int, Nout: int, DM: NDArray[np.int_]) -> NDArray[np.int_]:
+    """
+    Build repetition-selection matrix for dp^!=RM*(y_hat-y)/(DM*x)
+    """
+    # Build R: ???
+    RM = np.zeros(np.shape(DM), dtype=int)
+    for j in range(np.shape(DM)[0]):
+        RM[j, DM[j, :] == -1] = 1
+    return RM
 
 
 def buildL(DM: NDArray[np.int_], K_mat: NDArray[np.float_], Cstr: NDArray[np.float_],

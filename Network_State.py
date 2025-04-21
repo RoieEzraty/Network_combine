@@ -695,30 +695,22 @@ class Network_State:
         self.loss_in_t.append(self.loss)
         self.loss_norm_in_t.append(self.loss_norm)
 
-    def calc_x_update_vec(self, Strctr: "Network_Structure") -> None:
+    def calc_x_update_vec(self, BigClass: "Big_Class") -> None:
         """
         add_desc
         """
-        L_vec: NDArray[np.float_] = np.zeros(Strctr.NN)
-        L_vec[Strctr.output_nodes_arr] = self.loss
-        # print('L_vec')
-        # print(L_vec)
-        delta_p = np.matmul(Strctr.DM, self.p[:Strctr.NN]).T
+        L_vec: NDArray[np.float_] = np.zeros(BigClass.Strctr.NN)
+        L_vec[BigClass.Strctr.output_nodes_arr] = self.loss
+        delta_p = np.matmul(BigClass.Strctr.DM, self.p[:BigClass.Strctr.NN]).T
         delta_p[delta_p == 0] = 10**(-9)  # correct for division by zero
-        one_over_delta_p_norm = 1 / delta_p / np.linalg.norm(1 / delta_p)
-        # one_over_delta_p_norm = 1 / delta_p
-        C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) * one_over_delta_p_norm
+        one_over_delta_p_norm = 1 / delta_p / np.linalg.norm(1 / delta_p)  # normalize division by pressure diffs
+        C_vec: NDArray[np.float_] = np.matmul(BigClass.Strctr.RM, L_vec) * one_over_delta_p_norm
         # C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) / delta_p
-        # C_vec[np.isnan[C_vec[0]]] = 0.  # correct for Nans
-        # print('C_vec')
-        # print(C_vec[0])
-        C_vec_norm = C_vec[0] / np.linalg.norm(C_vec[0])
-        # print('C_vec_norm')
-        # print(C_vec_norm)
-        # x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(Strctr.DM_dagger, C_vec[0])
-        # x_update_vec = copy.copy(x_update_vec) / np.linalg.norm(x_update_vec)
-        x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(Strctr.DM_dagger, C_vec_norm)
-        # print('x_update_vec ', x_update_vec)
+        if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
+            C_vec_norm = C_vec[0] / np.linalg.norm(C_vec[0])
+            x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec_norm)
+        else:
+            x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec[0])
         self.x_update_vec = x_update_vec
 
     def calc_Power_norm(self, BigClass: "Big_Class"):

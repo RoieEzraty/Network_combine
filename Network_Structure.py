@@ -68,6 +68,8 @@ class Network_Structure:
 
     def build_inverse_incidence(self) -> None:
         self.DM_dagger: NDArray[np.float_] = matrix_functions.inverse_incidence(self.DM)
+        print('DM_dagger ', self.DM_dagger)
 
     def build_RM(self, Nin: int, Nout: int) -> None:
         self.RM: NDArray[np.int_] = matrix_functions.build_rep_sel(Nin, Nout, self.DM)
+        print('RM ', self.RM)

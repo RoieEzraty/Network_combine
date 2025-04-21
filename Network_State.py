@@ -302,7 +302,7 @@ class Network_State:
         input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]
 
         if BigClass.Variabs.training_scheme == 'GD_like':
-            delta: NDArray[np.float_] = self.x_update_vec[BigClass.Strctr.input_nodes_arr]
+            delta: NDArray[np.float_] = - self.x_update_vec[BigClass.Strctr.input_nodes_arr]
         else:
             if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
                 input_drawn_prev: NDArray[np.float_] = self.input_drawn_in_t[-2]
@@ -453,8 +453,8 @@ class Network_State:
             if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
                 output_prev: NDArray[np.float_] = self.output_in_t[-2]
                 if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
-                    delta: NDArray[np.float_] = self.alpha * (self.output-output_prev) * \
-                                                ((loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))  # normalize loss
+                    delta = self.alpha * (self.output-output_prev) * \
+                            ((loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))  # normalize loss
                 else:
                     delta = self.alpha * (self.output-output_prev) * (loss[0]-loss[1])
             else:
@@ -655,10 +655,8 @@ class Network_State:
         if p_out.size == p_desired.size:
             if func == 'MSE':
                 cost: np.float_ = np.mean((p_out - p_desired) ** 2)
-                print('MSE cost', cost)
             elif func == 'mean_abs':
                 cost = np.mean(np.abs(p_out - p_desired))
-                print('mean_abs cost', cost)
         else:
             cost = np.nan
             print(f"Incompatible sizes, p_out shape = {p_out.shape}, p_desired shape = {p_desired.shape}")
@@ -703,12 +701,24 @@ class Network_State:
         """
         L_vec: NDArray[np.float_] = np.zeros(Strctr.NN)
         L_vec[Strctr.output_nodes_arr] = self.loss
-        print('L_vec')
-        print(L_vec)
-        C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) / np.matmul(Strctr.DM, self.p[:Strctr.NN]).T
-        print('C_vec')
-        print(C_vec)
-        x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(Strctr.DM_dagger, C_vec[0])
+        # print('L_vec')
+        # print(L_vec)
+        delta_p = np.matmul(Strctr.DM, self.p[:Strctr.NN]).T
+        delta_p[delta_p == 0] = 10**(-9)  # correct for division by zero
+        one_over_delta_p_norm = 1 / delta_p / np.linalg.norm(1 / delta_p)
+        # one_over_delta_p_norm = 1 / delta_p
+        C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) * one_over_delta_p_norm
+        # C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) / delta_p
+        # C_vec[np.isnan[C_vec[0]]] = 0.  # correct for Nans
+        # print('C_vec')
+        # print(C_vec[0])
+        C_vec_norm = C_vec[0] / np.linalg.norm(C_vec[0])
+        # print('C_vec_norm')
+        # print(C_vec_norm)
+        # x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(Strctr.DM_dagger, C_vec[0])
+        # x_update_vec = copy.copy(x_update_vec) / np.linalg.norm(x_update_vec)
+        x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(Strctr.DM_dagger, C_vec_norm)
+        # print('x_update_vec ', x_update_vec)
         self.x_update_vec = x_update_vec
 
     def calc_Power_norm(self, BigClass: "Big_Class"):

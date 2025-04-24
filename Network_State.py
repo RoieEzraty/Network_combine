@@ -301,7 +301,7 @@ class Network_State:
         input_update: NDArray[np.float_] = self.input_update_in_t[-1]
         input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]
 
-        if BigClass.Variabs.training_scheme == 'GD_like':
+        if BigClass.Variabs.training_scheme in ['GD_like', 'Adaline']:
             delta: NDArray[np.float_] = - self.x_update_vec[BigClass.Strctr.input_nodes_arr]
         else:
             if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
@@ -447,7 +447,7 @@ class Network_State:
         loss: NDArray[np.float_] = self.loss_in_t[-1]
         output_update: NDArray[np.float_] = copy.copy(self.output_update_in_t[-1])
         # element-wise multiplication for alpha in output update
-        if BigClass.Variabs.training_scheme == 'GD_like':
+        if BigClass.Variabs.training_scheme in ['GD_like', 'Adaline']:
             delta: NDArray[np.float_] = self.x_update_vec[BigClass.Strctr.output_nodes_arr]
         else:
             if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
@@ -699,18 +699,34 @@ class Network_State:
         """
         add_desc
         """
-        L_vec: NDArray[np.float_] = np.zeros(BigClass.Strctr.NN)
-        L_vec[BigClass.Strctr.output_nodes_arr] = self.loss
-        delta_p = np.matmul(BigClass.Strctr.DM, self.p[:BigClass.Strctr.NN]).T
-        delta_p[delta_p == 0] = 10**(-9)  # correct for division by zero
-        one_over_delta_p_norm = 1 / delta_p / np.linalg.norm(1 / delta_p)  # normalize division by pressure diffs
-        C_vec: NDArray[np.float_] = np.matmul(BigClass.Strctr.RM, L_vec) * one_over_delta_p_norm
-        # C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) / delta_p
-        if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
-            C_vec_norm = C_vec[0] / np.linalg.norm(C_vec[0])
-            x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec_norm)
-        else:
-            x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec[0])
+        in_nodes = copy.copy(BigClass.Strctr.input_nodes_arr)
+        out_nodes = copy.copy(BigClass.Strctr.output_nodes_arr)
+        if BigClass.Variabs.training_scheme == 'GD_like':
+            L_vec: NDArray[np.float_] = np.zeros(BigClass.Strctr.NN)
+            L_vec[out_nodes] = self.loss
+            delta_p = np.matmul(BigClass.Strctr.DM, self.p[:BigClass.Strctr.NN]).T
+            delta_p[delta_p == 0] = 10**(-9)  # correct for division by zero
+            one_over_delta_p_norm = 1 / delta_p / np.linalg.norm(1 / delta_p)  # normalize division by pressure diffs
+            C_vec: NDArray[np.float_] = np.matmul(BigClass.Strctr.RM, L_vec) * one_over_delta_p_norm
+            # C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) / delta_p
+            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
+                C_vec_norm = C_vec[0] / np.linalg.norm(C_vec[0])
+                x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec_norm)
+            else:
+                x_update_vec = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec[0])
+        elif BigClass.Variabs.training_scheme == 'Adaline':
+            A_ij: NDArray[np.float_] = np.outer(self.p[in_nodes], self.loss)
+            A_ij_flat = A_ij.flatten()  # flattening in same order as how incidence (DM) matrix is built
+            # print('A_ij', A_ij)
+            A_vec: NDArray[np.float_] = np.zeros([BigClass.Strctr.NE])
+            A_vec[:A_ij_flat.size] = A_ij_flat
+            # print('A_vec', A_vec)
+            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
+                A_vec_norm = A_vec / np.linalg.norm(A_vec)
+                x_update_vec = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, A_vec_norm)
+            else:
+                x_update_vec = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, A_vec)
+            # print('x_update_vec', x_update_vec)
         self.x_update_vec = x_update_vec
 
     def calc_Power_norm(self, BigClass: "Big_Class"):

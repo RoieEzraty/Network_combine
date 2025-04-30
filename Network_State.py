@@ -581,6 +581,8 @@ class Network_State:
                 print('error, no delta_K vector supplied')
             else:
                 K_vec = matrix_functions.K_from_R(self.R_in_t[-1])
+                if BigClass.Variabs.normalize_step:
+                    delta_K = delta_K / np.linalg.norm(delta_K)
                 K_vec_nxt = K_vec + self.alpha * delta_K
             self.R_in_t.append(1/K_vec_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q

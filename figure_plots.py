@@ -464,6 +464,68 @@ def set_thicker_spines(ax, linewidth=2):
         spine.set_linewidth(linewidth)
 
 
+# # APPENDICES
+
+
+def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_], 
+                       R_3in1out_ourscheme: NDArray[np.float_],
+                       loss_3in1out_Adaline: NDArray[np.float_],
+                       loss_3in1out_ourscheme: NDArray[np.float_],
+                       Colorscheme: "Color_Scheme", smooth: bool = True,
+                       window_size: int = 10) -> None:
+
+    # Normalize R values so maximal will be 1
+    R_3in1out_Adaline_norm = R_3in1out_Adaline[-1] / np.max(R_3in1out_Adaline[-1])
+    R_3in1out_ourscheme_norm = R_3in1out_ourscheme[-1] / np.max(R_3in1out_ourscheme[-1])
+
+    # only use run up to t=600
+    T = 600
+
+    # MAE Loss up to t=T
+    loss_3in1out_Adaline_norm = np.mean(np.mean(np.abs(loss_3in1out_Adaline), axis=1), axis=1)[:T]
+    loss_3in1out_ourscheme_norm = np.mean(np.mean(np.abs(loss_3in1out_ourscheme), axis=1), axis=1)[:T]
+
+    if smooth:
+        loss_3in1out_Adaline_norm = statistics.mov_ave(loss_3in1out_Adaline_norm, window_size)
+        loss_3in1out_ourscheme_norm = statistics.mov_ave(loss_3in1out_ourscheme_norm, window_size)
+
+
+    # weird setup for bars
+    x = np.arange(len(R_3in1out_ourscheme_norm))
+    bar_width = 0.35
+
+    # instantiate figure and grid for positioning colorbal
+    fig = plt.figure(figsize=(7, 3))
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], wspace=0.45)
+
+    # R bar plot
+    ax0 = fig.add_subplot(gs[0, 0])
+    ax0.bar(x - bar_width / 2, R_3in1out_Adaline_norm,
+            width=bar_width, label='Adaline-like', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax0.bar(x + bar_width / 2, R_3in1out_Adaline_norm,
+            width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax0.set_yticks([0, 0.5, 1])
+    ax0.set_ylabel('$R$')
+    # ax0.legend()
+
+    # Loss plot
+    ax1 = fig.add_subplot(gs[0, 1])
+    ax1.plot(loss_3in1out_Adaline_norm, label='Adaline-like')
+    ax1.plot(loss_3in1out_ourscheme_norm, label='this work')
+    ax1.set_ylabel(r'$\|\mathcal{L}\|$')
+    ax1.set_xlabel(r'$t$')
+    ax1.set_yscale('log')
+    ax1.set_ylim(2e-3, 1)
+    ax1.legend()
+
+    # Thicker spines
+    for ax in [ax0, ax1]:
+        set_thicker_spines(ax)
+
+    plt.tight_layout()
+    plt.show()
+
+
 # # NOT IN USE
 
 

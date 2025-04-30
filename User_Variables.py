@@ -36,8 +36,8 @@ class User_Variables:
     """
     def __init__(self, iterations: int, Nin: int,  Nout: int, gamma: NDArray[np.float_], R_update: str,
                  training_scheme: str, use_p_tag: bool, supress_prints: bool, task_type: str, dataset_type: str,
-                 measure_accuracy_every: Optional[int] = None, R_max: float = 46.0, R_min: float = 1.0,
-                 anneal: bool = False, T_annealing=0.0, Ninter: int = 0) -> None:
+                 measure_accuracy_every: Optional[int] = None, normalize_step: bool = False, R_max: float = 46.0,
+                 R_min: float = 1.0, anneal: bool = False, T_annealing=0.0, Ninter: int = 0) -> None:
         self.iterations: int = iterations
         self.Nin: int = Nin
         self.Nout: int = Nout
@@ -55,6 +55,7 @@ class User_Variables:
         self.supress_prints: bool = supress_prints
         self.task_type: str = task_type
         self.dataset_type: str = dataset_type
+        self.normalize_step: bool = normalize_step
         if task_type == 'Iris_classification' and self.Nin != 4 and self.Nout != 3:
             print('mismatched # of inputs and outputs for Iris classification. correcting accordingly to Nin=4 Nout=3')
             self.Nin = 4

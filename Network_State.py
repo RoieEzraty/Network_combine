@@ -315,6 +315,9 @@ class Network_State:
             else:
                 delta = (input_drawn-input_drawn_prev) * self.alpha * np.mean(loss[0]-loss[1])
 
+        if BigClass.Variabs.normalize_step:  # uniform step size
+            delta = self.alpha * delta/np.linalg.norm(delta)
+
         # update modality is different under schemes of change of R
 
         # w/ memory
@@ -466,6 +469,9 @@ class Network_State:
                     # delta = self.alpha * loss[0] / self.output  # alpha*L/y - divide by output
                     # delta = self.alpha * loss[0]  # alpha*L - no outputs
                 # print('output delta ', delta)
+
+        if BigClass.Variabs.normalize_step:  # uniform step size
+            delta = self.alpha * delta/np.linalg.norm(delta)
 
         # update modality is different under schemes of change of R
 

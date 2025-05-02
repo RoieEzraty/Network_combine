@@ -95,7 +95,9 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax2.legend(legend2_1in2out, loc='center right')
 
     # R
-    ax3.plot(R_1in2out)
+    # ax3.plot(R_1in2out)
+    ax3.plot(R_1in2out[:,:2])
+    ax3.plot(R_1in2out[:,-2:])
     # for theoretical calculation of resistances, not in use
     # ax3.plot(np.outer(R_theor_1in2out, np.ones(t)).T, '--')
     ax3.set_title(r'$R$')
@@ -121,7 +123,9 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax6.legend(legend2_2in1out, loc='center right', bbox_to_anchor=(1, 0.4))
 
     # R
-    ax7.plot(R_2in1out)
+    # ax7.plot(R_2in1out)
+    ax7.plot(R_2in1out[:,:2])
+    ax7.plot(R_2in1out[:,-1:])
     # for theoretical calculation of resistances, not in use
     # ax7.plot(np.outer(R_theor_2in1out, np.ones(t)).T, '--')
     ax7.set_xlabel('t')
@@ -226,6 +230,12 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     R_mine_2in1out_norm = R_mine_2in1out[-1] / np.max(R_mine_2in1out[-1])
     R_GD_2in1out_norm = R_GD_2in1out[-1] / np.max(R_GD_2in1out[-1])
 
+    # omit input to ground
+    R_mine_1in2out_norm = np.concatenate([R_mine_1in2out_norm[:2], R_mine_1in2out_norm[-2:]])
+    R_GD_1in2out_norm = np.concatenate([R_GD_1in2out_norm[:2], R_GD_1in2out_norm[-2:]])
+    R_mine_2in1out_norm = np.concatenate([R_mine_2in1out_norm[:2], R_mine_2in1out_norm[-1:]])
+    R_GD_2in1out_norm = np.concatenate([R_GD_2in1out_norm[:2], R_GD_2in1out_norm[-1:]])
+
     # only use run up to t=250
     T1 = 250
     T2 = 500
@@ -242,7 +252,8 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     loss_GD_2in1out_mean_smooth = statistics.mov_ave(loss_GD_2in1out_mean, window_size=8)
 
     # weird setup for bars
-    x = np.arange(len(R_GD_1in2out_norm))
+    x_1in2out = np.arange(len(R_GD_1in2out_norm))
+    x_2in1out = np.arange(len(R_GD_2in1out_norm))
     bar_width = 0.35
 
     # Grid: 2 rows, 3 columns
@@ -253,11 +264,12 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
 
     # R bar plot
     ax0 = fig.add_subplot(gs[0, 0])
-    ax0.bar(x - bar_width / 2, R_GD_1in2out_norm,
+    ax0.bar(x_1in2out - bar_width / 2, R_GD_1in2out_norm,
             width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
-    ax0.bar(x + bar_width / 2, R_mine_1in2out_norm,
+    ax0.bar(x_1in2out + bar_width / 2, R_mine_1in2out_norm,
             width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
     ax0.set_yticks([0, 0.5, 1])
+    ax0.set_xticks([0, 1, 2, 3])
     ax0.set_title('$R$')
     ax0.legend()
 
@@ -282,10 +294,11 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
 
     # R bar plot
     ax3 = fig.add_subplot(gs[1, 0])
-    ax3.bar(x - bar_width / 2, R_GD_2in1out_norm,
+    ax3.bar(x_2in1out - bar_width / 2, R_GD_2in1out_norm,
             width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
-    ax3.bar(x + bar_width / 2, R_mine_2in1out_norm,
+    ax3.bar(x_2in1out + bar_width / 2, R_mine_2in1out_norm,
             width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax3.set_xticks([0, 1, 2,])
     ax3.set_yticks([0, 0.5, 1])
     ax3.set_xlabel('edge #')
     ax3.legend()
@@ -484,6 +497,9 @@ def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_],
     R_3in1out_Adaline_norm = R_3in1out_Adaline[-1] / np.max(R_3in1out_Adaline[-1])
     R_3in1out_ourscheme_norm = R_3in1out_ourscheme[-1] / np.max(R_3in1out_ourscheme[-1])
 
+    R_3in1out_Adaline_norm = np.concatenate([R_3in1out_Adaline_norm[:3], R_3in1out_Adaline_norm[-1:]])
+    R_3in1out_ourscheme_norm = np.concatenate([R_3in1out_ourscheme[:3],  R_3in1out_ourscheme[-1:]])
+
     # only use run up to t=600
     T = 600
 
@@ -510,6 +526,7 @@ def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_],
             width=bar_width, label='Adaline-like', alpha=0.8, edgecolor='k', linewidth=1.6)
     ax0.bar(x + bar_width / 2, R_3in1out_Adaline_norm,
             width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
+    ax0.set_xticks([0, 1, 2, 3])
     ax0.set_yticks([0, 0.5, 1])
     ax0.set_ylabel('$R$')
     # ax0.legend()

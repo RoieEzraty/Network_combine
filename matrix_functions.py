@@ -196,10 +196,10 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
             EIlst.append(interNode)
             EJlst.append(outNode)
 
-    # connect input to ground
-    for i, inNode in enumerate(Strctr.input_nodes_arr):
-        EIlst.append(inNode)
-        EJlst.append(ground_node)
+    # # connect input to ground
+    # for i, inNode in enumerate(Strctr.input_nodes_arr):
+    #     EIlst.append(inNode)
+    #     EJlst.append(ground_node)
 
     # connect extraInput to ground
     for i, inNode in enumerate(Strctr.extraInput_nodes_arr):

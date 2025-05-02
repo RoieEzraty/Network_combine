@@ -148,11 +148,17 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     EIlst: List[int] = []
     EJlst: List[int] = []
 
-    # connect inputs to outputs
-    for i, inNode in enumerate(Strctr.input_nodes_arr):
-        for j, outNode in enumerate(Strctr.output_nodes_arr):
-            EIlst.append(inNode)
-            EJlst.append(outNode)
+    # # connect inputs to outputs
+    # for i, inNode in enumerate(Strctr.input_nodes_arr):
+    #     for j, outNode in enumerate(Strctr.output_nodes_arr):
+    #         EIlst.append(inNode)
+    #         EJlst.append(outNode)
+    # connect inputs to outputs ONLY IF no intermediate nodes exist
+    if len(Strctr.inter_nodes_arr) == 0:
+        for inNode in Strctr.input_nodes_arr:
+            for outNode in Strctr.output_nodes_arr:
+                EIlst.append(inNode)
+                EJlst.append(outNode)
 
     # connect inputs to extraOutputs
     for i, inNode in enumerate(Strctr.input_nodes_arr):

@@ -23,6 +23,9 @@ class Big_Class:
     def add_Strctr(self, Strctr: "Network_Structure"):
         self.Strctr = Strctr
 
+    def add_Strctr_fict(self, Strctr_fict: "Network_Structure"):
+        self.Strctr_fict = Strctr_fict
+
     def add_State(self, State: "Network_State"):
         self.State = State
 

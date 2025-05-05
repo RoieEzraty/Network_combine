@@ -709,6 +709,7 @@ class Network_State:
         """
         in_nodes = copy.copy(BigClass.Strctr.input_nodes_arr)
         out_nodes = copy.copy(BigClass.Strctr.output_nodes_arr)
+        ground_nodes = copy.copy(BigClass.Strctr.ground_nodes_arr)
         if BigClass.Variabs.training_scheme == 'GD_like':
             L_vec: NDArray[np.float_] = np.zeros(BigClass.Strctr.NN)
             L_vec[out_nodes] = self.loss
@@ -723,17 +724,33 @@ class Network_State:
             else:
                 x_update_vec = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec[0])
         elif BigClass.Variabs.training_scheme == 'Adaline':
-            A_ij: NDArray[np.float_] = np.outer(self.p[in_nodes], self.loss)
-            A_ij_flat = A_ij.flatten()  # flattening in same order as how incidence (DM) matrix is built
-            # print('A_ij', A_ij)
-            A_vec: NDArray[np.float_] = np.zeros([BigClass.Strctr.NE])
-            A_vec[:A_ij_flat.size] = A_ij_flat
-            # print('A_vec', A_vec)
+            if BigClass.Variabs.Ninter > 0:
+                Strctr = BigClass.Strctr_fict
+            else:
+                Strctr = BigClass.Strctr
+            p = np.concatenate([BigClass.State.p[in_nodes], BigClass.State.p[out_nodes],
+                                BigClass.State.p[ground_nodes]])
+            DM = copy.copy(Strctr.DM)
+            A_vec: NDArray[np.float_] = np.zeros([Strctr.NE])
+            for idx in range(Strctr.NE):
+                x_j = p[np.where(DM[idx] == 1)]
+                y_i = p[np.where(DM[idx] == -1)]
+                output_idx = np.where(Strctr.output_nodes_arr == np.where(DM[idx] == -1)[0][0])[0]
+                if len(output_idx) == 0:
+                    loss_i = 0
+                else:
+                    loss_i = BigClass.State.loss[0][output_idx[0]]
+                A_ij = -(y_i-x_j)*loss_i
+                A_vec[idx] = A_ij
             if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
                 A_vec_norm = A_vec / np.linalg.norm(A_vec)
-                x_update_vec = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, A_vec_norm)
+                x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, A_vec_norm)
             else:
-                x_update_vec = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, A_vec)
+                x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, A_vec)
+            if BigClass.Variabs.Ninter > 0:  # enlarge x_update_vec again for complying with Strctr
+                # Insert zeros at each index, shifting elements to the right
+                for idx in BigClass.Strctr.inter_nodes_arr:
+                    x_update_vec = np.insert(x_update_vec, idx, 0)
             # print('x_update_vec', x_update_vec)
         self.x_update_vec = x_update_vec
 

@@ -486,12 +486,15 @@ def set_thicker_spines(ax, linewidth=2):
 # # APPENDICES
 
 
-def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_], 
-                       R_3in1out_ourscheme: NDArray[np.float_],
-                       loss_3in1out_Adaline: NDArray[np.float_],
-                       loss_3in1out_ourscheme: NDArray[np.float_],
-                       Colorscheme: "Color_Scheme", smooth: bool = True,
-                       window_size: int = 10) -> None:
+def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_],
+                            R_3in1out_ourscheme: NDArray[np.float_],
+                            loss_3in1out_Adaline: NDArray[np.float_],
+                            loss_3in1out_ourscheme: NDArray[np.float_],
+                            Colorscheme: "Color_Scheme", smooth: bool = True,
+                            window_size: int = 10) -> None:
+
+    # Set color cycle globally
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', Colorscheme.colors_lst)
 
     # Normalize R values so maximal will be 1
     R_3in1out_Adaline_norm = R_3in1out_Adaline[-1] / np.max(R_3in1out_Adaline[-1])
@@ -500,8 +503,8 @@ def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_],
     R_3in1out_Adaline_norm = np.concatenate([R_3in1out_Adaline_norm[:3], R_3in1out_Adaline_norm[-1:]])
     R_3in1out_ourscheme_norm = np.concatenate([R_3in1out_ourscheme[:3],  R_3in1out_ourscheme[-1:]])
 
-    # only use run up to t=600
-    T = 600
+    # only use run up to t=5600
+    T = 6000
 
     # MAE Loss up to t=T
     loss_3in1out_Adaline_norm = np.mean(np.mean(np.abs(loss_3in1out_Adaline), axis=1), axis=1)[:T]
@@ -510,7 +513,6 @@ def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_],
     if smooth:
         loss_3in1out_Adaline_norm = statistics.mov_ave(loss_3in1out_Adaline_norm, window_size)
         loss_3in1out_ourscheme_norm = statistics.mov_ave(loss_3in1out_ourscheme_norm, window_size)
-
 
     # weird setup for bars
     x = np.arange(len(R_3in1out_ourscheme_norm))
@@ -538,7 +540,7 @@ def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_],
     ax1.set_ylabel(r'$\|\mathcal{L}\|$')
     ax1.set_xlabel(r'$t$')
     ax1.set_yscale('log')
-    ax1.set_ylim(2e-3, 1)
+    ax1.set_ylim(1e-3, 1)
     ax1.legend()
 
     # Thicker spines

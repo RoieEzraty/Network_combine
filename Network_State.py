@@ -550,6 +550,7 @@ class Network_State:
         """
         R_vec: NDArray[np.float_] = self.R_in_t[-1]
         delta_p: NDArray[np.float_] = self.u * R_vec
+        # delta_p: NDArray[np.float_] = np.matmul(BigClass.Strctr.DM, BigClass.State.p[:BigClass.Strctr.NN])
         if BigClass.Variabs.R_update == 'deltaR_propto_dp':  # delta_R propto p_in-p_out
             self.R_in_t.append(np.abs(R_vec + BigClass.Variabs.gamma * delta_p))
             # self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
@@ -730,28 +731,20 @@ class Network_State:
                 Strctr = BigClass.Strctr
             p = np.concatenate([BigClass.State.p[in_nodes], BigClass.State.p[out_nodes],
                                 BigClass.State.p[ground_nodes]])
-            DM = copy.copy(Strctr.DM)
-            A_vec: NDArray[np.float_] = np.zeros([Strctr.NE])
-            for idx in range(Strctr.NE):
-                x_j = p[np.where(DM[idx] == 1)]
-                y_i = p[np.where(DM[idx] == -1)]
-                output_idx = np.where(Strctr.output_nodes_arr == np.where(DM[idx] == -1)[0][0])[0]
-                if len(output_idx) == 0:
-                    loss_i = 0
-                else:
-                    loss_i = BigClass.State.loss[0][output_idx[0]]
-                A_ij = -(y_i-x_j)*loss_i
-                A_vec[idx] = A_ij
+            grad_loss_vec = matrix_functions.grad_loss_FC(Strctr.NE, p, Strctr.DM, Strctr.output_nodes_arr,
+                                                          BigClass.State.loss)
             if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
-                A_vec_norm = A_vec / np.linalg.norm(A_vec)
-                x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, A_vec_norm)
+                grad_loss_vec_norm = grad_loss_vec / np.linalg.norm(grad_loss_vec)
+                x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec_norm)
             else:
-                x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, A_vec)
+                x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec)
             if BigClass.Variabs.Ninter > 0:  # enlarge x_update_vec again for complying with Strctr
                 # Insert zeros at each index, shifting elements to the right
                 for idx in BigClass.Strctr.inter_nodes_arr:
                     x_update_vec = np.insert(x_update_vec, idx, 0)
-            # print('x_update_vec', x_update_vec)
+            # x_update_vec[-1] = 0  # neglect ground node
+            # grad_loss_vec[-1] = 0
+        self.grad_loss_vec = grad_loss_vec
         self.x_update_vec = x_update_vec
 
     def calc_Power_norm(self, BigClass: "Big_Class"):

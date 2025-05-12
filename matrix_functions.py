@@ -472,6 +472,27 @@ def K_from_R(R_vec: NDArray[np.float_]) -> NDArray[np.float_]:
     return K_vec
 
 
+def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_nodes_arr: NDArray[np.int_],
+                 loss: NDArray[np.float_]) -> NDArray[np.float_]:
+
+    """
+    add desc
+    """
+
+    grad_loss_vec: NDArray[np.float_] = np.zeros([NE])
+    for idx in range(NE):
+        x_j = p[np.where(DM[idx] == 1)]
+        y_i = p[np.where(DM[idx] == -1)]
+        output_idx = np.where(output_nodes_arr == np.where(DM[idx] == -1)[0][0])[0]
+        if len(output_idx) == 0:
+            loss_i = 0
+        else:
+            loss_i = loss[0][output_idx[0]]
+        grad_loss_ij = -(y_i-x_j)*loss_i
+        grad_loss_vec[idx] = grad_loss_ij
+    return grad_loss_vec
+
+
 def ChangeRFromFlow(BigClass: "Big_Class", R_max, R_min, R_change_scheme='beads_pressure',
                     allowed_cells=[], beta=0.0):
     """

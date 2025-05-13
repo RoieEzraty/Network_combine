@@ -476,7 +476,25 @@ def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_no
                  loss: NDArray[np.float_]) -> NDArray[np.float_]:
 
     """
-    add desc
+    Compute the gradient of the loss function with respect to the edge pressures in a fully connected network.
+    As in appendix "Comparison to gradient descent and the Adaline algorithm" in the paper.
+
+    Parameters:
+    - NE: int
+        Number of edges in the network.
+    - p: NDArray[np.float_]
+        Array of node pressures.
+    - DM: NDArray[np.int_]
+        Directional incidence matrix with shape (NE, N_nodes), where each row contains -1 for source,
+        1 for target, and 0 elsewhere.
+    - output_nodes_arr: NDArray[np.int_]
+        Indices of output nodes where loss is applied.
+    - loss: NDArray[np.float_]
+        Array containing loss values for each output node.
+
+    Returns:
+    - grad_loss_vec: NDArray[np.float_]
+        Gradient of the loss with respect to each edge pressure.
     """
 
     grad_loss_vec: NDArray[np.float_] = np.zeros([NE])
@@ -491,6 +509,33 @@ def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_no
         grad_loss_ij = -(y_i-x_j)*loss_i
         grad_loss_vec[idx] = grad_loss_ij
     return grad_loss_vec
+
+
+def K_sum_vec(NE: int, EI: NDArray[np.int_], EJ: NDArray[np.int_], R: NDArray[np.float_]) -> NDArray[np.float_]:
+
+    """
+    Compute the sum of conductances (1/R) connected to each output node.
+    Needed for denomenator in the proper Adaline algorithm.
+
+    Parameters:
+    - NE: int
+        Number of edges in the network.
+    - EI: NDArray[np.int_]
+        Array of start node indices for each edge.
+    - EJ: NDArray[np.int_]
+        Array of end node indices for each edge.
+    - R: NDArray[np.float_]
+        Array of resistances for each edge.
+
+    Returns:
+    - K_sum_ij: NDArray[np.float_]
+        Array where each element contains the sum of conductances connected to the corresponding output node.
+    """
+
+    K_sum_ij = np.zeros(NE)
+    for i, node in enumerate(EJ):
+        K_sum_ij[i] = np.sum(1/R[EJ == node]) + np.sum(1/R[EI == node])
+    return K_sum_ij
 
 
 def ChangeRFromFlow(BigClass: "Big_Class", R_max, R_min, R_change_scheme='beads_pressure',

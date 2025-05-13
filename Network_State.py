@@ -733,6 +733,9 @@ class Network_State:
                                 BigClass.State.p[ground_nodes]])
             grad_loss_vec = matrix_functions.grad_loss_FC(Strctr.NE, p, Strctr.DM, Strctr.output_nodes_arr,
                                                           BigClass.State.loss)
+            # K_sum_vec = matrix_functions.K_sum_vec(Strctr.NE, Strctr.EI, Strctr.EJ, BigClass.State.R_in_t[-1])
+            # K_sum_vec_norm = K_sum_vec/np.linalg.norm(K_sum_vec)
+            # grad_loss_vec = grad_loss_vec/K_sum_vec_norm
             if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
                 grad_loss_vec_norm = grad_loss_vec / np.linalg.norm(grad_loss_vec)
                 x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec_norm)

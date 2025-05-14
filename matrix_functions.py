@@ -473,7 +473,7 @@ def K_from_R(R_vec: NDArray[np.float_]) -> NDArray[np.float_]:
 
 
 def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_nodes_arr: NDArray[np.int_],
-                 loss: NDArray[np.float_]) -> NDArray[np.float_]:
+                 ground_nodes_arr: NDArray[np.int_], loss: NDArray[np.float_]) -> NDArray[np.float_]:
 
     """
     Compute the gradient of the loss function with respect to the edge pressures in a fully connected network.
@@ -499,12 +499,26 @@ def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_no
 
     grad_loss_vec: NDArray[np.float_] = np.zeros([NE])
     for idx in range(NE):
-        x_j = p[np.where(DM[idx] == 1)]
-        y_i = p[np.where(DM[idx] == -1)]
+        # index of output node, if -1 node is indeed output. empty else
         output_idx = np.where(output_nodes_arr == np.where(DM[idx] == -1)[0][0])[0]
-        if len(output_idx) == 0:
+        ground_idx = np.where(ground_nodes_arr == np.where(DM[idx] == -1)[0][0])[0]
+        if len(ground_idx):  # edge connecting output to ground
+            output_idx = np.where(output_nodes_arr == np.where(DM[idx] == 1)[0][0])[0]  # output is at DM=1
+            x_j = array([0])
+            y_i = p[np.where(DM[idx] == 1)]
+            loss_i = loss[0][output_idx[0]]
+            print('ground edge')
+            print('output_idx ', output_idx)
+            print('x_j ', x_j)
+            print('y_i, ', y_i)
+            print('loss_i, ', loss_i)
+        elif len(output_idx) == 0:  # edge not leading to output
+            x_j = p[np.where(DM[idx] == 1)]
+            y_i = p[np.where(DM[idx] == -1)]
             loss_i = 0
         else:
+            x_j = p[np.where(DM[idx] == 1)]
+            y_i = p[np.where(DM[idx] == -1)]
             loss_i = loss[0][output_idx[0]]
         grad_loss_ij = -(y_i-x_j)*loss_i
         grad_loss_vec[idx] = grad_loss_ij

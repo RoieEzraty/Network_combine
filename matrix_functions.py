@@ -507,11 +507,11 @@ def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_no
             x_j = array([0])
             y_i = p[np.where(DM[idx] == 1)]
             loss_i = loss[0][output_idx[0]]
-            print('ground edge')
-            print('output_idx ', output_idx)
-            print('x_j ', x_j)
-            print('y_i, ', y_i)
-            print('loss_i, ', loss_i)
+            # print('ground edge')
+            # print('output_idx ', output_idx)
+            # print('x_j ', x_j)
+            # print('y_i, ', y_i)
+            # print('loss_i, ', loss_i)
         elif len(output_idx) == 0:  # edge not leading to output
             x_j = p[np.where(DM[idx] == 1)]
             y_i = p[np.where(DM[idx] == -1)]

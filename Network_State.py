@@ -576,16 +576,22 @@ class Network_State:
             # self.R_in_t.append(np.abs(R_vec + 0.5*np.tanh((BigClass.Variabs.gamma * delta_p)**3)/0.15))
             # self.R_in_t.append(np.abs(R_vec + 0.5*(BigClass.Variabs.gamma * delta_p)**3))
             self.R_in_t.append(np.abs(R_vec + 1*(BigClass.Variabs.gamma * delta_p)**3))
+            # print(1*(BigClass.Variabs.gamma * delta_p))
             # print('update R propto cubed')
         elif BigClass.Variabs.R_update == 'grad_desc':
             if delta_K == []:
                 print('error, no delta_K vector supplied')
             else:
                 K_vec = matrix_functions.K_from_R(self.R_in_t[-1])
-                if BigClass.Variabs.normalize_step:
-                    delta_K = delta_K / np.linalg.norm(delta_K)
+                # if BigClass.Variabs.normalize_step:
+                #     delta_K = delta_K / np.linalg.norm(delta_K)
                 K_vec_nxt = K_vec + self.alpha * delta_K
-            self.R_in_t.append(1/K_vec_nxt)
+                R_nxt = 1/K_vec_nxt
+                if BigClass.Variabs.normalize_step:
+                    delta_R = R_nxt - self.R_in_t[-1]
+                    delta_R_norm = delta_R / np.linalg.norm(delta_R)
+                    R_nxt = self.R_in_t[-1] + delta_R_norm
+            self.R_in_t.append(R_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q
             self.R_in_t.append(R_vec + BigClass.Variabs.gamma * self.u * delta_p * np.sign(delta_p))
         elif BigClass.Variabs.R_update == 'R_propto_Power':  # delta_R propto Power dissipation dp*Q
@@ -733,11 +739,13 @@ class Network_State:
                                 BigClass.State.p[ground_nodes]])
             grad_loss_vec = matrix_functions.grad_loss_FC(Strctr.NE, p, Strctr.DM, Strctr.output_nodes_arr,
                                                           Strctr.ground_nodes_arr, BigClass.State.loss)
-            K_sum_vec = matrix_functions.K_sum_vec(Strctr.NE, Strctr.EI, Strctr.EJ, BigClass.State.R_in_t[-1])
-            K_sum_vec_norm = K_sum_vec/np.linalg.norm(K_sum_vec)
-            grad_loss_vec = grad_loss_vec/K_sum_vec_norm
+            self.grad_loss_vec = grad_loss_vec
+            grad_loss_vec_norm = grad_loss_vec / np.linalg.norm(grad_loss_vec)
+            self.grad_loss_vec_norm = grad_loss_vec_norm
+            # K_sum_vec = matrix_functions.K_sum_vec(Strctr.NE, Strctr.EI, Strctr.EJ, BigClass.State.R_in_t[-1])
+            # K_sum_vec_norm = K_sum_vec/np.linalg.norm(K_sum_vec)
+            # grad_loss_vec = grad_loss_vec/K_sum_vec_norm
             if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
-                grad_loss_vec_norm = grad_loss_vec / np.linalg.norm(grad_loss_vec)
                 x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec_norm)
             else:
                 x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec)
@@ -747,7 +755,6 @@ class Network_State:
                     x_update_vec = np.insert(x_update_vec, idx, 0)
             # x_update_vec[-1] = 0  # neglect ground node
             # grad_loss_vec[-1] = 0
-        self.grad_loss_vec = grad_loss_vec
         self.x_update_vec = x_update_vec
 
     def calc_Power_norm(self, BigClass: "Big_Class"):

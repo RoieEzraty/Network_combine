@@ -315,8 +315,8 @@ class Network_State:
             else:
                 delta = (input_drawn-input_drawn_prev) * self.alpha * np.mean(loss[0]-loss[1])
 
-        if BigClass.Variabs.normalize_step:  # uniform step size
-            delta = self.alpha * delta/np.linalg.norm(delta)
+        # if BigClass.Variabs.normalize_step:  # uniform step size
+        #     delta = self.alpha * delta/np.linalg.norm(delta)
 
         # update modality is different under schemes of change of R
 
@@ -470,8 +470,8 @@ class Network_State:
                     # delta = self.alpha * loss[0]  # alpha*L - no outputs
                 # print('output delta ', delta)
 
-        if BigClass.Variabs.normalize_step:  # uniform step size
-            delta = self.alpha * delta/np.linalg.norm(delta)
+        # if BigClass.Variabs.normalize_step:  # uniform step size
+        #     delta = self.alpha * delta/np.linalg.norm(delta)
 
         # update modality is different under schemes of change of R
 
@@ -552,7 +552,14 @@ class Network_State:
         delta_p: NDArray[np.float_] = self.u * R_vec
         # delta_p: NDArray[np.float_] = np.matmul(BigClass.Strctr.DM, BigClass.State.p[:BigClass.Strctr.NN])
         if BigClass.Variabs.R_update == 'deltaR_propto_dp':  # delta_R propto p_in-p_out
-            self.R_in_t.append(np.abs(R_vec + BigClass.Variabs.gamma * delta_p))
+            delta_R = BigClass.Variabs.gamma*delta_p
+            if BigClass.Variabs.normalize_step:
+                delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
+                R_nxt = self.R_in_t[-1] + delta_R_norm
+            else:
+                R_nxt = self.R_in_t[-1] + delta_R
+            self.R_in_t.append(np.abs(R_nxt))
+            # self.R_in_t.append(np.abs(R_vec + BigClass.Variabs.gamma * delta_p))
             # self.R_in_t.append(R_vec + BigClass.Variabs.gamma * delta_p)
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
             self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
@@ -575,7 +582,13 @@ class Network_State:
             # self.R_in_t.append(np.abs(R_vec + np.tanh((BigClass.Variabs.gamma * delta_p)**3/0.15)))
             # self.R_in_t.append(np.abs(R_vec + 0.5*np.tanh((BigClass.Variabs.gamma * delta_p)**3)/0.15))
             # self.R_in_t.append(np.abs(R_vec + 0.5*(BigClass.Variabs.gamma * delta_p)**3))
-            self.R_in_t.append(np.abs(R_vec + 1*(BigClass.Variabs.gamma * delta_p)**3))
+            delta_R = BigClass.Variabs.gamma*(delta_p)**3
+            if BigClass.Variabs.normalize_step:
+                delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
+                R_nxt = self.R_in_t[-1] + delta_R_norm
+            else:
+                R_nxt = self.R_in_t[-1] + delta_R
+            self.R_in_t.append(np.abs(R_nxt))
             # print(1*(BigClass.Variabs.gamma * delta_p))
             # print('update R propto cubed')
         elif BigClass.Variabs.R_update == 'grad_desc':
@@ -589,7 +602,7 @@ class Network_State:
                 R_nxt = 1/K_vec_nxt
                 if BigClass.Variabs.normalize_step:
                     delta_R = R_nxt - self.R_in_t[-1]
-                    delta_R_norm = delta_R / np.linalg.norm(delta_R)
+                    delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
                     R_nxt = self.R_in_t[-1] + delta_R_norm
             self.R_in_t.append(R_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_Power':  # delta_R propto Power dissipation dp*Q

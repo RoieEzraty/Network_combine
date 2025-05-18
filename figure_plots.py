@@ -207,8 +207,6 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
 
 def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray[np.float_],
                        R_mine_2in1out: NDArray[np.float_], R_GD_2in1out: NDArray[np.float_],
-                       loss_mine_1in2out: NDArray[np.float_], loss_GD_1in2out: NDArray[np.float_],
-                       loss_mine_2in1out: NDArray[np.float_], loss_GD_2in1out: NDArray[np.float_],
                        cosine_sim_1in2out: NDArray[np.float_], cosine_sim_2in1out: NDArray[np.float_],
                        Colorscheme: "Color_Scheme") -> None:
 
@@ -239,21 +237,6 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     R_mine_2in1out_norm = np.concatenate([R_mine_2in1out_norm[:2], R_mine_2in1out_norm[-1:]])
     R_GD_2in1out_norm = np.concatenate([R_GD_2in1out_norm[:2], R_GD_2in1out_norm[-1:]])
 
-    # only use run up to t=250
-    T1 = 250
-    T2 = 500
-
-    # MAE Loss up to t=250
-    loss_mine_1in2out_mean = np.mean(np.mean(np.abs(loss_mine_1in2out), axis=1), axis=1)[:T1]
-    loss_GD_1in2out_mean = np.mean(np.mean(np.abs(loss_GD_1in2out), axis=1), axis=1)[:T1]
-    loss_mine_2in1out_mean = np.mean(np.mean(np.abs(loss_mine_2in1out), axis=1), axis=1)[:T2]
-    loss_GD_2in1out_mean = np.mean(np.mean(np.abs(loss_GD_2in1out), axis=1), axis=1)[:T2]
-
-    loss_mine_1in2out_mean_smooth = statistics.mov_ave(loss_mine_1in2out_mean, window_size=8)
-    loss_GD_1in2out_mean_smooth = statistics.mov_ave(loss_GD_1in2out_mean, window_size=8)
-    loss_mine_2in1out_mean_smooth = statistics.mov_ave(loss_mine_2in1out_mean, window_size=8)
-    loss_GD_2in1out_mean_smooth = statistics.mov_ave(loss_GD_2in1out_mean, window_size=8)
-
     # weird setup for bars
     x_1in2out = np.arange(len(R_GD_1in2out_norm))
     x_2in1out = np.arange(len(R_GD_2in1out_norm))
@@ -261,7 +244,7 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
 
     # Grid: 2 rows, 3 columns
     fig = plt.figure(figsize=(15, 6))
-    gs = gridspec.GridSpec(2, 3, width_ratios=[1, 1.2, 1.2], height_ratios=[1, 1])
+    gs = gridspec.GridSpec(2, 2, width_ratios=[1.2, 1.2], height_ratios=[1, 1])
 
     # ---- Row 1 - 1 input 2 outputs ----
 
@@ -276,55 +259,37 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     ax0.set_title('$R$')
     ax0.legend()
 
-    # Loss plot
-    ax1 = fig.add_subplot(gs[0, 1])
-    ax1.plot(loss_GD_1in2out_mean_smooth, label='GD')
-    ax1.plot(loss_mine_1in2out_mean_smooth, label='this work')
-    ax1.set_title(r'$\|\mathcal{L}\|$')
-    ax1.set_yscale('log')
-    ax1.set_ylim(5e-4, 1)
-    ax1.legend()
-
     # Cosine similarity
-    ax2 = fig.add_subplot(gs[0, 2])
-    ax2.plot(cosine_sim_1in2out[:T1])
-    ax2.plot(np.zeros([T1]), '--k')  # dotted line at cosine=0
-    ax2.set_yticks([-1, 0, 1])
-    ax2.set_title(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
-    ax2.set_ylim(-1, 1)
+    ax1 = fig.add_subplot(gs[0, 1])
+    ax1.plot(cosine_sim_1in2out)
+    ax1.plot(np.zeros([len(cosine_sim_1in2out)]), '--k')  # dotted line at cosine=0
+    ax1.set_yticks([-1, 0, 1])
+    ax1.set_title(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
+    ax1.set_ylim(-1, 1)
 
     # ---- Row 1 - 2 inputs 1 output ----
 
     # R bar plot
-    ax3 = fig.add_subplot(gs[1, 0])
-    ax3.bar(x_2in1out - bar_width / 2, R_GD_2in1out_norm,
+    ax2 = fig.add_subplot(gs[1, 0])
+    ax2.bar(x_2in1out - bar_width / 2, R_GD_2in1out_norm,
             width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
-    ax3.bar(x_2in1out + bar_width / 2, R_mine_2in1out_norm,
+    ax2.bar(x_2in1out + bar_width / 2, R_mine_2in1out_norm,
             width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
-    ax3.set_xticks([0, 1, 2,])
-    ax3.set_yticks([0, 0.5, 1])
-    ax3.set_xlabel('edge #')
-    ax3.legend()
-
-    # Loss plot
-    ax4 = fig.add_subplot(gs[1, 1])
-    ax4.plot(loss_GD_2in1out_mean_smooth, label='GD')
-    ax4.plot(loss_mine_2in1out_mean_smooth, label='this work')
-    ax4.set_yscale('log')
-    ax4.set_ylim(5e-4, 1)
-    ax4.set_xlabel('$t$')
-    ax4.legend()
+    ax2.set_xticks([0, 1, 2,])
+    ax2.set_yticks([0, 0.5, 1])
+    ax2.set_xlabel('edge #')
+    ax2.legend()
 
     # Cosine similarity
-    ax5 = fig.add_subplot(gs[1, 2])
-    ax5.plot(cosine_sim_2in1out[:T2])
-    ax5.plot(np.zeros([T2]), '--k')  # dotted line at cosine=0
-    ax5.set_yticks([-1, 0, 1])
-    ax5.set_xlabel('$t$')
-    ax5.set_ylim(-1, 1)
+    ax3 = fig.add_subplot(gs[1, 1])
+    ax3.plot(cosine_sim_2in1out)
+    ax3.plot(np.zeros([len(cosine_sim_2in1out)]), '--k')  # dotted line at cosine=0
+    ax3.set_yticks([-1, 0, 1])
+    ax3.set_xlabel('$t$')
+    ax3.set_ylim(-1, 1)
 
     # Thicker spines
-    for ax in [ax0, ax1, ax2, ax3, ax4, ax5]:
+    for ax in [ax0, ax1, ax2, ax3]:
         set_thicker_spines(ax)
 
     plt.tight_layout()

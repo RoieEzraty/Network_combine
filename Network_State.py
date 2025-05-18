@@ -56,6 +56,7 @@ class Network_State:
         self.alpha: np.float_ = Variabs.alpha_vec[0]
         # Loss and Power
         self.loss_in_t: List[NDArray[np.float_]] = []
+        self.loss_scalar_in_t: List[NDArray[np.float_]] = []
         self.Power_norm_in_t: List[NDArray[np.float_]] = []  # Power dissipation in whole network, normalized by inputs
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_update_in_t[-1])

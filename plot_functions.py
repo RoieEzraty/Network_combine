@@ -19,8 +19,8 @@ import colors, statistics
 # ================================
 
 
-def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None, movmean_loss: bool = False,
-                    include_network: Optional[bool] = False, node_labels: bool = False) -> None:
+def plot_importants(BigClass: "Big_Class", movmean_loss: bool = False, include_network: Optional[bool] = False,
+                    node_labels: bool = False) -> None:
     """
     one plot with 4 subfigures of
     1) mean absolute value of loss in time
@@ -30,7 +30,6 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
 
     inputs:
     BigClass        - Class instance containing User_Variables, Network_Structure, etc.
-    M               - 2D NDArray task matrix M under which desired output = M*input
     movmean_loss    - boolean of whether to smoothen loss with moving mean
     include_network - boolean of whether to plot network
     node_label      - boolean of whether to plot node number

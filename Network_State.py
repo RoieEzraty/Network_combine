@@ -56,7 +56,6 @@ class Network_State:
         self.alpha: np.float_ = Variabs.alpha_vec[0]
         # Loss and Power
         self.loss_in_t: List[NDArray[np.float_]] = []
-        self.loss_norm_in_t: List[NDArray[np.float_]] = []  # normalized loss
         self.Power_norm_in_t: List[NDArray[np.float_]] = []  # Power dissipation in whole network, normalized by inputs
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_update_in_t[-1])
@@ -718,10 +717,7 @@ class Network_State:
                 self.loss = BigClass.Variabs.loss_fn(self.output, self.desired, self.Power_norm, BigClass.Variabs.lam)
             else:
                 self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
-        self.loss_norm = self.loss/np.mean(np.abs(self.desired))
-
         self.loss_in_t.append(self.loss)
-        self.loss_norm_in_t.append(self.loss_norm)
 
     def calc_x_update_vec(self, BigClass: "Big_Class") -> None:
         """

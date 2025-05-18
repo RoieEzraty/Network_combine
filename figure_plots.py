@@ -83,9 +83,10 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # ---- Row 1 - 1 input 2 outputs ----
 
     # ||Loss||
-    ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1))
+    # ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1))
+    ax1.plot(statistics.mov_ave(loss_1in2out, window_size=4))
     ax1.set_yscale('log')
-    ax1.set_ylim(None, 1)
+    ax1.set_ylim(1e-9, 1e1)
     ax1.set_title(r'$\|\mathcal{L}\|$')
 
     # "update" modality pressures
@@ -96,25 +97,26 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
 
     # R
     # ax3.plot(R_1in2out)
-    ax3.plot(R_1in2out[:,:2])
-    ax3.plot(R_1in2out[:,-2:])
+    ax3.plot(R_1in2out[:, :2])
+    ax3.plot(R_1in2out[:, -2:])
     # for theoretical calculation of resistances, not in use
     # ax3.plot(np.outer(R_theor_1in2out, np.ones(t)).T, '--')
     ax3.set_title(r'$R$')
 
     # network structure
+    node_colors_1in2out = [Colorscheme.colors_lst[1], Colorscheme.colors_lst[0], Colorscheme.colors_lst[0], 'black']
     nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color=Colorscheme.colors_lst[0],
-                     node_color=Colorscheme.colors_lst[0], with_labels=True, arrows=False, font_color='white',
+                     node_color=node_colors_1in2out, with_labels=True, arrows=False, font_color='white',
                      font_size=14, width=2, ax=ax4)
     ax4.set_title('Network structure')
 
     # ---- Row 1 - 2 inputs 1 output ----
 
     # ||Loss||
-    ax5.plot(np.mean(np.mean(np.abs(loss_2in1out), axis=1), axis=1))
+    ax5.plot(statistics.mov_ave(loss_2in1out, window_size=4))
     ax5.set_xlabel('t')
     ax5.set_yscale('log')
-    ax5.set_ylim(None, 1)
+    ax5.set_ylim(1e-6, 1e1)
 
     # "update" modality pressures
     ax6.plot(input_update_2in1out)
@@ -124,15 +126,16 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
 
     # R
     # ax7.plot(R_2in1out)
-    ax7.plot(R_2in1out[:,:2])
-    ax7.plot(R_2in1out[:,-1:])
+    ax7.plot(R_2in1out[:, :2])
+    ax7.plot(R_2in1out[:, -1:])
     # for theoretical calculation of resistances, not in use
     # ax7.plot(np.outer(R_theor_2in1out, np.ones(t)).T, '--')
     ax7.set_xlabel('t')
 
     # network structure
+    node_colors_2in1out = [Colorscheme.colors_lst[1], Colorscheme.colors_lst[0], Colorscheme.colors_lst[1], 'black']
     nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color=Colorscheme.colors_lst[0],
-                     node_color=Colorscheme.colors_lst[0], with_labels=True, arrows=False, font_color='white',
+                     node_color=node_colors_2in1out, with_labels=True, arrows=False, font_color='white',
                      font_size=14, width=2, ax=ax8)
 
     # Thicker spines

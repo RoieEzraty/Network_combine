@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 # ==================================
 
 
-def final_err(BigClass: "Big_Class", samples: int = 40):
+def final_err(loss_scalar_in_t: NDArray[np.float_], samples: int = 40):
     """
     Final relative error over the last `samples` time steps.
 
@@ -25,16 +25,14 @@ def final_err(BigClass: "Big_Class", samples: int = 40):
     absolute value of the target output in that same period.
 
     inputs:
-    BigClass - Class instance containing User_Variables, Network_Structure, etc.
-    samples  - int, optional Number of most recent time steps to include in the error calculation
+    State   - Class instance containing all network state variabs in time.
+    samples - int, optional Number of most recent time steps to include in the error calculation
 
     output:
     float of final relative error: mean absolute loss over the last `samples` time steps,
         normalized by the mean absolute value of the corresponding target values.
     """
-    numerator = np.mean(np.mean(np.mean(np.abs(BigClass.State.loss_in_t), axis=1), axis=1)[-samples:])
-    denominator = np.mean(np.abs(BigClass.Variabs.targets)[-samples:])
-    return numerator / denominator
+    return np.mean(loss_scalar_in_t[-samples:])
 
 
 def calculate_accuracy_1sample(output, targets_mat: NDArray[np.float_], target_i: NDArray[np.float_]) -> float:

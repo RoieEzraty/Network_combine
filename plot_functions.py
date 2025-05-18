@@ -69,11 +69,10 @@ def plot_importants(BigClass: "Big_Class", M: Optional[NDArray[np.int_]] = None,
         if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax1.axvline(x=t, color='red', linestyle='--', linewidth=1)
     if movmean_loss:
-        movmean_loss_t = statistics.mov_ave(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t), axis=1),
-                                            axis=1), 80)
+        movmean_loss_t = statistics.mov_ave(BigClass.State.loss_scalar_in_t, 16)
         ax1.plot(np.abs(movmean_loss_t[1:]))
     else:
-        ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
+        ax1.plot(BigClass.State.loss_scalar_in_t[1:])
     # ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_in_t[1:]), axis=1), axis=1))
     ax1.set_yscale('log')
     ax1.set_ylim(1e-5, 1)
@@ -415,7 +414,7 @@ def plot_importants_w_measured(BigClass: "Big_Class", M: Optional[NDArray[np.int
     for t in range(t):
         if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
             ax4.axvline(x=t, color='red', linestyle='--', linewidth=1)
-    ax4.plot(np.mean(np.mean(np.abs(BigClass.State.loss_norm_in_t[1:]), axis=1), axis=1))
+    ax4.plot(BigClass.State.loss_scalar_in_t[1:])
     ax4.set_title('Loss')
     ax4.set_xlabel('t')
     ax4.set_yscale('log')
@@ -433,4 +432,3 @@ def plot_importants_w_measured(BigClass: "Big_Class", M: Optional[NDArray[np.int
         else:
             print('no NET assigned in input')
     plt.show()
-

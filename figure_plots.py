@@ -86,12 +86,12 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # ax1.plot(np.mean(np.mean(np.abs(loss_1in2out), axis=1), axis=1))
     ax1.plot(statistics.mov_ave(loss_1in2out, window_size=4))
     ax1.set_yscale('log')
-    ax1.set_ylim(1e-9, 1e1)
+    ax1.set_ylim(1e-15, 1e1)
     ax1.set_title(r'$\|\mathcal{L}\|$')
 
     # "update" modality pressures
-    ax2.plot(input_update_1in2out)
-    ax2.plot(output_update_1in2out)
+    ax2.plot(input_update_1in2out[1:])
+    ax2.plot(output_update_1in2out[1:])
     ax2.set_title('"Update" modality pressure')
     ax2.legend(legend2_1in2out, loc='center right')
 
@@ -116,11 +116,11 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     ax5.plot(statistics.mov_ave(loss_2in1out, window_size=4))
     ax5.set_xlabel('t')
     ax5.set_yscale('log')
-    ax5.set_ylim(1e-6, 1e1)
+    ax5.set_ylim(1e-8, 1e1)
 
     # "update" modality pressures
-    ax6.plot(input_update_2in1out)
-    ax6.plot(output_update_2in1out)
+    ax6.plot(input_update_2in1out[1:])
+    ax6.plot(output_update_2in1out[1:])
     ax6.set_xlabel('t')
     ax6.legend(legend2_2in1out, loc='center right', bbox_to_anchor=(1, 0.4))
 
@@ -161,11 +161,13 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
     outputs:
     matplotlib plot
     """
-    loss_mean_lin = np.mean(loss_mat_lin, axis=2)
-    loss_mean_nonlin = np.mean(loss_mat_nonlin, axis=2)
+    v_max = 0.1
+    plot_from = 3
+    loss_mean_lin = np.mean(loss_mat_lin, axis=2)[plot_from:, plot_from:]
+    loss_mean_nonlin = np.mean(loss_mat_nonlin, axis=2)[plot_from:, plot_from:]
 
-    Nin = np.arange(1, loss_mat_lin.shape[0]+1)  # array input dimension
-    Nout = np.arange(1, loss_mat_lin.shape[1]+1)  # array output dimension
+    Nin = np.arange(plot_from+1, loss_mat_lin.shape[0]+1)  # array input dimension
+    Nout = np.arange(plot_from+1, loss_mat_lin.shape[1]+1)  # array output dimension
 
     # instantiate figure and grid for positioning colorbal
     fig = plt.figure(figsize=(6, 3))
@@ -178,7 +180,7 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
     # linear update rule
     ax1.imshow(loss_mean_lin, cmap=Colorscheme.cmap, origin='lower',
                extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-               vmin=0, vmax=0.3)
+               vmin=0, vmax=v_max)
     ax1.set_title(r'$\dot{R} \propto \Delta p$')
     ax1.set_xlabel('# Outputs')
     ax1.set_ylabel('# Inputs')
@@ -189,7 +191,7 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
     # nonlinear update rule
     im2 = ax2.imshow(loss_mean_nonlin, cmap=Colorscheme.cmap, origin='lower',
                      extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-                     vmin=0, vmax=0.3)
+                     vmin=0, vmax=v_max)
     ax2.set_title(r'$\dot{R} \propto \left(\Delta p\right)^3$')
     ax2.set_xlabel('# Outputs')
     ax2.set_xticks(Nin)

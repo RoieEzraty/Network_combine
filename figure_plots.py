@@ -260,18 +260,20 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
     """
     opacity = 0.25  # for confidence STD bounds
 
+    T = int(1600/15)  # cutoff time, don't plot after that
+
     # Apply smoothing for the average accuracy lines
     if smooth:
-        mean_accuracy = statistics.mov_ave(np.mean(accuracy_in_t, axis=0), window_size)
+        mean_accuracy = statistics.mov_ave(np.mean(accuracy_in_t[:, :T], axis=0), window_size)
 
         # Standard deviations for confidence bounds
-        std = statistics.mov_ave(np.std(accuracy_in_t, axis=0), window_size)
+        std = statistics.mov_ave(np.std(accuracy_in_t[:, :T], axis=0), window_size)
 
         t_for_accuracy_smoothed = t_for_accuracy[:len(mean_accuracy)]  # t_for_accuracy after smoothing
     else:
-        mean_accuracy = np.mean(accuracy_in_t, axis=0)
+        mean_accuracy = np.mean(accuracy_in_t[:, :T], axis=0)
 
-        std = np.std(accuracy_in_t, axis=0)
+        std = np.std(accuracy_in_t[:, :T], axis=0)
 
         t_for_accuracy_smoothed = t_for_accuracy
 
@@ -279,7 +281,7 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
     mean_accuracy[0] = 1/3
 
     # Add vertical lines at times where t finished cycle through dataset and targets were re-calculated
-    for t in range(t_final):
+    for t in range(int(t_final)):
         if t % dataset_shape[0] == 0:
             plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1, alpha=0.3)
 
@@ -293,6 +295,7 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
 
     # axes
     plt.xlabel('$t$', fontsize=14)  # Set x-axis label with font size
+    plt.xlim([-50, T*15])
     plt.ylabel('Test accuracy', fontsize=14)  # Set y-axis label with font size
     plt.ylim([0, 1])
 

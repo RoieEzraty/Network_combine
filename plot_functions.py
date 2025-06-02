@@ -270,6 +270,7 @@ def plot_accuracy(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_i
     plt.ylabel('Accuracy', fontsize=14)  # Set y-axis label with font size
     plt.title('Accuracy Over Time', fontsize=16)  # Set title with font size
     plt.ylim([0, 1])
+    plt.show()
 
 
 def plot_Power(State: "Network_State") -> None:

@@ -555,7 +555,7 @@ class Network_State:
             delta_R = BigClass.Variabs.gamma*delta_p
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
-                R_nxt = self.R_in_t[-1] + delta_R_norm
+                R_nxt:NDArray[np.float_] = self.R_in_t[-1] + delta_R_norm
             else:
                 R_nxt = self.R_in_t[-1] + delta_R
             self.R_in_t.append(np.abs(R_nxt))
@@ -576,12 +576,14 @@ class Network_State:
             R_bar: float = (R_max + R_min)/2.0
             u_0: float = 1 / (np.sqrt(BigClass.Strctr.NE) * R_bar)
             # R_nxt: float = R_max + (R_min - R_max) * np.exp(- self.u / u_0)
-            R_nxt: float = R_max + (R_min - R_max) * np.exp(- np.abs(self.u) / u_0)
+            R_nxt = R_max + (R_min - R_max) * np.exp(- np.abs(self.u) / u_0)
             self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
         elif BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # delta_R propto p_in-p_out
             # self.R_in_t.append(np.abs(R_vec + np.tanh((BigClass.Variabs.gamma * delta_p)**3/0.15)))
             # self.R_in_t.append(np.abs(R_vec + 0.5*np.tanh((BigClass.Variabs.gamma * delta_p)**3)/0.15))
             # self.R_in_t.append(np.abs(R_vec + 0.5*(BigClass.Variabs.gamma * delta_p)**3))
+            # delta_R = BigClass.Variabs.gamma*(delta_p)**(5)
+            # delta_R = BigClass.Variabs.gamma*np.sign(delta_p) * (np.abs(delta_p) ** (1.1))
             delta_R = BigClass.Variabs.gamma*(delta_p)**3
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)

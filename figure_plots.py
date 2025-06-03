@@ -358,8 +358,9 @@ def plot_final_accuracy_bar_chart(accuracy_in_t_R_propto_deltap: np.ndarray,
     bars = plt.bar(x, means, yerr=stds, capsize=5, color=colors, edgecolor='black', linewidth=1.5, alpha=0.9)
     plt.xticks(x, legend, rotation=20, fontsize=13)
     plt.ylabel("Final test accuracy", fontsize=14)
-    plt.ylim([0, 1])
-    plt.grid(axis='y', linestyle='--', alpha=0.4)
+    plt.ylim([0.33, 1])
+    plt.yticks(np.arange(0.3, 1.01, 0.1))  # Tick marks every 0.1
+    plt.grid(axis='y', linestyle='--', linewidth=1.5, alpha=0.4)
 
     set_thicker_spines(plt.gca(), linewidth=1.5)
     plt.tight_layout()

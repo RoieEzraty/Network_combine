@@ -301,7 +301,7 @@ class Network_State:
         input_drawn: NDArray[np.float_] = self.input_drawn_in_t[-1]
 
         if BigClass.Variabs.training_scheme in ['GD_like', 'Adaline']:
-            delta: NDArray[np.float_] = - self.x_update_vec[BigClass.Strctr.input_nodes_arr]
+            delta: NDArray[np.float_] = - self.update_vec[BigClass.Strctr.input_nodes_arr]
         else:
             if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
                 input_drawn_prev: NDArray[np.float_] = self.input_drawn_in_t[-2]
@@ -445,7 +445,7 @@ class Network_State:
 
         # element-wise multiplication for alpha in output update
         if BigClass.Variabs.training_scheme in ['GD_like', 'Adaline']:
-            delta: NDArray[np.float_] = self.x_update_vec[BigClass.Strctr.output_nodes_arr]
+            delta: NDArray[np.float_] = self.update_vec[BigClass.Strctr.output_nodes_arr]
         else:
             if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
                 output_prev: NDArray[np.float_] = self.output_in_t[-2]
@@ -699,7 +699,7 @@ class Network_State:
                 self.loss = BigClass.Variabs.loss_fn(self.output, self.desired)
         self.loss_in_t.append(self.loss)
 
-    def calc_x_update_vec(self, BigClass: "Big_Class") -> None:
+    def calc_update_vals_vec(self, BigClass: "Big_Class") -> None:
         """
         calculate the update modality values of inputs and outputs if the scheme is Adaline-like (standard way)
         or GD_like (not used)
@@ -711,7 +711,7 @@ class Network_State:
         BigClass
 
         output:
-        x_update_vec - values for "update" modality pressures, nodes numbered as in Strctr.DM
+        update_vec - values for "update" modality pressures, nodes numbered as in Strctr.DM
         """
         in_nodes = copy.copy(BigClass.Strctr.input_nodes_arr)
         out_nodes = copy.copy(BigClass.Strctr.output_nodes_arr)
@@ -726,9 +726,9 @@ class Network_State:
             # C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) / delta_p
             if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
                 C_vec_norm = C_vec[0] / np.linalg.norm(C_vec[0])
-                x_update_vec: NDArray[np.float_] = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec_norm)
+                update_vec: NDArray[np.float_] = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec_norm)
             else:
-                x_update_vec = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec[0])
+                update_vec = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec[0])
         elif BigClass.Variabs.training_scheme == 'Adaline':
             if BigClass.Variabs.Ninter > 0:
                 Strctr = BigClass.Strctr_fict
@@ -742,16 +742,16 @@ class Network_State:
             grad_loss_vec_norm = grad_loss_vec / np.linalg.norm(grad_loss_vec)
             self.grad_loss_vec_norm = grad_loss_vec_norm
             if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
-                x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec_norm)
+                update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec_norm)
             else:
-                x_update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec)
-            if BigClass.Variabs.Ninter > 0:  # enlarge x_update_vec again for complying with Strctr
+                update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec)
+            if BigClass.Variabs.Ninter > 0:  # enlarge update_vec again for complying with Strctr
                 # Insert zeros at each index, shifting elements to the right
                 for idx in BigClass.Strctr.inter_nodes_arr:
-                    x_update_vec = np.insert(x_update_vec, idx, 0)
-            # x_update_vec[-1] = 0  # neglect ground node
+                    update_vec = np.insert(update_vec, idx, 0)
+            # update_vec[-1] = 0  # neglect ground node
             # grad_loss_vec[-1] = 0
-        self.x_update_vec = x_update_vec
+        self.update_vec = update_vec
 
     def calc_Power_norm(self, BigClass: "Big_Class"):
         self.Power_norm = statistics.power_dissip_norm(self.u, self.R_in_t[-1], self.input_drawn)

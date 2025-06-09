@@ -148,11 +148,6 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
     EIlst: List[int] = []
     EJlst: List[int] = []
 
-    # # connect inputs to outputs
-    # for i, inNode in enumerate(Strctr.input_nodes_arr):
-    #     for j, outNode in enumerate(Strctr.output_nodes_arr):
-    #         EIlst.append(inNode)
-    #         EJlst.append(outNode)
     # connect inputs to outputs ONLY IF no intermediate nodes exist
     if len(Strctr.inter_nodes_arr) == 0:
         for inNode in Strctr.input_nodes_arr:
@@ -202,10 +197,7 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
             EIlst.append(interNode)
             EJlst.append(outNode)
 
-    # # connect input to ground
-    # for i, inNode in enumerate(Strctr.input_nodes_arr):
-    #     EIlst.append(inNode)
-    #     EJlst.append(ground_node)
+    # Don't connect input to ground
 
     # connect extraInput to ground
     for i, inNode in enumerate(Strctr.extraInput_nodes_arr):
@@ -477,7 +469,7 @@ def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_no
 
     """
     Compute the gradient of the loss function with respect to the edge pressures in a fully connected network.
-    As in appendix "Comparison to gradient descent and the Adaline algorithm" in the paper.
+    As in appendix "Comparison to gradient descent" in the paper.
 
     Parameters:
     - NE: int
@@ -507,11 +499,6 @@ def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_no
             x_j = array([0])
             y_i = p[np.where(DM[idx] == 1)]
             loss_i = loss[0][output_idx[0]]
-            # print('ground edge')
-            # print('output_idx ', output_idx)
-            # print('x_j ', x_j)
-            # print('y_i, ', y_i)
-            # print('loss_i, ', loss_i)
         elif len(output_idx) == 0:  # edge not leading to output
             x_j = p[np.where(DM[idx] == 1)]
             y_i = p[np.where(DM[idx] == -1)]
@@ -523,33 +510,6 @@ def grad_loss_FC(NE: int, p: NDArray[np.float_], DM: NDArray[np.int_], output_no
         grad_loss_ij = -(y_i-x_j)*loss_i
         grad_loss_vec[idx] = grad_loss_ij
     return grad_loss_vec
-
-
-def K_sum_vec(NE: int, EI: NDArray[np.int_], EJ: NDArray[np.int_], R: NDArray[np.float_]) -> NDArray[np.float_]:
-
-    """
-    Compute the sum of conductances (1/R) connected to each output node.
-    Needed for denomenator in the proper Adaline algorithm.
-
-    Parameters:
-    - NE: int
-        Number of edges in the network.
-    - EI: NDArray[np.int_]
-        Array of start node indices for each edge.
-    - EJ: NDArray[np.int_]
-        Array of end node indices for each edge.
-    - R: NDArray[np.float_]
-        Array of resistances for each edge.
-
-    Returns:
-    - K_sum_ij: NDArray[np.float_]
-        Array where each element contains the sum of conductances connected to the corresponding output node.
-    """
-
-    K_sum_ij = np.zeros(NE)
-    for i, node in enumerate(EJ):
-        K_sum_ij[i] = np.sum(1/R[EJ == node]) + np.sum(1/R[EI == node])
-    return K_sum_ij
 
 
 def ChangeRFromFlow(BigClass: "Big_Class", R_max, R_min, R_change_scheme='beads_pressure',
@@ -708,3 +668,33 @@ def ConstraintMatrix(NodeData, Nodes, GroundNodes, NN, EI, EJ) -> Tuple[np.ndarr
     f[NN:, 0] = CStr[:, -1]
 
     return CStr, CStr[:, :-1], f
+
+
+# # NOT IN USE
+
+
+# def K_sum_vec(NE: int, EI: NDArray[np.int_], EJ: NDArray[np.int_], R: NDArray[np.float_]) -> NDArray[np.float_]:
+
+#     """
+#     Compute the sum of conductances (1/R) connected to each output node.
+#     Needed for denomenator in the proper Adaline algorithm.
+
+#     Parameters:
+#     - NE: int
+#         Number of edges in the network.
+#     - EI: NDArray[np.int_]
+#         Array of start node indices for each edge.
+#     - EJ: NDArray[np.int_]
+#         Array of end node indices for each edge.
+#     - R: NDArray[np.float_]
+#         Array of resistances for each edge.
+
+#     Returns:
+#     - K_sum_ij: NDArray[np.float_]
+#         Array where each element contains the sum of conductances connected to the corresponding output node.
+#     """
+
+#     K_sum_ij = np.zeros(NE)
+#     for i, node in enumerate(EJ):
+#         K_sum_ij[i] = np.sum(1/R[EJ == node]) + np.sum(1/R[EI == node])
+#     return K_sum_ij

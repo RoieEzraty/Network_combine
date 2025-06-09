@@ -146,7 +146,7 @@ class User_Variables:
 
     def create_noise_for_extras(self) -> None:
         """
-        add desc
+        Creates noise on extra input nodes
         """
         dataset_size = np.shape(self.X_train)[0]
 

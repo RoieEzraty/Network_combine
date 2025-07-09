@@ -61,7 +61,8 @@ class Network_State:
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_update_in_t[-1])
 
-    def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None) -> None:
+    def initiate_resistances(self, BigClass: "Big_Class", R_vec_i: Optional[NDArray[np.float_]] = None,
+                             add_noise: Optional[float] = 0.0) -> None:
         """
         After using build_incidence, initiate resistances
 
@@ -77,6 +78,9 @@ class Network_State:
                 self.R_in_t = [R_vec_i]
         else:  # uniform resistances - not user specified
             self.R_in_t = [np.ones((BigClass.Strctr.NE), dtype=float)]
+
+        if add_noise:
+            self.R_in_t[0] += np.random.normal(loc=0.0, scale=add_noise, size=BigClass.Strctr.NE)
         # resistances for bead net as if w/out beads
         self.R_backg: NDArray[np.float_] = BigClass.Variabs.R_min * np.ones(BigClass.Strctr.NE)
 

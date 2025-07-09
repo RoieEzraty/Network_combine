@@ -152,45 +152,63 @@ def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
         p_reordered_normalized = p_reordered / np.max(p_reordered)
         node_colors = [BigClass.Colorscheme.cmap(value) for value in p_reordered_normalized]
     else:
-        node_colors = [colors_lst[0] for _ in range(len(NET.nodes))]
+        # node_colors = [colors_lst[0] for _ in range(len(NET.nodes))]
+        node_colors = []
+        for node in NET.nodes:
+            if node in BigClass.Strctr.input_nodes_arr:
+                node_colors.append(colors_lst[0])
+            elif node in BigClass.Strctr.output_nodes_arr:
+                node_colors.append(colors_lst[1])
+            elif node == BigClass.Strctr.NN-1:
+                node_colors.append("black")
+            else:
+                node_colors.append("gray")  # Optional: default color for unclassified nodes
 
     # Create or use the specified axis
     ax = ax or plt.gca()
 
-    # Draw edges with arrows
-    for (u, v), color, width, direction in zip(NET.edges, edge_colors, edge_widths, edge_directions):
-        if direction > 0:  # Positive flow
-            nx.draw_networkx_edges(NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
-                                   connectionstyle="arc3,rad=0.0", arrowstyle="-|>", arrows=True, ax=ax)
-        else:  # Negative flow (reverse direction)
-            nx.draw_networkx_edges(NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
-                                   connectionstyle="arc3,rad=0.0", arrowstyle="<|-", arrows=True, ax=ax)
+    # # Draw edges with arrows
+    # for (u, v), color, width, direction in zip(NET.edges, edge_colors, edge_widths, edge_directions):
+    #     if direction > 0:  # Positive flow
+    #         nx.draw_networkx_edges(NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
+    #                                connectionstyle="arc3,rad=0.0", arrowstyle="-|>", arrows=True, ax=ax)
+    #     else:  # Negative flow (reverse direction)
+    #         nx.draw_networkx_edges(NET, pos_lattice, edgelist=[(u, v)], edge_color=[color], width=width,
+    #                                connectionstyle="arc3,rad=0.0", arrowstyle="<|-", arrows=True, ax=ax)
 
-    # Draw nodes
-    # nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors, node_size=100)
-    nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors, node_size=20)
+    # # Draw nodes
+    # # nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors, node_size=100)
+    # nx.draw_networkx_nodes(NET, pos=pos_lattice, node_color=node_colors, node_size=20)
 
-    # Highlight input nodes
-    nx.draw_networkx_nodes(NET,
-                           pos=pos_lattice,
-                           nodelist=BigClass.Strctr.input_nodes_arr,
-                           node_color="none",  # Hollow circle
-                           edgecolors="k",  # black border
-                           node_size=200,  # Adjust size as needed
-                           linewidths=2)  # Thickness of the border
+    # # Highlight input nodes
+    # nx.draw_networkx_nodes(NET,
+    #                        pos=pos_lattice,
+    #                        nodelist=BigClass.Strctr.input_nodes_arr,
+    #                        node_color="none",  # Hollow circle
+    #                        edgecolors="k",  # black border
+    #                        node_size=200,  # Adjust size as needed
+    #                        linewidths=2)  # Thickness of the border
 
-    # Highlight output nodes
-    nx.draw_networkx_nodes(NET,
-                           pos=pos_lattice,
-                           nodelist=BigClass.Strctr.output_nodes_arr,
-                           node_color="none",  # Hollow circle
-                           edgecolors="grey",  # Grey border
-                           node_size=200,  # Adjust size as needed
-                           linewidths=2)  # Thickness of the border
+    # # Highlight output nodes
+    # nx.draw_networkx_nodes(NET,
+    #                        pos=pos_lattice,
+    #                        nodelist=BigClass.Strctr.output_nodes_arr,
+    #                        node_color="none",  # Hollow circle
+    #                        edgecolors="grey",  # Grey border
+    #                        node_size=200,  # Adjust size as needed
+    #                        linewidths=2)  # Thickness of the border
+
+    # Draw arrows for ax5
+    # draw_arrow(ax5, pos_lattice_both, 0, 2, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # in to output
+    # draw_arrow(ax5, pos_lattice_both, 1, 2, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # in to output
+    # draw_arrow(ax5, pos_lattice_both, 2, 3, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # out to ground
+    nx.draw_networkx(NET, pos=pos_lattice, edge_color=edge_colors,
+                     node_color=node_colors, with_labels=False, arrows=True, font_color='white',
+                     font_size=14, width=2, node_size=400)
 
     # Draw labels (if enabled)
     if node_labels:
-        nx.draw_networkx_labels(NET, pos_lattice)
+        nx.draw_networkx_labels(NET, pos=pos_lattice, font_size=16, font_color='white')
 
     # Show the plot
     plt.show()

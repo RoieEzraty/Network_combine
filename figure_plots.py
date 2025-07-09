@@ -13,16 +13,12 @@ from numpy.typing import NDArray
 from brokenaxes import brokenaxes
 from matplotlib.patches import FancyArrowPatch
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from matplotlib.patches import RegularPolygon
 from matplotlib.lines import Line2D
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-
+from matplotlib.colors import LogNorm
 
 import statistics
 
 if TYPE_CHECKING:
-    from User_Variables import User_Variables
-    from Network_State import Network_State
     from Color_Scheme import Color_Scheme
 
 
@@ -122,7 +118,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # "update" modality pressures
     ax2.plot(input_update_1in2out[1:T])
     ax2.plot(output_update_1in2out[1:T])
-    ax2.set_title('"Update" modality pressure')
+    ax2.set_title('Update modality pressure')
     ax2.set_ylim([-0.13, 0.17])
     # ax2.legend(legend2_1in2out, loc='upper right')
     ax2.legend(legend2_1in2out, loc='upper right',
@@ -200,7 +196,8 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
 
 def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
     """
-    Two-panel plot comparing linear and nonlinear update rules - ensemble mean of loss at end of training.
+    Two-panel plot comparing linear and nonlinear update rules - ensemble mean of loss at end of training,
+    shown on a logarithmic color scale.
 
     Parameters:
     -----------
@@ -211,53 +208,131 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
     Colorscheme : Color_Scheme
         Object with a `.cmap` attribute defining the colormap
 
-    outputs:
+    Outputs:
+    --------
     matplotlib plot
     """
-    v_max = 0.1
+
+    log_scale = True
+    # log_scale = False
+    if log_scale:
+        loss_max = 1
+        loss_min = 5e-3
+        # Set color normalization using logarithmic scale
+        norm = LogNorm(vmin=loss_min, vmax=loss_max)  # Adjust vmin/vmax if needed
+    else:
+        vmin = 0
+        vmax = 0.1
+        norm = None
     plot_from = 0
+
     loss_mean_lin = np.mean(loss_mat_lin, axis=2)[plot_from:, plot_from:]
     loss_mean_nonlin = np.mean(loss_mat_nonlin, axis=2)[plot_from:, plot_from:]
 
     Nin = np.arange(plot_from+1, loss_mat_lin.shape[0]+1)  # array input dimension
     Nout = np.arange(plot_from+1, loss_mat_lin.shape[1]+1)  # array output dimension
 
-    # instantiate figure and grid for positioning colorbal
+    # Instantiate figure and grid for positioning colorbar
     fig = plt.figure(figsize=(6, 3))
     gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.3)
 
     ax1 = fig.add_subplot(gs[0])
     ax2 = fig.add_subplot(gs[1])
-    # cax = fig.add_subplot(gs[2])  # no need to specify colorbar here
 
-    # linear update rule
-    ax1.imshow(loss_mean_lin, cmap=Colorscheme.cmap, origin='lower',
-               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-               vmin=0, vmax=v_max)
-    ax1.set_title(r'$\dot{R} \propto \Delta p$')
+    # Linear update rule
+    ax1.imshow(loss_mean_lin, cmap=Colorscheme.cmap, norm=norm,
+               vmin=(vmin if not log_scale else None), vmax=(vmax if not log_scale else None), origin='lower',
+               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5])
+    ax1.set_title(r'$\dot{R} \propto \Delta p^{\,!}$')
     ax1.set_xlabel('# Outputs')
     ax1.set_ylabel('# Inputs')
     ax1.set_xticks(Nin)
     ax1.set_yticks(Nout)
     set_thicker_spines(ax1, linewidth=1.5)
 
-    # nonlinear update rule
-    im2 = ax2.imshow(loss_mean_nonlin, cmap=Colorscheme.cmap, origin='lower',
-                     extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
-                     vmin=0, vmax=v_max)
-    ax2.set_title(r'$\dot{R} \propto \left(\Delta p\right)^3$')
+    # Nonlinear update rule
+    im2 = ax2.imshow(loss_mean_nonlin, cmap=Colorscheme.cmap, norm=norm,
+                     vmin=(vmin if not log_scale else None), vmax=(vmax if not log_scale else None), origin='lower',
+                     extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5])
+    ax2.set_title(r'$\dot{R} \propto \left(\Delta p^{\,!}\right)^3$')
     ax2.set_xlabel('# Outputs')
     ax2.set_xticks(Nin)
     ax2.set_yticks(Nout)
     set_thicker_spines(ax2, linewidth=1.5)
 
-    # colorbar axis positioned at [1.05, 0] with 0.08 width and 1.0 height
+    # Colorbar axis positioned at [1.05, 0] with 0.08 width and 1.0 height
     cax = ax2.inset_axes((1.05, 0, 0.08, 1.0))
-    # Add colorbar to the dedicated axis
     cbar = fig.colorbar(im2, cax=cax)
     cbar.set_label(r'$\|\mathcal{L}\|$')
 
     plt.show()
+
+
+# def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
+#     """
+#     Two-panel plot comparing linear and nonlinear update rules - ensemble mean of loss at end of training.
+
+#     Parameters:
+#     -----------
+#     loss_mat_lin : np.ndarray
+#         3D array [Nin, Nout, ensemble] for the linear system
+#     loss_mat_nonlin : np.ndarray
+#         3D array [Nin, Nout, ensemble] for the nonlinear system
+#     Colorscheme : Color_Scheme
+#         Object with a `.cmap` attribute defining the colormap
+
+#     outputs:
+#     matplotlib plot
+#     """
+#     loss_max = 0
+#     loss_min = -5
+#     # loss_max = 0.1
+#     # loss_min = 0
+#     plot_from = 0
+#     loss_mean_lin = np.mean(loss_mat_lin, axis=2)[plot_from:, plot_from:]
+#     loss_mean_nonlin = np.mean(loss_mat_nonlin, axis=2)[plot_from:, plot_from:]
+#     log_loss_lin = np.log(loss_mean_lin)
+#     log_loss_nonlin = np.log(loss_mean_nonlin)
+
+#     Nin = np.arange(plot_from+1, loss_mat_lin.shape[0]+1)  # array input dimension
+#     Nout = np.arange(plot_from+1, loss_mat_lin.shape[1]+1)  # array output dimension
+
+#     # instantiate figure and grid for positioning colorbal
+#     fig = plt.figure(figsize=(6, 3))
+#     gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.3)
+
+#     ax1 = fig.add_subplot(gs[0])
+#     ax2 = fig.add_subplot(gs[1])
+#     # cax = fig.add_subplot(gs[2])  # no need to specify colorbar here
+
+#     # linear update rule
+#     ax1.imshow(log_loss_lin, cmap=Colorscheme.cmap, origin='lower',
+#                extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
+#                vmin=loss_min, vmax=loss_max)
+#     ax1.set_title(r'$\dot{R} \propto \Delta p$')
+#     ax1.set_xlabel('# Outputs')
+#     ax1.set_ylabel('# Inputs')
+#     ax1.set_xticks(Nin)
+#     ax1.set_yticks(Nout)
+#     set_thicker_spines(ax1, linewidth=1.5)
+
+#     # nonlinear update rule
+#     im2 = ax2.imshow(log_loss_nonlin, cmap=Colorscheme.cmap, origin='lower',
+#                      extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5],
+#                      vmin=loss_min, vmax=loss_max)
+#     ax2.set_title(r'$\dot{R} \propto \left(\Delta p\right)^3$')
+#     ax2.set_xlabel('# Outputs')
+#     ax2.set_xticks(Nin)
+#     ax2.set_yticks(Nout)
+#     set_thicker_spines(ax2, linewidth=1.5)
+
+#     # colorbar axis positioned at [1.05, 0] with 0.08 width and 1.0 height
+#     cax = ax2.inset_axes((1.05, 0, 0.08, 1.0))
+#     # Add colorbar to the dedicated axis
+#     cbar = fig.colorbar(im2, cax=cax)
+#     cbar.set_label(r'$\|\mathcal{L}\|$')
+
+#     plt.show()
 
 
 def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],
@@ -590,6 +665,190 @@ def add_ground_symbol(ax, pos, node_index):
 
 # # APPENDICES
 
+
+def plot_comparison_GD_4in6out(R_Adalike_4in6out: NDArray[np.float_], R_GD_4in6out: NDArray[np.float_], Nout: int,
+                               cosine_sim_4in6out: NDArray[np.float_], Colorscheme: "Color_Scheme",
+                               window: int = 0) -> None:
+
+    """
+    1) Bar plot of resistances at end of training using gradient descent (GD) and proposed scheme
+    2) cosine similarity between change in conductivities using GD and my scheme
+
+    inputs:
+    too many
+
+    outputs:
+    matplotlib plot
+    """
+    # Set color cycle globally
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', Colorscheme.colors_lst)
+
+    # omit output to ground
+    R_Adalike_4in6out = R_Adalike_4in6out[-1][:-Nout]
+    R_GD_4in6out = R_GD_4in6out[-1][:-Nout]
+
+    # Normalize R values so maximal will be 1
+    # R_Adalike_4in6out_norm = R_Adalike_4in6out / np.max(R_Adalike_4in6out)
+    # R_GD_4in6out_norm = R_GD_4in6out / np.max(R_GD_4in6out)
+    R_Adalike_4in6out_norm = R_Adalike_4in6out
+    R_GD_4in6out_norm = R_GD_4in6out
+
+    # # weird setup for bars
+    # x_4in6out = np.arange(len(R_GD_4in6out_norm))
+    # bar_width = 0.35
+
+    if window:
+        cosine_sim_4in6out = statistics.mov_ave(cosine_sim_4in6out, window)
+
+    # Grid: 1 rows, 2 columns
+    fig = plt.figure(figsize=(6, 3))
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], height_ratios=[1])
+    ax0 = fig.add_subplot(gs[0])
+    ax1 = fig.add_subplot(gs[1])
+
+    # R vs R_GD
+    # ax0.bar(x_4in6out - bar_width / 2, R_GD_4in6out_norm,
+    #         width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
+    # ax0.bar(x_4in6out + bar_width / 2, R_Adalike_4in6out_norm,
+    #         width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
+    # ax0.set_yticks([0, 0.5, 1])
+    # ax0.set_xticks([0, 1, 2, 3])
+    # ax0.plot(R_GD_4in6out_norm, R_Adalike_4in6out_norm, '.')
+
+    # color_cycle = Colorscheme.colors_lst + ['#000000'] + Colorscheme.colors_lst
+    color_cycle = [Colorscheme.colors_lst[0]]*len(R_GD_4in6out)
+    print('color_cycle', color_cycle)
+    n_colors = Nout
+
+    # Assign color by position modulo color count
+    color_indices = np.arange(len(R_GD_4in6out_norm)) % n_colors
+    point_colors = [color_cycle[i] for i in color_indices]
+
+    print('point colors', point_colors)
+    # Scatter plot with per-point colors
+    ax0.scatter(
+        R_GD_4in6out_norm,
+        R_Adalike_4in6out_norm,
+        c=point_colors,
+        marker='.',
+        s=40,
+        edgecolors='none'
+    )
+    ax0.set_ylabel(r'$R$')
+    ax0.set_xlabel(r'$R_{GD}$')
+
+    # Diagonal line (y = x)
+    min_val = min(R_GD_4in6out_norm.min(), R_Adalike_4in6out_norm.min())
+    max_val = max(R_GD_4in6out_norm.max(), R_Adalike_4in6out_norm.max())
+    ax0.plot([min_val, max_val], [min_val, max_val], '--k', linewidth=1.2, alpha=0.3)
+
+    # Set log scale
+    ax0.set_xscale('log')
+    ax0.set_yscale('log')
+
+    # Cosine similarity
+    ax1.plot(cosine_sim_4in6out)
+    # ax1.plot(np.zeros([len(cosine_sim_4in6out)]), '--k')  # dotted line at cosine=0
+    ax1.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
+    ax1.set_xlabel('$t$')
+    ax1.set_ylim(0, 1)
+    ax1.set_yticks([0, 0.5, 1])
+
+    # Thicker spines
+    for ax in [ax0, ax1]:
+        set_thicker_spines(ax)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def cos_sim_lin_nonlin(cos_mat_lin: np.ndarray, cos_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
+    """
+    Two-panel plot comparing linear and nonlinear update rules - ensemble mean of loss at end of training,
+    shown on a logarithmic color scale.
+
+    Parameters:
+    -----------
+    loss_mat_lin : np.ndarray
+        3D array [Nin, Nout, ensemble] for the linear system
+    loss_mat_nonlin : np.ndarray
+        3D array [Nin, Nout, ensemble] for the nonlinear system
+    Colorscheme : Color_Scheme
+        Object with a `.cmap` attribute defining the colormap
+
+    Outputs:
+    --------
+    matplotlib plot
+    """
+
+    vmin = 0
+    vmax = 1
+
+    cos_mean_lin = np.mean(cos_mat_lin, axis=2)
+    cos_mean_nonlin = np.mean(cos_mat_nonlin, axis=2)
+
+    Nin = np.arange(1, 11)  # array input dimension
+    Nout = np.arange(1, 11)  # array output dimension
+
+    # Instantiate figure and grid for positioning colorbar
+    fig = plt.figure(figsize=(6, 3))
+    gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.3)
+
+    ax1 = fig.add_subplot(gs[0])
+    ax2 = fig.add_subplot(gs[1])
+
+    # Linear update rule
+    ax1.imshow(cos_mean_lin, cmap=Colorscheme.cmap, vmin=vmin, vmax=vmax, origin='lower',
+               extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5])
+    ax1.set_title(r'$\dot{R} \propto \Delta p$')
+    ax1.set_xlabel('# Outputs')
+    ax1.set_ylabel('# Inputs')
+    ax1.set_xticks(Nin)
+    ax1.set_yticks(Nout)
+    set_thicker_spines(ax1, linewidth=1.5)
+
+    # Nonlinear update rule
+    im2 = ax2.imshow(cos_mean_nonlin, cmap=Colorscheme.cmap, vmin=vmin, vmax=vmax, origin='lower',
+                     extent=[min(Nin)-0.5, max(Nin)+0.5, min(Nout)-0.5, max(Nout)+0.5])
+    ax2.set_title(r'$\dot{R} \propto \left(\Delta p\right)^3$')
+    ax2.set_xlabel('# Outputs')
+    ax2.set_xticks(Nin)
+    ax2.set_yticks(Nout)
+    set_thicker_spines(ax2, linewidth=1.5)
+
+    # Colorbar axis positioned at [1.05, 0] with 0.08 width and 1.0 height
+    cax = ax2.inset_axes((1.05, 0, 0.08, 1.0))
+    cbar = fig.colorbar(im2, cax=cax)
+    # cbar.set_label(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
+    cbar.set_label(r'$C$')
+
+    plt.show()
+
+
+# # Auxiliary functions
+
+
+def draw_arrow(ax, pos, src, dst, color='gray', arrowstyle='-|>', lw=2, head_width=6):
+    """Draws a thick arrow from node `src` to node `dst` on axes `ax`."""
+    src_xy = pos[src]
+    dst_xy = pos[dst]
+    eps = 0
+    arrow = FancyArrowPatch(
+        posA=src_xy+eps,
+        posB=dst_xy+eps,
+        connectionstyle="arc3,rad=0.0",
+        arrowstyle=arrowstyle,
+        mutation_scale=head_width,  # size of the arrow head
+        linewidth=lw,
+        color=color,
+        zorder=1
+    )
+    ax.add_patch(arrow)
+
+
+# # NOT IN USE
+
+
 def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_],
                             R_3in1out_ourscheme: NDArray[np.float_],
                             loss_3in1out_Adaline: NDArray[np.float_],
@@ -646,85 +905,6 @@ def plot_comparison_Adaline(R_3in1out_Adaline: NDArray[np.float_],
     ax1.set_yscale('log')
     ax1.set_ylim(1e-3, 1)
     ax1.legend()
-
-    # Thicker spines
-    for ax in [ax0, ax1]:
-        set_thicker_spines(ax)
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_comparison_GD_4in6out(R_Adalike_4in6out: NDArray[np.float_], R_GD_4in6out: NDArray[np.float_], Nout: int,
-                               cosine_sim_4in6out: NDArray[np.float_], Colorscheme: "Color_Scheme",
-                               window: int = 0) -> None:
-
-    """
-    Two rows plot with 3 subfigures each
-    1) Bar plot of resistances at end of training using gradient descent (GD) and proposed scheme
-    2) loss a.f.o t using GD and proposed scheme
-    3) cosine similarity between change in conductivities using GD and my scheme
-
-    inputs:
-    too many
-
-    outputs:
-    matplotlib plot
-    """
-    # Set color cycle globally
-    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', Colorscheme.colors_lst)
-
-    # omit output to ground
-    R_Adalike_4in6out = R_Adalike_4in6out[-1][:-Nout]
-    R_GD_4in6out = R_GD_4in6out[-1][:-Nout]
-
-    # Normalize R values so maximal will be 1
-    R_Adalike_4in6out_norm = R_Adalike_4in6out / np.max(R_Adalike_4in6out)
-    R_GD_4in6out_norm = R_GD_4in6out / np.max(R_GD_4in6out)
-
-    # # weird setup for bars
-    # x_4in6out = np.arange(len(R_GD_4in6out_norm))
-    # bar_width = 0.35
-
-    if window:
-        cosine_sim_4in6out = statistics.mov_ave(cosine_sim_4in6out, window)
-
-    # Grid: 2 rows, 3 columns
-    fig = plt.figure(figsize=(6, 3))
-    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], height_ratios=[1])
-    ax0 = fig.add_subplot(gs[0])
-    ax1 = fig.add_subplot(gs[1])
-
-    # ---- Row 1 - 1 input 2 outputs ----
-
-    # R bar plot
-    # ax0.bar(x_4in6out - bar_width / 2, R_GD_4in6out_norm,
-    #         width=bar_width, label='GD', alpha=0.8, edgecolor='k', linewidth=1.6)
-    # ax0.bar(x_4in6out + bar_width / 2, R_Adalike_4in6out_norm,
-    #         width=bar_width, label='this work', alpha=0.8, edgecolor='k', linewidth=1.6)
-    # ax0.set_yticks([0, 0.5, 1])
-    # ax0.set_xticks([0, 1, 2, 3])
-    ax0.plot(R_GD_4in6out_norm, R_Adalike_4in6out_norm, '.')
-    ax0.set_ylabel(r'$R$')
-    ax0.set_xlabel(r'$R_{GD}$')
-
-    # Diagonal line (y = x)
-    min_val = min(R_GD_4in6out_norm.min(), R_Adalike_4in6out_norm.min())
-    max_val = max(R_GD_4in6out_norm.max(), R_Adalike_4in6out_norm.max())
-    ax0.plot([min_val, max_val], [min_val, max_val], '--k', linewidth=1.2, alpha=0.3)
-
-    # Set log scale
-    ax0.set_xscale('log')
-    ax0.set_yscale('log')
-
-    # Cosine similarity
-    ax1.plot(cosine_sim_4in6out)
-    ax1.plot(np.zeros([len(cosine_sim_4in6out)]), '--k')  # dotted line at cosine=0
-    ax1.set_yticks([-1, 0, 1])
-    ax1.set_ylabel(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
-    ax1.set_xlabel('$t$')
-    ax1.set_ylim(-1, 1)
-    ax1.set_yticks([-1, -0.5, 0, 0.5, 1])
 
     # Thicker spines
     for ax in [ax0, ax1]:
@@ -824,28 +1004,6 @@ def plot_comparison_GD(R_mine_1in2out: NDArray[np.float_], R_GD_1in2out: NDArray
     plt.tight_layout()
     plt.show()
 
-
-# # Auxiliary functions
-
-
-def draw_arrow(ax, pos, src, dst, color='gray', arrowstyle='-|>', lw=2, head_width=6):
-    """Draws a thick arrow from node `src` to node `dst` on axes `ax`."""
-    src_xy = pos[src]
-    dst_xy = pos[dst]
-    eps = 0
-    arrow = FancyArrowPatch(
-        posA=src_xy+eps,
-        posB=dst_xy+eps,
-        connectionstyle="arc3,rad=0.0",
-        arrowstyle=arrowstyle,
-        mutation_scale=head_width,  # size of the arrow head
-        linewidth=lw,
-        color=color,
-        zorder=1
-    )
-    ax.add_patch(arrow)
-
-# # NOT IN USE
 
 
 def plot_accuracy_4_materials(t_final: int, dataset_shape: np.ndarray, t_for_accuracy: np.ndarray,

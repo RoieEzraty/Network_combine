@@ -80,6 +80,34 @@ class Networkx_Net:
                     pos_lattice[start_index + 2] = array([(self.scale / 2 - self.squish) + x_offset, 0 + y_offset])
                     pos_lattice[start_index + 3] = array([0 + x_offset, (self.scale / 2 - self.squish) + y_offset])
                     pos_lattice[start_index + 4] = array([0 + x_offset, 0 + y_offset])
+        elif BigClass.Strctr.net_type == 'FC':
+            pos_lattice = {}
+
+            k = 0  # horizontal position
+
+            # Input layer: x = 0
+            n_in = len(BigClass.Strctr.input_nodes_arr)
+            for i, node in enumerate(BigClass.Strctr.input_nodes_arr):
+                y = i - (n_in - 1) / 2  # Center the input layer around x=0
+                pos_lattice[node] = (k, y)
+            k += 1
+
+            n_inter = len(BigClass.Strctr.inter_nodes_arr)
+            for i, node in enumerate(BigClass.Strctr.inter_nodes_arr):
+                y = i - (n_inter - 1) / 2  # Center the input layer around x=0
+                pos_lattice[node] = (k, y)
+            k += 1
+
+            # Output layer: x = 1
+            n_out = len(BigClass.Strctr.output_nodes_arr)
+            for i, node in enumerate(BigClass.Strctr.output_nodes_arr):
+                y = i - (n_out - 1) / 2  # Center the output layer around x=0
+                pos_lattice[node] = (k, y)
+            k += 1
+
+            # Ground node: x = 2, centered
+            pos_lattice[BigClass.Strctr.NN-1] = (k, 0)
+
         else:
             pos_lattice = nx.spring_layout(self.NET, k=1.0, iterations=20)
         self.pos_lattice = pos_lattice

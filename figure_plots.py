@@ -45,7 +45,7 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
                        loss_1in2out: NDArray[np.float_], loss_2in1out: NDArray[np.float_],
                        NET_1in2out: nx.DiGraph, NET_2in1out: nx.DiGraph,
                        pos_lattice_1in2out: dict, pos_lattice_2in1out: dict,
-                       Colorscheme: "Color_Scheme") -> None:
+                       Colorscheme: "Color_Scheme", savestr: str = '') -> None:
     """
     2 rows of 4 subfigures:
     1) Mean Absolute Error a.f.o training time t
@@ -191,10 +191,14 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     for ax in [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]:
         set_thicker_spines(ax)  # Apply the spine thickness to each subplot
 
-    plt.show()
+    if savestr:
+        plt.savefig(savestr, format='eps', dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
 
 
-def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
+def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme",
+                    savestr: str = '') -> None:
     """
     Two-panel plot comparing linear and nonlinear update rules - ensemble mean of loss at end of training,
     shown on a logarithmic color scale.
@@ -265,7 +269,10 @@ def loss_afo_in_out(loss_mat_lin: np.ndarray, loss_mat_nonlin: np.ndarray, Color
     cbar = fig.colorbar(im2, cax=cax)
     cbar.set_label(r'$\|\mathcal{L}\|$')
 
-    plt.show()
+    if savestr:
+        plt.savefig(savestr, format='eps', dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
 
 
 def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_], accuracy_in_t: NDArray[np.float_],
@@ -274,7 +281,8 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
                              accuracy_in_t_deltaR_propto_deltap: np.ndarray,
                              accuracy_in_t_deltaR_propto_Q: np.ndarray,
                              accuracy_in_t_deltaR_propto_Power: np.ndarray, Colorscheme: "Color_Scheme",
-                             Iris_PNG_folder: str, smooth: bool = True, window_size: int = 5) -> None:
+                             Iris_PNG_folder: str, smooth: bool = True, window_size: int = 5,
+                             savestr: str = '') -> None:
     """
     Plots the accuracy in time for the Iris classification task where R_dot=delta_p
 
@@ -320,15 +328,32 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
         if t % dataset_shape[0] == 0:
             ax.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1, alpha=0.3)
 
-    # for i, t in enumerate(t_for_accuracy):
-    #     plt.axvline(x=t, color=Colorscheme.red, linestyle='--', linewidth=1, alpha=0.3)
+    is_eps = savestr.endswith('.eps')
+    opacity_eps = 1.0 if is_eps else opacity
 
-    ax.plot(t_for_accuracy_smoothed, mean_accuracy, label='accuracy', color=Colorscheme.colors_lst[0], marker='.',
-            linestyle='')
+    # Fill confidence bounds FIRST so it's behind the line
+    ax.fill_between(t_for_accuracy_smoothed,
+                    mean_accuracy - std,
+                    mean_accuracy + std,
+                    color=Colorscheme.colors_lst[1],
+                    alpha=opacity_eps,
+                    zorder=1)
 
-    # Plot confidence intervals using fill_between
-    ax.fill_between(t_for_accuracy_smoothed, mean_accuracy - std,
-                    mean_accuracy + std, color=Colorscheme.colors_lst[0], alpha=opacity)
+    # Then plot the mean accuracy line on top
+    ax.plot(t_for_accuracy_smoothed,
+            mean_accuracy,
+            label='accuracy',
+            color=Colorscheme.colors_lst[0],
+            marker='.',
+            linestyle='',
+            zorder=2)
+
+    # ax.plot(t_for_accuracy_smoothed, mean_accuracy, label='accuracy', color=Colorscheme.colors_lst[0], marker='.',
+    #         linestyle='')
+
+    # # Plot confidence intervals using fill_between
+    # ax.fill_between(t_for_accuracy_smoothed, mean_accuracy - std,
+    #                 mean_accuracy + std, color=Colorscheme.colors_lst[0], alpha=opacity)
 
     # axes
     ax.set_xlabel('$t$', fontsize=14)  # Set x-axis label with font size
@@ -336,21 +361,21 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
     ax.set_ylabel('Test accuracy', fontsize=14)  # Set y-axis label with font size
     ax.set_ylim([0.3, 1])
 
-    # # Iris
-    # Load your PNG image
-    iris_img = mpimg.imread(Iris_PNG_folder)  # ← path to your image
+    # # # Iris
+    # # Load your PNG image
+    # iris_img = mpimg.imread(Iris_PNG_folder)  # ← path to your image
 
-    # Create the image box (tweak zoom as needed)
-    imagebox = OffsetImage(iris_img, zoom=0.16)
+    # # Create the image box (tweak zoom as needed)
+    # imagebox = OffsetImage(iris_img, zoom=0.1)
 
-    # Anchor it to lower right using axes fraction coordinates
-    ab = AnnotationBbox(imagebox, (0.45, 0.08),  # x, y in axes coords
-                        frameon=False,
-                        xycoords='axes fraction',
-                        box_alignment=(1, 0))  # align bottom-right corner of image to point
+    # # Anchor it to lower right using axes fraction coordinates
+    # ab = AnnotationBbox(imagebox, (0.35, 0.08),  # x, y in axes coords
+    #                     frameon=False,
+    #                     xycoords='axes fraction',
+    #                     box_alignment=(1, 0))  # align bottom-right corner of image to point
 
-    # Add it to the current axes
-    fig.gca().add_artist(ab)
+    # # Add it to the current axes
+    # fig.gca().add_artist(ab)
 
     # # 5 matrials inset
     # Create inset axes
@@ -367,6 +392,12 @@ def plot_accuracy_1_material(t_final: np.int_, t_for_accuracy: NDArray[np.int_],
 
     # Thicker spines
     set_thicker_spines(plt.gca(), linewidth=1.5)  # apply to the current Axes
+
+    if savestr:
+        # plt.savefig(savestr, format='eps', dpi=300, bbox_inches='tight')
+        plt.savefig(savestr, format='eps', dpi=300)
+    else:
+        plt.show()
 
 
 def plot_final_accuracy_bar_chart(ax: plt.Axes,
@@ -422,9 +453,167 @@ def plot_final_accuracy_bar_chart(ax: plt.Axes,
 # # APPENDICES
 
 
+def comparison_hidden_layers(Nin1_Nout7_Ninter0_lin: np.ndarray, Nin1_Nout7_Ninter7_lin: np.ndarray,
+                             Nin1_Nout7_Ninter0_nonlin: np.ndarray, Nin1_Nout7_Ninter7_nonlin: np.ndarray,
+                             Nin6_Nout1_Ninter0_lin: np.ndarray, Nin6_Nout1_Ninter6_lin: np.ndarray,
+                             Nin6_Nout1_Ninter0_nonlin: np.ndarray, Nin6_Nout1_Ninter6_nonlin: np.ndarray,
+                             Nin6_Nout7_Ninter0_lin: np.ndarray, Nin6_Nout7_Ninter7_lin: np.ndarray,
+                             Nin6_Nout7_Ninter0_nonlin: np.ndarray, Nin6_Nout7_Ninter7_nonlin: np.ndarray,
+                             Colorscheme: "Color_Scheme", savestr: str = '') -> None:
+
+    window_size = 100
+
+    # loss_Nin1_Nout7_Ninter0_lin = statistics.mov_ave(Nin1_Nout7_Ninter0_lin, window_size)[-1]
+    # loss_Nin1_Nout7_Ninter7_lin = statistics.mov_ave(Nin1_Nout7_Ninter7_lin, window_size)[-1]
+    # loss_Nin1_Nout7_Ninter0_nonlin = statistics.mov_ave(Nin1_Nout7_Ninter0_nonlin, window_size)[-1]
+    # loss_Nin1_Nout7_Ninter7_nonlin = statistics.mov_ave(Nin1_Nout7_Ninter7_nonlin, window_size)[-1]
+
+    # loss_Nin6_Nout1_Ninter0_lin = statistics.mov_ave(Nin6_Nout1_Ninter0_lin, window_size)[-1]
+    # loss_Nin6_Nout1_Ninter6_lin = statistics.mov_ave(Nin6_Nout1_Ninter6_lin, window_size)[-1]
+    # loss_Nin6_Nout1_Ninter0_nonlin = statistics.mov_ave(Nin6_Nout1_Ninter0_nonlin, window_size)[-1]
+    # loss_Nin6_Nout1_Ninter6_nonlin = statistics.mov_ave(Nin6_Nout1_Ninter6_nonlin, window_size)[-1]
+
+    loss_Nin6_Nout7_Ninter0_lin = statistics.mov_ave(Nin6_Nout7_Ninter0_lin, window_size)[-1]
+    loss_Nin6_Nout7_Ninter7_lin = statistics.mov_ave(Nin6_Nout7_Ninter7_lin, window_size)[-1]
+    loss_Nin6_Nout7_Ninter0_nonlin = statistics.mov_ave(Nin6_Nout7_Ninter0_nonlin, window_size)[-1]
+    loss_Nin6_Nout7_Ninter7_nonlin = statistics.mov_ave(Nin6_Nout7_Ninter7_nonlin, window_size)[-1]
+
+    # std_Nin1_Nout7_Ninter0_lin = np.std(Nin1_Nout7_Ninter0_lin[-window_size:])
+    # std_Nin1_Nout7_Ninter7_lin = np.std(Nin1_Nout7_Ninter7_lin[-window_size:])
+    # std_Nin1_Nout7_Ninter0_nonlin = np.std(Nin1_Nout7_Ninter0_nonlin[-window_size:])
+    # std_Nin1_Nout7_Ninter7_nonlin = np.std(Nin1_Nout7_Ninter7_nonlin[-window_size:])
+
+    # std_Nin6_Nout1_Ninter0_lin = np.std(Nin6_Nout1_Ninter0_lin[-window_size:])
+    # std_Nin6_Nout1_Ninter6_lin = np.std(Nin6_Nout1_Ninter6_lin[-window_size:])
+    # std_Nin6_Nout1_Ninter0_nonlin = np.std(Nin6_Nout1_Ninter0_nonlin[-window_size:])
+    # std_Nin6_Nout1_Ninter6_nonlin = np.std(Nin6_Nout1_Ninter6_nonlin[-window_size:])
+
+    std_Nin6_Nout7_Ninter0_lin = np.std(Nin6_Nout7_Ninter0_lin[-window_size:])
+    std_Nin6_Nout7_Ninter7_lin = np.std(Nin6_Nout7_Ninter7_lin[-window_size:])
+    std_Nin6_Nout7_Ninter0_nonlin = np.std(Nin6_Nout7_Ninter0_nonlin[-window_size:])
+    std_Nin6_Nout7_Ninter7_nonlin = np.std(Nin6_Nout7_Ninter7_nonlin[-window_size:])
+
+    fig = plt.figure(figsize=(6, 3))
+    gs = gridspec.GridSpec(2, 3, height_ratios=[3, 1], width_ratios=[1, 1, 0.05], hspace=0.05, wspace=0.1)
+
+    # Upper and lower axes for the broken y-axis on the left subplot
+    # ax1_upper = fig.add_subplot(gs[0, 0])
+    # ax1_lower = fig.add_subplot(gs[1, 0], sharex=ax1_upper)
+    ax1 = fig.add_subplot(gs[:, 0])
+    ax2 = fig.add_subplot(gs[:, 1], sharey=ax1)  # full height
+
+    # Hide x-axis ticks on the upper part
+    # ax1_upper.tick_params(labelbottom=False)
+    ax1.tick_params(bottom=False, labelbottom=False)
+    ax2.tick_params(bottom=False, labelbottom=False, labelleft=False)
+
+    # x_labels = [r'$1\ \mathit{in}\ 7\ \mathit{out}$', r'$6\ \mathit{in}\ 1\ \mathit{out}$',
+    #             r'$6\ \mathit{in}\ 7\ \mathit{out}$']
+    bar_positions = np.arange(1)
+    bar_width = 0.35
+
+    # Data
+    # means_no_hidden = [loss_Nin1_Nout7_Ninter0_lin, loss_Nin6_Nout1_Ninter0_lin, loss_Nin6_Nout7_Ninter0_lin]
+    # means_with_hidden = [loss_Nin1_Nout7_Ninter7_lin, loss_Nin6_Nout1_Ninter6_lin, loss_Nin6_Nout7_Ninter7_lin]
+
+    # stds_no_hidden = [std_Nin1_Nout7_Ninter0_lin, std_Nin6_Nout1_Ninter0_lin, std_Nin6_Nout7_Ninter0_lin]
+    # stds_with_hidden = [std_Nin1_Nout7_Ninter7_lin, std_Nin6_Nout1_Ninter6_lin, std_Nin6_Nout7_Ninter7_lin]
+
+    # # Plot on both upper and lower axes
+    # for ax in [ax1_upper, ax1_lower]:
+    #     ax.bar(bar_positions - bar_width/2, means_no_hidden, bar_width,
+    #            yerr=stds_no_hidden, capsize=5, edgecolor='k', linewidth=1.6, label='no hidden')
+    #     ax.bar(bar_positions + bar_width/2, means_with_hidden, bar_width,
+    #            yerr=stds_with_hidden, capsize=5, edgecolor='k', linewidth=1.6, label='with hidden')
+
+    ax1.bar(bar_positions - bar_width/2,
+            loss_Nin6_Nout7_Ninter0_lin,
+            bar_width,
+            yerr=std_Nin6_Nout7_Ninter0_lin,
+            capsize=5, edgecolor='k', linewidth=1.6, label='no hidden')
+
+    ax1.bar(bar_positions + bar_width/2,
+            loss_Nin6_Nout7_Ninter7_lin,
+            bar_width,
+            yerr=std_Nin6_Nout7_Ninter7_lin,
+            capsize=5, edgecolor='k', linewidth=1.6, label='with hidden')
+
+    ax2.bar(bar_positions - bar_width/2,
+            loss_Nin6_Nout7_Ninter0_nonlin,
+            bar_width,
+            yerr=std_Nin6_Nout7_Ninter0_nonlin,
+            capsize=5, edgecolor='k', linewidth=1.6, label='no hidden')
+
+    ax2.bar(bar_positions + bar_width/2,
+            loss_Nin6_Nout7_Ninter7_nonlin,
+            bar_width,
+            yerr=std_Nin6_Nout7_Ninter7_nonlin,
+            capsize=5, edgecolor='k', linewidth=1.6, label='with hidden')
+
+    # ax1_upper.set_ylim(1e-6, 1)    # upper part
+    # ax1_lower.set_ylim(1e-21, 5e-20)  # lower part
+    # ax1_upper.set_yscale('log')
+    # ax1_lower.set_yscale('log')
+
+    # d = .015  # size of diagonal lines
+    # kwargs = dict(transform=ax1_upper.transAxes, color='k', clip_on=False)
+    # ax1_upper.plot((-d, +d), (-d, +d), **kwargs)        # top-left
+    # ax1_upper.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right
+
+    # kwargs.update(transform=ax1_lower.transAxes)  # switch to the bottom axes
+    # ax1_lower.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left
+    # ax1_lower.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right
+
+    # ax1_lower.set_xticks(bar_positions)
+    # ax1_lower.set_xticklabels(x_labels, rotation=35)
+    # ax1_upper.set_title(r'$\dot{R}\propto\Delta p^{\,!}$')
+    # ax1_upper.set_ylabel(r'$\|\mathcal{L}\|$')
+
+    ax1.set_title(r'$\dot{R}\propto\Delta p^{\,!}$')
+    # ax1.set_xticks(bar_positions)
+    # ax1.set_xticklabels(x_labels, rotation=35)
+    ax1.set_ylabel(r'$\|\mathcal{L}\|$')
+    ax1.set_yscale('log')
+    ax1.set_ylim([1e-3, 1])
+    # ax1.legend()
+
+    ax2.set_title(r'$\dot{R}\propto\left(\Delta p^{\,!}\right)^3$')
+    # ax2.set_xticks(bar_positions)
+    # ax2.set_xticklabels(x_labels, rotation=35)
+    # ax2.set_ylabel(r'$\|\mathcal{L}\|$')
+    ax2.set_yscale('log')
+    ax2.set_ylim([1e-3, 1])
+    ax2.legend()
+
+    # ax1.set_title(r'$\dot{R}\propto\Delta p^{\,!}$')
+    # ax1.set_xticks(bar_positions)
+    # ax1.set_xticklabels(x_labels, rotation=90)
+    # ax1.set_ylabel(r'$\|\mathcal{L}\|$')
+    # ax1.set_ylim([1e-8,1])
+    # # ax1.set_ylim([0,0.06])
+    # ax1.set_yscale('log')
+    # # ax1.legend()
+
+    # ax2.set_title(r'$\dot{R}\propto\left(\Delta p^{\,!}\right)^3$')
+    # ax2.set_xticks(bar_positions)
+    # ax2.set_xticklabels(x_labels, rotation=90)
+    # # ax2.set_ylabel(r'$\|\mathcal{L}\|$')
+    # ax2.set_ylim([1e-6,1])
+    # # ax2.set_ylim([0,0.06])
+    # ax2.set_yscale('log')
+    # ax2.legend()
+
+    plt.tight_layout()
+
+    if savestr:
+        plt.savefig(savestr, format='eps', dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
+
+
 def plot_comparison_GD_4in6out(R_Adalike_4in6out: NDArray[np.float_], R_GD_4in6out: NDArray[np.float_], Nout: int,
                                cosine_sim_4in6out: NDArray[np.float_], Colorscheme: "Color_Scheme",
-                               window: int = 0) -> None:
+                               window: int = 0, savestr: str = '') -> None:
 
     """
     1) Bar plot of resistances at end of training using gradient descent (GD) and proposed scheme
@@ -515,10 +704,15 @@ def plot_comparison_GD_4in6out(R_Adalike_4in6out: NDArray[np.float_], R_GD_4in6o
         set_thicker_spines(ax)
 
     plt.tight_layout()
-    plt.show()
+
+    if savestr:
+        plt.savefig(savestr, format='eps', dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
 
 
-def cos_sim_lin_nonlin(cos_mat_lin: np.ndarray, cos_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme") -> None:
+def cos_sim_lin_nonlin(cos_mat_lin: np.ndarray, cos_mat_nonlin: np.ndarray, Colorscheme: "Color_Scheme",
+                       savestr: str = '') -> None:
     """
     Two-panel plot comparing linear and nonlinear update rules - ensemble mean of loss at end of training,
     shown on a logarithmic color scale.
@@ -578,150 +772,10 @@ def cos_sim_lin_nonlin(cos_mat_lin: np.ndarray, cos_mat_nonlin: np.ndarray, Colo
     # cbar.set_label(r'$\cos\left(\dot{\vec{k}},\dot{\vec{k}}_{GD}\right)$')
     cbar.set_label(r'$C$')
 
-    plt.show()
-
-
-def comparison_hidden_layers(Nin1_Nout7_Ninter0_lin: np.ndarray, Nin1_Nout7_Ninter7_lin: np.ndarray,
-                             Nin1_Nout7_Ninter0_nonlin: np.ndarray, Nin1_Nout7_Ninter7_nonlin: np.ndarray,
-                             Nin6_Nout1_Ninter0_lin: np.ndarray, Nin6_Nout1_Ninter6_lin: np.ndarray,
-                             Nin6_Nout1_Ninter0_nonlin: np.ndarray, Nin6_Nout1_Ninter6_nonlin: np.ndarray,
-                             Nin6_Nout7_Ninter0_lin: np.ndarray, Nin6_Nout7_Ninter7_lin: np.ndarray,
-                             Nin6_Nout7_Ninter0_nonlin: np.ndarray, Nin6_Nout7_Ninter7_nonlin: np.ndarray,
-                             Colorscheme: "Color_Scheme") -> None:
-
-    window_size = 100
-
-    loss_Nin1_Nout7_Ninter0_lin = statistics.mov_ave(Nin1_Nout7_Ninter0_lin, window_size)[-1]
-    loss_Nin1_Nout7_Ninter7_lin = statistics.mov_ave(Nin1_Nout7_Ninter7_lin, window_size)[-1]
-    loss_Nin1_Nout7_Ninter0_nonlin = statistics.mov_ave(Nin1_Nout7_Ninter0_nonlin, window_size)[-1]
-    loss_Nin1_Nout7_Ninter7_nonlin = statistics.mov_ave(Nin1_Nout7_Ninter7_nonlin, window_size)[-1]
-
-    loss_Nin6_Nout1_Ninter0_lin = statistics.mov_ave(Nin6_Nout1_Ninter0_lin, window_size)[-1]
-    loss_Nin6_Nout1_Ninter6_lin = statistics.mov_ave(Nin6_Nout1_Ninter6_lin, window_size)[-1]
-    loss_Nin6_Nout1_Ninter0_nonlin = statistics.mov_ave(Nin6_Nout1_Ninter0_nonlin, window_size)[-1]
-    loss_Nin6_Nout1_Ninter6_nonlin = statistics.mov_ave(Nin6_Nout1_Ninter6_nonlin, window_size)[-1]
-
-    loss_Nin6_Nout7_Ninter0_lin = statistics.mov_ave(Nin6_Nout7_Ninter0_lin, window_size)[-1]
-    loss_Nin6_Nout7_Ninter7_lin = statistics.mov_ave(Nin6_Nout7_Ninter7_lin, window_size)[-1]
-    loss_Nin6_Nout7_Ninter0_nonlin = statistics.mov_ave(Nin6_Nout7_Ninter0_nonlin, window_size)[-1]
-    loss_Nin6_Nout7_Ninter7_nonlin = statistics.mov_ave(Nin6_Nout7_Ninter7_nonlin, window_size)[-1]
-
-    std_Nin1_Nout7_Ninter0_lin = np.std(Nin1_Nout7_Ninter0_lin[-window_size:])
-    std_Nin1_Nout7_Ninter7_lin = np.std(Nin1_Nout7_Ninter7_lin[-window_size:])
-    std_Nin1_Nout7_Ninter0_nonlin = np.std(Nin1_Nout7_Ninter0_nonlin[-window_size:])
-    std_Nin1_Nout7_Ninter7_nonlin = np.std(Nin1_Nout7_Ninter7_nonlin[-window_size:])
-
-    std_Nin6_Nout1_Ninter0_lin = np.std(Nin6_Nout1_Ninter0_lin[-window_size:])
-    std_Nin6_Nout1_Ninter6_lin = np.std(Nin6_Nout1_Ninter6_lin[-window_size:])
-    std_Nin6_Nout1_Ninter0_nonlin = np.std(Nin6_Nout1_Ninter0_nonlin[-window_size:])
-    std_Nin6_Nout1_Ninter6_nonlin = np.std(Nin6_Nout1_Ninter6_nonlin[-window_size:])
-
-    std_Nin6_Nout7_Ninter0_lin = np.std(Nin6_Nout7_Ninter0_lin[-window_size:])
-    std_Nin6_Nout7_Ninter7_lin = np.std(Nin6_Nout7_Ninter7_lin[-window_size:])
-    std_Nin6_Nout7_Ninter0_nonlin = np.std(Nin6_Nout7_Ninter0_nonlin[-window_size:])
-    std_Nin6_Nout7_Ninter7_nonlin = np.std(Nin6_Nout7_Ninter7_nonlin[-window_size:])
-
-    fig = plt.figure(figsize=(9, 4))
-    gs = gridspec.GridSpec(2, 3, height_ratios=[3, 1], width_ratios=[1, 1, 0.05], hspace=0.05, wspace=0.3)
-
-    # Upper and lower axes for the broken y-axis on the left subplot
-    ax1_upper = fig.add_subplot(gs[0, 0])
-    ax1_lower = fig.add_subplot(gs[1, 0], sharex=ax1_upper)
-    ax2 = fig.add_subplot(gs[:, 1])  # full height
-
-    # Hide x-axis ticks on the upper part
-    ax1_upper.tick_params(labelbottom=False)
-
-    x_labels = [r'$1\ \mathit{in}\ 7\ \mathit{out}$', r'$6\ \mathit{in}\ 1\ \mathit{out}$',
-                r'$6\ \mathit{in}\ 7\ \mathit{out}$']
-    bar_positions = np.arange(3)
-    bar_width = 0.35
-
-    # Data
-    means_no_hidden = [loss_Nin1_Nout7_Ninter0_lin, loss_Nin6_Nout1_Ninter0_lin, loss_Nin6_Nout7_Ninter0_lin]
-    means_with_hidden = [loss_Nin1_Nout7_Ninter7_lin, loss_Nin6_Nout1_Ninter6_lin, loss_Nin6_Nout7_Ninter7_lin]
-
-    stds_no_hidden = [std_Nin1_Nout7_Ninter0_lin, std_Nin6_Nout1_Ninter0_lin, std_Nin6_Nout7_Ninter0_lin]
-    stds_with_hidden = [std_Nin1_Nout7_Ninter7_lin, std_Nin6_Nout1_Ninter6_lin, std_Nin6_Nout7_Ninter7_lin]
-
-    # Plot on both upper and lower axes
-    for ax in [ax1_upper, ax1_lower]:
-        ax.bar(bar_positions - bar_width/2, means_no_hidden, bar_width,
-               yerr=stds_no_hidden, capsize=5, edgecolor='k', linewidth=1.6, label='no hidden')
-        ax.bar(bar_positions + bar_width/2, means_with_hidden, bar_width,
-               yerr=stds_with_hidden, capsize=5, edgecolor='k', linewidth=1.6, label='with hidden')
-
-    # ax1.bar(bar_positions - bar_width/2,
-    #         [loss_Nin1_Nout7_Ninter0_lin, loss_Nin6_Nout1_Ninter0_lin, loss_Nin6_Nout7_Ninter0_lin],
-    #         bar_width,
-    #         yerr=[std_Nin1_Nout7_Ninter0_lin, std_Nin6_Nout1_Ninter0_lin, std_Nin6_Nout7_Ninter0_lin],
-    #         capsize=5, edgecolor='k', linewidth=1.6, label='no hidden')
-
-    # ax1.bar(bar_positions + bar_width/2,
-    #         [loss_Nin1_Nout7_Ninter7_lin, loss_Nin6_Nout1_Ninter6_lin, loss_Nin6_Nout7_Ninter7_lin],
-    #         bar_width,
-    #         yerr=[std_Nin1_Nout7_Ninter7_lin, std_Nin6_Nout1_Ninter6_lin, std_Nin6_Nout7_Ninter7_lin],
-    #         capsize=5, edgecolor='k', linewidth=1.6, label='with hidden')
-
-    ax2.bar(bar_positions - bar_width/2,
-            [loss_Nin1_Nout7_Ninter0_nonlin, loss_Nin6_Nout1_Ninter0_nonlin, loss_Nin6_Nout7_Ninter0_nonlin],
-            bar_width,
-            yerr=[std_Nin1_Nout7_Ninter0_nonlin, std_Nin6_Nout1_Ninter0_nonlin, std_Nin6_Nout7_Ninter0_nonlin],
-            capsize=5, edgecolor='k', linewidth=1.6, label='no hidden')
-
-    ax2.bar(bar_positions + bar_width/2,
-            [loss_Nin1_Nout7_Ninter7_nonlin, loss_Nin6_Nout1_Ninter6_nonlin, loss_Nin6_Nout7_Ninter7_nonlin],
-            bar_width,
-            yerr=[std_Nin1_Nout7_Ninter7_nonlin, std_Nin6_Nout1_Ninter6_nonlin, std_Nin6_Nout7_Ninter7_nonlin],
-            capsize=5, edgecolor='k', linewidth=1.6, label='with hidden')
-
-    ax1_upper.set_ylim(1e-6, 1)    # upper part
-    ax1_lower.set_ylim(1e-21, 5e-20)  # lower part
-    ax1_upper.set_yscale('log')
-    ax1_lower.set_yscale('log')
-
-    d = .015  # size of diagonal lines
-    kwargs = dict(transform=ax1_upper.transAxes, color='k', clip_on=False)
-    ax1_upper.plot((-d, +d), (-d, +d), **kwargs)        # top-left
-    ax1_upper.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right
-
-    kwargs.update(transform=ax1_lower.transAxes)  # switch to the bottom axes
-    ax1_lower.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left
-    ax1_lower.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right
-
-    ax1_lower.set_xticks(bar_positions)
-    ax1_lower.set_xticklabels(x_labels, rotation=35)
-    ax1_upper.set_title(r'$\dot{R}\propto\Delta p^{\,!}$')
-    ax1_lower.set_ylabel(r'$\|\mathcal{L}\|$')
-
-    ax2.set_title(r'$\dot{R}\propto\left(\Delta p^{\,!}\right)^3$')
-    ax2.set_xticks(bar_positions)
-    ax2.set_xticklabels(x_labels, rotation=35)
-    ax2.set_ylabel(r'$\|\mathcal{L}\|$')
-    ax2.set_yscale('log')
-    ax2.set_ylim([1e-6, 1])
-    ax2.legend()
-
-    # ax1.set_title(r'$\dot{R}\propto\Delta p^{\,!}$')
-    # ax1.set_xticks(bar_positions)
-    # ax1.set_xticklabels(x_labels, rotation=90)
-    # ax1.set_ylabel(r'$\|\mathcal{L}\|$')
-    # ax1.set_ylim([1e-8,1])
-    # # ax1.set_ylim([0,0.06])
-    # ax1.set_yscale('log')
-    # # ax1.legend()
-
-    # ax2.set_title(r'$\dot{R}\propto\left(\Delta p^{\,!}\right)^3$')
-    # ax2.set_xticks(bar_positions)
-    # ax2.set_xticklabels(x_labels, rotation=90)
-    # # ax2.set_ylabel(r'$\|\mathcal{L}\|$')
-    # ax2.set_ylim([1e-6,1])
-    # # ax2.set_ylim([0,0.06])
-    # ax2.set_yscale('log')
-    # ax2.legend()
-
-    plt.tight_layout()
-    plt.show()
+    if savestr:
+        plt.savefig(savestr, format='eps', dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
 
 
 # # Auxiliary functions

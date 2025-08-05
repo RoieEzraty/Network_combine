@@ -110,6 +110,167 @@ def plot_importants(BigClass: "Big_Class", movmean_loss: bool = False, include_n
     plt.show()
 
 
+def plot_importants_BucklingBeads(BigClass: "Big_Class", movmean_loss: bool = False,
+                                  include_network: Optional[bool] = False, node_labels: bool = False) -> None:
+    """
+    one plot with 4 subfigures of
+    1) mean absolute value of loss in time
+    2) inputs and outputs in the update modality, in time
+    3) resistances in time
+    4) Network structure, from networkx pos_lattice
+
+    inputs:
+    BigClass        - Class instance containing User_Variables, Network_Structure, etc.
+    movmean_loss    - boolean of whether to smoothen loss with moving mean
+    include_network - boolean of whether to plot network
+    node_label      - boolean of whether to plot node number
+
+    outputs:
+    1 matplotlib plot
+    """
+
+    Nin = BigClass.Variabs.Nin
+    Nout = BigClass.Variabs.Nout
+    t = BigClass.State.t
+
+    # Set the custom color cycle globally without cycler
+    colors_lst, red, custom_cmap = colors.color_scheme()
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_lst)
+
+    legend2 = [r'$V_R$', r'$V_G$', r'$V_B$', r'$V_{{o1}}$', r'$V_{{o2}}$']
+    if include_network:
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(17, 3))
+    else:
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12.75, 3))
+
+    # Loss
+    for t in range(t):
+        if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
+            ax1.axvline(x=t, color='red', linestyle='--', linewidth=1)
+    if movmean_loss:
+        movmean_loss_t = statistics.mov_ave(BigClass.State.loss_scalar_in_t, 16)
+        ax1.plot(np.abs(movmean_loss_t[1:]))
+    else:
+        ax1.plot(BigClass.State.loss_scalar_in_t[1:])
+    # ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_in_t[1:]), axis=1), axis=1))
+    ax1.set_yscale('log')
+    ax1.set_ylim(1e-5, 1)
+    ax1.set_title(r'$Loss$')
+    ax1.set_xlabel('t')
+
+    # Update modality
+    ax2.plot(np.cumsum(BigClass.State.output_update_in_t[1:], axis=0))
+    ax2.plot(np.cumsum(BigClass.State.input_update_in_t[1:], axis=0))
+    if BigClass.Variabs.access_interNodes:
+        ax2.plot(BigClass.State.inter_update_in_t[1:])
+    ax2.set_title(r'$\Delta V^{\,!}$')
+    ax2.set_xlabel('t')
+    ax2.legend(legend2)
+
+    # Resistances
+    plt.plot(np.array(BigClass.State.R_in_t)[1:, :-Nout])
+    ax3.set_title(r'$\frac{d\Delta V}{dP}$')
+    ax3.set_xlabel('t')
+
+    # Network structure
+    if include_network:
+        if BigClass.NET.NET is not None:
+            plotNetStructure(NET=BigClass.NET.NET,
+                             BigClass=BigClass,
+                             pos_lattice=BigClass.NET.pos_lattice,
+                             node_labels=node_labels,
+                             R_reordered=BigClass.NET.R_reordered,
+                             u_reordered=BigClass.NET.u_reordered,
+                             p_reordered=BigClass.NET.p_reordered,
+                             ax=ax4  # Pass the subplot axis
+                             )
+        else:
+            print('no NET assigned in input')
+    plt.show()
+
+
+def plot_importants_LCEs(BigClass: "Big_Class", movmean_loss: bool = False,
+                         include_network: Optional[bool] = False, node_labels: bool = False) -> None:
+    """
+    one plot with 4 subfigures of
+    1) mean absolute value of loss in time
+    2) inputs and outputs in the update modality, in time
+    3) resistances in time
+    4) Network structure, from networkx pos_lattice
+
+    inputs:
+    BigClass        - Class instance containing User_Variables, Network_Structure, etc.
+    movmean_loss    - boolean of whether to smoothen loss with moving mean
+    include_network - boolean of whether to plot network
+    node_label      - boolean of whether to plot node number
+
+    outputs:
+    1 matplotlib plot
+    """
+
+    Nin = BigClass.Variabs.Nin
+    Nout = BigClass.Variabs.Nout
+    t = BigClass.State.t
+
+    # Set the custom color cycle globally without cycler
+    colors_lst, red, custom_cmap = colors.color_scheme()
+    plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_lst)
+
+    legend2 = []
+    legend2 += [rf'$T_{{\sigma_{{{j+1}}}}}$' for j in range(Nout)]
+    legend2 += [rf'$T_{{\epsilon_{{{i+1}}}}}$' for i in range(Nin)]
+
+    if include_network:
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(17, 3))
+    else:
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12.75, 3))
+
+    # Loss
+    for t in range(t):
+        if t % len(BigClass.Variabs.dataset) == 0 and t != 0 and BigClass.Variabs.task_type != 'Regression':
+            ax1.axvline(x=t, color='red', linestyle='--', linewidth=1)
+    if movmean_loss:
+        movmean_loss_t = statistics.mov_ave(BigClass.State.loss_scalar_in_t, 16)
+        ax1.plot(np.abs(movmean_loss_t[1:]))
+    else:
+        ax1.plot(BigClass.State.loss_scalar_in_t[1:])
+    # ax1.plot(np.mean(np.mean(np.abs(BigClass.State.loss_in_t[1:]), axis=1), axis=1))
+    ax1.set_yscale('log')
+    ax1.set_ylim(1e-5, 1)
+    ax1.set_title(r'$Loss$')
+    ax1.set_xlabel('t')
+
+    # Update modality
+    ax2.plot(np.cumsum(BigClass.State.output_update_in_t[1:], axis=0)+25)
+    ax2.plot(np.cumsum(BigClass.State.input_update_in_t[1:], axis=0)+25)
+    if BigClass.Variabs.access_interNodes:
+        ax2.plot(BigClass.State.inter_update_in_t[1:])
+    ax2.set_title(r'$T$')
+    ax2.set_xlabel('t')
+    ax2.legend(legend2)
+
+    # Resistances
+    plt.plot(np.array(BigClass.State.R_in_t)[1:, :-Nout])
+    ax3.set_title(r'$E_{ij}$')
+    ax3.set_xlabel('t')
+
+    # Network structure
+    if include_network:
+        if BigClass.NET.NET is not None:
+            plotNetStructure(NET=BigClass.NET.NET,
+                             BigClass=BigClass,
+                             pos_lattice=BigClass.NET.pos_lattice,
+                             node_labels=node_labels,
+                             R_reordered=BigClass.NET.R_reordered,
+                             u_reordered=BigClass.NET.u_reordered,
+                             p_reordered=BigClass.NET.p_reordered,
+                             ax=ax4  # Pass the subplot axis
+                             )
+        else:
+            print('no NET assigned in input')
+    plt.show()
+
+
 def plotNetStructure(NET: nx.DiGraph, BigClass: "Big_Class",
                      pos_lattice: Dict[Any, Tuple[float, float]], node_labels: bool = False,
                      R_reordered: NDArray[np.float_] = np.array([]),

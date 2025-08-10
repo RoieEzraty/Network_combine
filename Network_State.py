@@ -326,7 +326,8 @@ class Network_State:
         elif R_update == 'beads':
             self.input_update_nxt = input_update + self.alpha * np.mean(np.abs(loss[0]))
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin',
+                          'deltaR_propto_dp_decay', 'deltaR_propto_dp_nonlin_decay']:
             self.input_update_nxt = - delta
         elif R_update == 'grad_desc':
             self.input_update_nxt = input_update
@@ -371,7 +372,8 @@ class Network_State:
         if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
             self.extraInput_update_nxt: NDArray[np.float_] = extraInput_update - delta
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin',
+                          'deltaR_propto_dp_decay', 'deltaR_propto_dp_nonlin_decay']:
             self.extraInput_update_nxt = - delta
         elif R_update == 'grad_desc':
             self.extraInput_update_nxt = extraInput_update
@@ -416,7 +418,8 @@ class Network_State:
             # self.inter_update_nxt = inter_update - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_update_nxt = inter_update - delta
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin',
+                          'deltaR_propto_dp_decay', 'deltaR_propto_dp_nonlin_decay']:
             # self.inter_update_nxt = - delta + 0.01*np.random.randn(BigClass.Variabs.Ninter)
             self.inter_update_nxt = - delta
         elif R_update == 'grad_desc':
@@ -472,7 +475,8 @@ class Network_State:
         elif R_update == 'beads':
             self.output_update_nxt = output_update + self.alpha * np.mean(loss[0])
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin',
+                          'deltaR_propto_dp_decay', 'deltaR_propto_dp_nonlin_decay']:
             self.output_update_nxt = delta
         elif R_update == 'grad_desc':
             self.output_update_nxt = output_update
@@ -513,7 +517,8 @@ class Network_State:
         if R_update in ['R_propto_dp', 'R_propto_Q', 'R_propto_sqrt_dp', 'R_propto_Power', 'R_propto_Q_exp', 'beads']:
             self.extraOutput_update_nxt = extraOutput_update + delta
         # else if no memory
-        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin']:
+        elif R_update in ['deltaR_propto_dp', 'deltaR_propto_Q', 'deltaR_propto_Power', 'deltaR_propto_dp_nonlin',
+                          'deltaR_propto_dp_decay', 'deltaR_propto_dp_nonlin_decay']:
             self.extraOutput_update_nxt = delta
         elif R_update == 'grad_desc':
             self.extraOutput_update_nxt = extraOutput_update
@@ -542,14 +547,17 @@ class Network_State:
         R_vec: NDArray[np.float_] = self.R_in_t[-1]
         delta_p: NDArray[np.float_] = self.u * R_vec
         # delta_p: NDArray[np.float_] = np.matmul(BigClass.Strctr.DM, BigClass.State.p[:BigClass.Strctr.NN])
-        if BigClass.Variabs.R_update == 'deltaR_propto_dp':  # delta_R propto p_in-p_out
+        if BigClass.Variabs.R_update in {'deltaR_propto_dp', 'deltaR_propto_dp_decay'}:  # delta_R propto p_in-p_out
             delta_R = BigClass.Variabs.gamma*delta_p
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
                 R_nxt: NDArray[np.float_] = self.R_in_t[-1] + delta_R_norm
             else:
-                R_nxt = self.R_in_t[-1] + delta_R
-            self.R_in_t.append(np.abs(R_nxt))
+                if BigClass.Variabs.R_update == 'deltaR_propto_dp_decay':  # update and add decay of resistance to 1
+                    R_nxt = self.R_in_t[-1] + delta_R - BigClass.Variabs.decay*(self.R_in_t[-1] - 1)
+                else:  # update regular
+                    R_nxt = self.R_in_t[-1] + delta_R
+            self.R_in_t.append(np.clip(R_nxt, 1e-9, None))
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
             self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
             # self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
@@ -567,16 +575,17 @@ class Network_State:
             # R_nxt: float = R_max + (R_min - R_max) * np.exp(- self.u / u_0)
             R_nxt = R_max + (R_min - R_max) * np.exp(- np.abs(self.u) / u_0)
             self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
-        elif BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # delta_R propto p_in-p_out
-            # self.R_in_t.append(np.abs(R_vec + np.tanh((BigClass.Variabs.gamma * delta_p)**3/0.15)))
-            # delta_R = BigClass.Variabs.gamma*np.sign(delta_p) * (np.abs(delta_p) ** (1.1))
+        elif BigClass.Variabs.R_update in {'deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay'}:  # delta_R propto p_in-p_out
             delta_R = BigClass.Variabs.gamma*(delta_p)**3
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
                 R_nxt = self.R_in_t[-1] + delta_R_norm
             else:
-                R_nxt = self.R_in_t[-1] + delta_R
-            self.R_in_t.append(np.abs(R_nxt))
+                if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin_decay':  # update and add decay of resistance to 1
+                    R_nxt = self.R_in_t[-1] + delta_R - BigClass.Variabs.decay*(self.R_in_t[-1] - 1)
+                else:
+                    R_nxt = self.R_in_t[-1] + delta_R
+            self.R_in_t.append(np.clip(R_nxt, 1e-9, None))
         elif BigClass.Variabs.R_update == 'grad_desc':
             if delta_K == []:
                 print('error, no delta_K vector supplied')

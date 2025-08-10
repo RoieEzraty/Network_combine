@@ -312,7 +312,7 @@ class Network_State:
             else:  # use zero input, output and loss for 2nd sample
                 input_drawn_prev = np.zeros([BigClass.Variabs.Nin])
                 loss = np.array([copy.copy(loss[0]), np.zeros([BigClass.Variabs.Nout])])  # good loss dims for next "if"
-            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
+            if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:
                 delta = (input_drawn-input_drawn_prev) * self.alpha * \
                     (np.mean(loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))
             else:
@@ -456,13 +456,13 @@ class Network_State:
         else:
             if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
                 output_prev: NDArray[np.float_] = self.output_in_t[-2]
-                if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
+                if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:
                     delta = self.alpha * (self.output-output_prev) * \
                             ((loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))  # normalize loss
                 else:
                     delta = self.alpha * (self.output-output_prev) * (loss[0]-loss[1])
             else:
-                if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':
+                if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:
                     delta = self.alpha * self.output * (loss[0]/np.linalg.norm(loss[0]))  # normalize loss
                 else:
                     delta = self.alpha * self.output * loss[0]  # alpha*y*L
@@ -737,7 +737,7 @@ class Network_State:
             one_over_delta_p_norm = 1 / delta_p / np.linalg.norm(1 / delta_p)  # normalize division by pressure diffs
             C_vec: NDArray[np.float_] = np.matmul(BigClass.Strctr.RM, L_vec) * one_over_delta_p_norm
             # C_vec: NDArray[np.float_] = np.matmul(Strctr.RM, L_vec) / delta_p
-            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
+            if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:  # normalize C as well
                 C_vec_norm = C_vec[0] / np.linalg.norm(C_vec[0])
                 update_vec: NDArray[np.float_] = - self.alpha * np.matmul(BigClass.Strctr.DM_dagger, C_vec_norm)
             else:
@@ -754,7 +754,7 @@ class Network_State:
             self.grad_loss_vec = grad_loss_vec
             grad_loss_vec_norm = grad_loss_vec / np.linalg.norm(grad_loss_vec)
             self.grad_loss_vec_norm = grad_loss_vec_norm
-            if BigClass.Variabs.R_update == 'deltaR_propto_dp_nonlin':  # normalize C as well
+            if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:  # normalize C as well
                 update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec_norm)
             else:
                 update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec)

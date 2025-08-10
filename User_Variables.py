@@ -37,7 +37,7 @@ class User_Variables:
     def __init__(self, iterations: int, Nin: int,  Nout: int, gamma: NDArray[np.float_], R_update: str,
                  training_scheme: str, use_p_tag: bool, supress_prints: bool, task_type: str, dataset_type: str,
                  measure_accuracy_every: Optional[int] = None, normalize_step: bool = False, R_max: float = 46.0,
-                 R_min: float = 1.0, anneal: bool = False, T_annealing=0.0, Ninter: int = 0) -> None:
+                 R_min: float = 1.0, anneal: bool = False, T_annealing=0.0, Ninter: int = 0, decay_R: float = 2e-6) -> None:
         self.iterations: int = iterations
         self.Nin: int = Nin
         self.Nout: int = Nout
@@ -70,7 +70,7 @@ class User_Variables:
         self.reset_thresh_b: float = 1e4  # large positive value above which "update" modality input resets to initial
         self.reset_thresh_s: float = -1e4  # large negative value below which "update" modality input resets to initial
         if R_update in ['deltaR_propto_dp_decay', 'deltaR_propto_dp_nonlin_decay']:
-            self.decay = 2e-3
+            self.decay = decay_R
 
         # # predetermined ones
         self.lam: float = -80.0**(1)

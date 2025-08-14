@@ -575,7 +575,7 @@ class Network_State:
             # R_nxt: float = R_max + (R_min - R_max) * np.exp(- self.u / u_0)
             R_nxt = R_max + (R_min - R_max) * np.exp(- np.abs(self.u) / u_0)
             self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
-        elif BigClass.Variabs.R_update in {'deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay'}:  # delta_R propto p_in-p_out
+        elif BigClass.Variabs.R_update in {'deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay'}:  # non linear rules
             delta_R = BigClass.Variabs.gamma*(delta_p)**3
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)

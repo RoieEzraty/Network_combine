@@ -51,6 +51,8 @@ class Network_State:
         else:
             self.output_update_in_t = [0.5 * np.ones(Variabs.Nout)]
         self.extraOutput_update_in_t: List[NDArray[np.float_]] = [0.5 * np.ones(Variabs.extraNout)]
+        if Variabs.hysteresis:
+            self.hysteresis = 0
         # learning rate
         self.alpha_in_t = Variabs.alpha_vec[0]*np.ones([Variabs.iterations])
         self.alpha: np.float_ = Variabs.alpha_vec[0]
@@ -546,9 +548,18 @@ class Network_State:
         """
         R_vec: NDArray[np.float_] = self.R_in_t[-1]
         delta_p: NDArray[np.float_] = self.u * R_vec
-        # delta_p: NDArray[np.float_] = np.matmul(BigClass.Strctr.DM, BigClass.State.p[:BigClass.Strctr.NN])
+        # delta_p: NDArray[np.float_] = np.matmul(BigClass.Strctr.DM, BigClass.State.p[:BigClass.Strctr.NN])  # same as u * R_vec
+
+        # if hysteretic material - update only if new history. if not hysteretic, update for sure
+        if BigClass.Variabs.hysteresis:
+            BigClass.State.hysteresis += delta_p
+            update_cond: bool = ((BigClass.State.hysteresis > BigClass.Variabs.hyst_thresh) | 
+                                 (BigClass.State.hysteresis < -BigClass.Variabs.hyst_thresh))
+        else:
+            update_cond = np.ones(BigClass.Strctr.NE)
+
         if BigClass.Variabs.R_update in {'deltaR_propto_dp', 'deltaR_propto_dp_decay'}:  # delta_R propto p_in-p_out
-            delta_R = BigClass.Variabs.gamma*delta_p
+            delta_R = BigClass.Variabs.gamma*delta_p * update_cond
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
                 R_nxt: NDArray[np.float_] = self.R_in_t[-1] + delta_R_norm
@@ -575,8 +586,8 @@ class Network_State:
             # R_nxt: float = R_max + (R_min - R_max) * np.exp(- self.u / u_0)
             R_nxt = R_max + (R_min - R_max) * np.exp(- np.abs(self.u) / u_0)
             self.R_in_t.append(BigClass.Variabs.gamma * R_nxt)
-        elif BigClass.Variabs.R_update in {'deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay'}:  # non linear rules
-            delta_R = BigClass.Variabs.gamma*(delta_p)**3
+        elif BigClass.Variabs.R_update in {'deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay'}:  # non linear rules 
+            delta_R = BigClass.Variabs.gamma*(delta_p)**3 * update_cond
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
                 R_nxt = self.R_in_t[-1] + delta_R_norm
@@ -607,6 +618,10 @@ class Network_State:
                                                                 BigClass.Variabs.R_min,
                                                                 R_change_scheme='beads_pressure', allowed_cells=[],
                                                                 beta=0.0))
+
+        if BigClass.Variabs.hysteresis:
+            BigClass.State.hysteresis[BigClass.State.hysteresis > BigClass.Variabs.hyst_thresh] = BigClass.Variabs.hyst_thresh
+            BigClass.State.hysteresis[BigClass.State.hysteresis < -BigClass.Variabs.hyst_thresh] = -BigClass.Variabs.hyst_thresh
 
         # print
         if not BigClass.Variabs.supress_prints:

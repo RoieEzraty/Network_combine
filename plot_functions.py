@@ -137,7 +137,8 @@ def plot_importants_BucklingBeads(BigClass: "Big_Class", movmean_loss: bool = Fa
     colors_lst, red, custom_cmap = colors.color_scheme()
     plt.rcParams['axes.prop_cycle'] = plt.cycler('color', colors_lst)
 
-    legend2 = [r'$V_R$', r'$V_G$', r'$V_B$', r'$V_{{o1}}$', r'$V_{{o2}}$']
+    # legend2 = [r'$V_R$', r'$V_G$', r'$V_B$', r'$V_{{o1}}$', r'$V_{{o2}}$']
+    legend2 = [r'$V_{in1}$', r'$V_{in2}$', r'$V_{out1}$', r'$V_{out2}$', r'$V_{out3}$']
     if include_network:
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(17, 3))
     else:

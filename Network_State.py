@@ -314,7 +314,7 @@ class Network_State:
             else:  # use zero input, output and loss for 2nd sample
                 input_drawn_prev = np.zeros([BigClass.Variabs.Nin])
                 loss = np.array([copy.copy(loss[0]), np.zeros([BigClass.Variabs.Nout])])  # good loss dims for next "if"
-            if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:
+            if BigClass.Variabs.normalize_loss:
                 delta = (input_drawn-input_drawn_prev) * self.alpha * \
                     (np.mean(loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))
             else:
@@ -458,17 +458,18 @@ class Network_State:
         else:
             if BigClass.Variabs.use_p_tag:  # if two samples of p in for every loss calcaultion are to be taken
                 output_prev: NDArray[np.float_] = self.output_in_t[-2]
-                if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:
-                    delta = self.alpha * (self.output-output_prev) * \
-                            ((loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1]))  # normalize loss
+                if BigClass.Variabs.normalize_loss:
+                    loss_multip = (loss[0]-loss[1])/np.linalg.norm(loss[0]-loss[1])
                 else:
-                    delta = self.alpha * (self.output-output_prev) * (loss[0]-loss[1])
+                    loss_multip = loss[0]-loss[1]
+                delta = self.alpha * (self.output-output_prev) * loss_multip  # normalize loss
             else:
-                if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:
-                    delta = self.alpha * self.output * (loss[0]/np.linalg.norm(loss[0]))  # normalize loss
+                if BigClass.Variabs.normalize_loss:
+                    loss_multip = loss[0]/np.linalg.norm(loss[0])
                 else:
-                    delta = self.alpha * self.output * loss[0]  # alpha*y*L
-
+                    loss_multip = loss[0]
+                delta = self.alpha * self.output * loss_multip  # normalize loss
+                
         # update modality is different under schemes of change of R
 
         # w/ memory
@@ -769,7 +770,7 @@ class Network_State:
             self.grad_loss_vec = grad_loss_vec
             grad_loss_vec_norm = grad_loss_vec / np.linalg.norm(grad_loss_vec)
             self.grad_loss_vec_norm = grad_loss_vec_norm
-            if BigClass.Variabs.R_update in ['deltaR_propto_dp_nonlin', 'deltaR_propto_dp_nonlin_decay']:  # normalize C as well
+            if BigClass.Variabs.normalize_loss:  # normalize C as well
                 update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec_norm)
             else:
                 update_vec = - self.alpha * np.matmul(Strctr.DM_dagger, grad_loss_vec)

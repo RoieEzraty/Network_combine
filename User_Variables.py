@@ -35,10 +35,10 @@ class User_Variables:
     Class instance User_Variables
     """
     def __init__(self, iterations: int, Nin: int,  Nout: int, gamma: NDArray[np.float_], R_update: str,
-                 training_scheme: str, use_p_tag: bool, supress_prints: bool, task_type: str, dataset_type: str,
-                 measure_accuracy_every: Optional[int] = None, normalize_step: bool = False, hysteresis: Optional[float] = None,
-                 R_max: float = 46.0, R_min: float = 1.0, anneal: bool = False, T_annealing=0.0, Ninter: int = 0,
-                 decay_R: float = 2e-6) -> None:
+                 training_scheme: str, use_p_tag: bool, normalize_loss: bool, supress_prints: bool, task_type: str,
+                 dataset_type: str, measure_accuracy_every: Optional[int] = None, normalize_step: bool = False, 
+                 hysteresis: Optional[float] = None, R_max: float = 46.0, R_min: float = 1.0, anneal: bool = False,
+                 T_annealing=0.0, Ninter: int = 0, decay_R: float = 2e-6) -> None:
         self.iterations: int = iterations
         self.Nin: int = Nin
         self.Nout: int = Nout
@@ -70,6 +70,7 @@ class User_Variables:
         self.T_annealing = T_annealing
         self.reset_thresh_b: float = 1e4  # large positive value above which "update" modality input resets to initial
         self.reset_thresh_s: float = -1e4  # large negative value below which "update" modality input resets to initial
+        self.normalize_loss = normalize_loss  # normalize update modality step by loss magnitude (non linear scheme or hyst)
         if R_update in ['deltaR_propto_dp_decay', 'deltaR_propto_dp_nonlin_decay']:
             self.decay = decay_R
         if hysteresis:

@@ -60,6 +60,7 @@ class Network_State:
         self.loss_in_t: List[NDArray[np.float_]] = []
         self.loss_scalar_in_t: List[NDArray[np.float_]] = []
         self.Power_norm_in_t: List[NDArray[np.float_]] = []  # Power dissipation in whole network, normalized by inputs
+        self.update_vec_in_t: List[NDArray[np.float_]] = []  # input and output values in update modality, w/out hysteresis
         # Other sizes that make problems sometimes
         self.extraInput: NDArray[np.float_] = copy.copy(self.extraInput_update_in_t[-1])
 
@@ -561,6 +562,7 @@ class Network_State:
 
         if BigClass.Variabs.R_update in {'deltaR_propto_dp', 'deltaR_propto_dp_decay'}:  # delta_R propto p_in-p_out
             delta_R = BigClass.Variabs.gamma*delta_p * update_cond
+            print('delta_R ', delta_R)
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
                 R_nxt: NDArray[np.float_] = self.R_in_t[-1] + delta_R_norm
@@ -569,7 +571,7 @@ class Network_State:
                     R_nxt = self.R_in_t[-1] + delta_R - BigClass.Variabs.decay*(self.R_in_t[-1] - 1)
                 else:  # update regular
                     R_nxt = self.R_in_t[-1] + delta_R
-            self.R_in_t.append(np.clip(R_nxt, 1e-9, None))
+            self.R_in_t.append(np.clip(R_nxt, 1e-12, None))
         elif BigClass.Variabs.R_update == 'R_propto_dp':  # R propto p_in-p_out
             self.R_in_t.append(BigClass.Variabs.gamma * np.abs(delta_p))
             # self.R_in_t.append(BigClass.Variabs.gamma * delta_p)
@@ -597,7 +599,7 @@ class Network_State:
                     R_nxt = self.R_in_t[-1] + delta_R - BigClass.Variabs.decay*(self.R_in_t[-1] - 1)
                 else:
                     R_nxt = self.R_in_t[-1] + delta_R
-            self.R_in_t.append(np.clip(R_nxt, 1e-9, None))
+            self.R_in_t.append(np.clip(R_nxt, 1e-12, None))
         elif BigClass.Variabs.R_update == 'grad_desc':
             if delta_K == []:
                 print('error, no delta_K vector supplied')
@@ -628,7 +630,7 @@ class Network_State:
         if not BigClass.Variabs.supress_prints:
             pass
 
-        self.R_in_t[-1][self.R_in_t[-1] < 10**-12] = 10**-12  # inhibit vanishing R
+        self.R_in_t[-1][self.R_in_t[-1] < 10**-12] = 10**-12  # inhibit vanishing R - already accounted for above?
 
     def dK_grad_desc(self, Strctr: "Network_Structure", dK_step, p_desired, func):
         """
@@ -781,6 +783,7 @@ class Network_State:
             # update_vec[-1] = 0  # neglect ground node
             # grad_loss_vec[-1] = 0
         self.update_vec = update_vec
+        self.update_vec_in_t.append(update_vec)
 
     def calc_Power_norm(self, BigClass: "Big_Class"):
         self.Power_norm = statistics.power_dissip_norm(self.u, self.R_in_t[-1], self.input_drawn)

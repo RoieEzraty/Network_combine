@@ -144,7 +144,8 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
 
     NN: int = len(Strctr.input_nodes_arr) + len(Strctr.extraInput_nodes_arr) + len(Strctr.inter_nodes_arr) + \
         len(Strctr.output_nodes_arr) + len(Strctr.extraOutput_nodes_arr) + len(Strctr.ground_nodes_arr)
-    ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
+    if len(Strctr.ground_nodes_arr) != 0:
+        ground_node: int = copy.copy(NN) - 1  # ground nodes is last one.
     EIlst: List[int] = []
     EJlst: List[int] = []
 
@@ -199,20 +200,22 @@ def build_incidence(Strctr: "Network_Structure") -> Tuple[NDArray[np.int_], NDAr
 
     # Don't connect input to ground
 
-    # connect extraInput to ground
-    for i, inNode in enumerate(Strctr.extraInput_nodes_arr):
-        EIlst.append(inNode)
-        EJlst.append(ground_node)
+    if len(Strctr.ground_nodes_arr) != 0:
 
-    # connect output to ground
-    for i, outNode in enumerate(Strctr.output_nodes_arr):
-        EIlst.append(outNode)
-        EJlst.append(ground_node)
+        # connect extraInput to ground
+        for i, inNode in enumerate(Strctr.extraInput_nodes_arr):
+            EIlst.append(inNode)
+            EJlst.append(ground_node)
+    
+        # connect output to ground
+        for i, outNode in enumerate(Strctr.output_nodes_arr):
+            EIlst.append(outNode)
+            EJlst.append(ground_node)
 
-    # connect extraOutput to ground
-    for i, outNode in enumerate(Strctr.extraOutput_nodes_arr):
-        EIlst.append(outNode)
-        EJlst.append(ground_node)
+        # connect extraOutput to ground
+        for i, outNode in enumerate(Strctr.extraOutput_nodes_arr):
+            EIlst.append(outNode)
+            EJlst.append(ground_node)
 
     if Strctr.net_type == 'FC_connected_outputs':  # connect all outputs between themselves
         # Generate unique pairs and store them in separate lists

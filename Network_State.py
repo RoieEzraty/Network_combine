@@ -562,7 +562,6 @@ class Network_State:
 
         if BigClass.Variabs.R_update in {'deltaR_propto_dp', 'deltaR_propto_dp_decay'}:  # delta_R propto p_in-p_out
             delta_R = BigClass.Variabs.gamma*delta_p * update_cond
-            print('delta_R ', delta_R)
             if BigClass.Variabs.normalize_step:
                 delta_R_norm = self.alpha * delta_R / np.linalg.norm(delta_R)
                 R_nxt: NDArray[np.float_] = self.R_in_t[-1] + delta_R_norm

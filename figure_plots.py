@@ -98,13 +98,11 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # ---- Row 1 - 1 input 2 outputs ----
 
     # network structure
-    node_colors_1in2out = [Colorscheme.colors_lst[1], Colorscheme.colors_lst[0], Colorscheme.colors_lst[0], 'black']
-    # Draw arrows for ax4
-    # draw_arrow(ax1, pos_lattice_both, 0, 1, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # in to output
-    # draw_arrow(ax1, pos_lattice_both, 0, 2, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # in to output
-    # draw_arrow(ax1, pos_lattice_both, 1, 3, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # out to ground
-    # draw_arrow(ax1, pos_lattice_both, 2, 3, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # out to ground
-    nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color=Colorscheme.colors_lst[0],
+    # node_colors_1in2out = [Colorscheme.colors_lst[1], Colorscheme.colors_lst[0], Colorscheme.colors_lst[0], 'black']
+    node_colors_1in2out = [Colorscheme.colors_lst[0], Colorscheme.colors_lst[1], Colorscheme.colors_lst[2], 'black']
+    edge_colors_1in2out = [Colorscheme.colors_lst[0], Colorscheme.colors_lst[1], Colorscheme.colors_lst[2],
+                           Colorscheme.colors_lst[3]]
+    nx.draw_networkx(NET_1in2out, pos=pos_lattice_both, edge_color=edge_colors_1in2out,
                      node_color=node_colors_1in2out, with_labels=False, arrows=True, font_color='white',
                      font_size=14, width=2, node_size=400, ax=ax1)
     # Add custom labels
@@ -146,12 +144,13 @@ def plot_performance_2(M: NDArray[np.float_], t: np.int_,
     # ---- Row 1 - 2 inputs 1 output ----
 
     # network structure
-    node_colors_2in1out = [Colorscheme.colors_lst[1], Colorscheme.colors_lst[0], Colorscheme.colors_lst[1], 'black']
+    node_colors_2in1out = [Colorscheme.colors_lst[0], Colorscheme.colors_lst[2], Colorscheme.colors_lst[1], 'black']
+    edge_colors_2in1out = [Colorscheme.colors_lst[0], Colorscheme.colors_lst[2], Colorscheme.colors_lst[1]]
     # Draw arrows for ax5
     # draw_arrow(ax5, pos_lattice_both, 0, 2, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # in to output
     # draw_arrow(ax5, pos_lattice_both, 1, 2, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # in to output
     # draw_arrow(ax5, pos_lattice_both, 2, 3, color=Colorscheme.colors_lst[0], head_width=arrow_head_w)  # out to ground
-    nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color=Colorscheme.colors_lst[0],
+    nx.draw_networkx(NET_2in1out, pos=pos_lattice_both, edge_color=edge_colors_2in1out,
                      node_color=node_colors_2in1out, with_labels=False, arrows=True, font_color='white',
                      font_size=14, width=2, node_size=400, ax=ax5)
     # Add custom labels
